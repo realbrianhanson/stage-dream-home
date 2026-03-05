@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
+import { Copy, Check } from "lucide-react";
+import { toast } from "sonner";
 import DownloadWithPresets from "@/components/DownloadWithPresets";
 
 interface BeforeAfterSliderProps {
@@ -12,6 +14,7 @@ interface BeforeAfterSliderProps {
 const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfterSliderProps) => {
   const [sliderPos, setSliderPos] = useState(50);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [copied, setCopied] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
 
@@ -41,8 +44,43 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfte
   const handleTouchMove = (e: React.TouchEvent) => {
     updateSlider(e.touches[0].clientX);
   };
+  const handleCopyToClipboard = async () => {
+    try {
+      const response = await fetch(after);
+      const blob = await response.blob();
+      const pngBlob = blob.type === "image/png" ? blob : await convertToPngBlob(blob);
+      await navigator.clipboard.write([
+        new ClipboardItem({ "image/png": pngBlob }),
+      ]);
+      setCopied(true);
+      toast.success("Image copied to clipboard");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Clipboard not available in this browser — use Download instead");
+      // Auto-trigger download as fallback
+      const link = document.createElement("a");
+      link.href = after;
+      link.download = "staged-room.png";
+      link.click();
+    }
+  };
 
-  
+  const convertToPngBlob = (blob: Blob): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("PNG conversion failed"))), "image/png");
+      };
+      img.onerror = reject;
+      img.src = URL.createObjectURL(blob);
+    });
+  };
+
 
   return (
     <section className="py-24 px-6">
@@ -127,6 +165,15 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfte
         {/* Actions */}
         <div className="flex justify-center gap-4 mt-8">
           <DownloadWithPresets imageUrl={after} filename="staged-room" variant="gold" isWatermarked={isWatermarked} />
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleCopyToClipboard}
+            className="border border-border font-body font-semibold text-sm px-8 py-3 rounded-lg text-muted-foreground hover:border-accent/30 hover:text-accent transition-colors flex items-center gap-2"
+          >
+            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            {copied ? "Copied!" : "Copy to Clipboard"}
+          </motion.button>
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
