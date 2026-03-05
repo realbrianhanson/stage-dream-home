@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Sparkles, Clock, Palette, TrendingUp, Star, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Clock, Palette, TrendingUp, Star, CheckCircle2, Sparkles } from "lucide-react";
 import Logo from "@/components/Logo";
 import heroImage from "@/assets/landing-hero.jpg";
 import beforeVacant from "@/assets/before-vacant.jpg";
@@ -61,6 +61,10 @@ const Landing = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-transparent to-foreground/30" />
         </motion.div>
 
+        {/* Radial gold glow accents */}
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 30% 30%, hsl(38 60% 55% / 0.06) 0%, transparent 50%)' }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 70% 70%, hsl(38 60% 55% / 0.04) 0%, transparent 50%)' }} />
+
         <div className="relative z-10 text-center px-6 max-w-5xl mx-auto pt-20">
           <motion.div
             initial="hidden"
@@ -69,7 +73,7 @@ const Landing = () => {
             custom={0}
             className="inline-flex items-center gap-2 bg-accent/20 border border-accent/30 rounded-full px-5 py-2 mb-8"
           >
-            <Sparkles className="w-4 h-4 text-accent" />
+            <div className="w-1.5 h-1.5 rounded-full bg-accent" style={{ boxShadow: '0 0 8px hsl(38 60% 55% / 0.5)' }} />
             <span className="font-body text-xs tracking-[0.2em] uppercase text-accent">AI-Powered Virtual Staging</span>
           </motion.div>
 
@@ -78,10 +82,11 @@ const Landing = () => {
             animate="visible"
             variants={fadeUp}
             custom={1}
-            className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-medium text-primary-foreground leading-[0.95] mb-8"
+            className="font-display font-medium text-primary-foreground leading-[0.95] mb-8"
+            style={{ fontSize: 'clamp(3rem, 8vw, 6.5rem)' }}
           >
             Sell Properties{" "}
-            <span className="italic text-accent">Faster</span>
+            <span className="italic font-light text-accent">Faster</span>
           </motion.h1>
 
           <motion.p
@@ -104,7 +109,7 @@ const Landing = () => {
           >
             <button
               onClick={() => navigate("/auth")}
-              className="gold-gradient text-accent-foreground font-body font-semibold text-base px-10 py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity flex items-center gap-2 group"
+              className="gold-gradient-animated text-accent-foreground font-body font-semibold text-base px-10 py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity flex items-center gap-2 group"
             >
               Start Staging Free
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -123,12 +128,18 @@ const Landing = () => {
             animate="visible"
             variants={fadeUp}
             custom={4}
-            className="mt-20 flex flex-wrap items-center justify-center gap-8 text-primary-foreground/40"
+            className="mt-20 border-t border-b border-primary-foreground/5 py-6 flex flex-wrap items-center justify-center gap-8 text-primary-foreground/40"
           >
             {["500+ Agents", "10,000+ Rooms Staged", "4.9★ Rating", "< 30s Processing"].map((stat) => (
               <span key={stat} className="font-body text-sm tracking-wide">{stat}</span>
             ))}
           </motion.div>
+
+          {/* Gold divider */}
+          <div
+            className="mt-8 mx-auto"
+            style={{ width: 120, height: 1, background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.4), transparent)' }}
+          />
         </div>
 
         {/* Scroll indicator */}
