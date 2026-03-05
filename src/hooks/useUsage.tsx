@@ -60,6 +60,12 @@ export const useUsage = () => {
     ? usage.plan !== "free" || usage.stagings_this_month < FREE_LIMIT
     : false;
 
+  const remainingStagings = usage
+    ? usage.plan !== "free"
+      ? Infinity
+      : Math.max(0, FREE_LIMIT - usage.stagings_this_month)
+    : 0;
+
   const increment = async () => {
     if (!user || !usage) return;
     const newCount = usage.stagings_this_month + 1;
@@ -74,6 +80,7 @@ export const useUsage = () => {
     usage,
     loading,
     canStage,
+    remainingStagings,
     increment,
     freeLimit: FREE_LIMIT,
     refresh: fetchOrCreate,

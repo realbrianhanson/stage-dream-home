@@ -2,7 +2,9 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import HeroSection from "@/components/HeroSection";
 import RoomUploader from "@/components/RoomUploader";
+import type { StagingResult } from "@/components/RoomUploader";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
+import ComparisonView from "@/components/ComparisonView";
 import UsageIndicator from "@/components/UsageIndicator";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,12 +12,17 @@ import { useUsage } from "@/hooks/useUsage";
 import { supabase } from "@/integrations/supabase/client";
 import { LogOut, ImageIcon } from "lucide-react";
 
+type ResultState =
+  | { type: "single"; original: string; staged: string }
+  | { type: "multi"; original: string; results: StagingResult[] }
+  | null;
+
 const Index = () => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { usage, canStage, increment, freeLimit, loading: usageLoading } = useUsage();
-  const [result, setResult] = useState<{ original: string; staged: string } | null>(null);
+  const { usage, canStage, increment, freeLimit, remainingStagings, loading: usageLoading } = useUsage();
+  const [result, setResult] = useState<ResultState>(null);
   const [stagingCount, setStagingCount] = useState(0);
 
   const reStageState = location.state as {
@@ -47,8 +54,14 @@ const Index = () => {
   };
 
   const handleResult = (original: string, staged: string) => {
-    setResult({ original, staged });
+    setResult({ type: "single", original, staged });
     setStagingCount((prev) => prev + 1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleMultiResult = (original: string, results: StagingResult[]) => {
+    setResult({ type: "multi", original, results });
+    setStagingCount((prev) => prev + results.length);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -94,7 +107,7 @@ const Index = () => {
         </div>
       </nav>
 
-      {result ? (
+      {result?.type === "single" ? (
         <div className="pt-20">
           <BeforeAfterSlider
             before={result.original}
@@ -102,15 +115,23 @@ const Index = () => {
             onReset={() => setResult(null)}
           />
         </div>
+      ) : result?.type === "multi" ? (
+        <ComparisonView
+          original={result.original}
+          results={result.results}
+          onReset={() => setResult(null)}
+        />
       ) : (
         <>
           <HeroSection onGetStarted={scrollToUpload} />
           <RoomUploader
             onResult={handleResult}
+            onMultiResult={handleMultiResult}
             initialImage={reStageState?.reStageImage}
             initialRoomType={reStageState?.reStageRoomType}
             initialStyle={reStageState?.reStageStyle}
             canStage={canStage}
+            remainingStagings={remainingStagings}
             onStagingComplete={increment}
             usage={usage}
             freeLimit={freeLimit}
