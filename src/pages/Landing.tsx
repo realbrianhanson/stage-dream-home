@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Sparkles, Clock, Palette, TrendingUp, Star, CheckCircle2 } from "lucide-react";
@@ -24,10 +25,18 @@ const Landing = () => {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 1.1]);
 
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 60);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-5 backdrop-blur-md bg-background/20 border-b border-border/10">
+      <nav className={`fixed top-0 left-0 right-0 z-50 px-6 transition-all duration-300 border-b border-border/10 ${scrolled ? "py-3 backdrop-blur-xl bg-foreground/95" : "py-5 backdrop-blur-md bg-background/20"}`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Logo light />
           <div className="flex items-center gap-6">
