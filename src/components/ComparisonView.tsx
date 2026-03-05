@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, X, Check } from "lucide-react";
+import { X, Check } from "lucide-react";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
+import DownloadWithPresets from "@/components/DownloadWithPresets";
 import type { StagingResult } from "@/components/RoomUploader";
 
 interface ComparisonViewProps {
@@ -13,12 +14,7 @@ interface ComparisonViewProps {
 const ComparisonView = ({ original, results, onReset }: ComparisonViewProps) => {
   const [selectedResult, setSelectedResult] = useState<StagingResult | null>(null);
 
-  const handleDownload = (result: StagingResult) => {
-    const link = document.createElement("a");
-    link.href = result.stagedImageUrl;
-    link.download = `staged-${result.style.toLowerCase().replace(/\s+/g, "-")}.png`;
-    link.click();
-  };
+  // download handled by DownloadWithPresets component
 
   return (
     <div className="pt-24 pb-16 px-6">
@@ -102,15 +98,13 @@ const ComparisonView = ({ original, results, onReset }: ComparisonViewProps) => 
                     <Check className="w-3.5 h-3.5" />
                     Compare
                   </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDownload(result);
-                    }}
-                    className="w-10 h-10 rounded-lg border border-white/[0.06] text-muted-foreground hover:text-accent hover:border-accent/20 flex items-center justify-center transition-colors"
-                  >
-                    <Download className="w-4 h-4" />
-                  </button>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <DownloadWithPresets
+                      imageUrl={result.stagedImageUrl}
+                      filename={`staged-${result.style.toLowerCase().replace(/\s+/g, "-")}`}
+                      variant="outline"
+                    />
+                  </div>
                 </div>
               </motion.div>
             ))}
