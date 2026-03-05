@@ -61,7 +61,7 @@ interface RoomUploaderProps {
   initialCustomInstructions?: string;
   canStage: boolean;
   remainingStagings: number;
-  onStagingComplete: () => void;
+  onStagingComplete: () => Promise<boolean>;
   usage: { plan: string; stagings_this_month: number } | null;
   freeLimit: number;
 }
@@ -162,11 +162,6 @@ const RoomUploader = ({
       return;
     }
 
-    if (usage?.plan === "free" && remainingStagings < count) {
-      toast.error(`You only have ${remainingStagings} staging${remainingStagings !== 1 ? "s" : ""} left this month. Select fewer styles or upgrade.`);
-      return;
-    }
-
     setIsProcessing(true);
     cancelledRef.current = false;
 
@@ -176,7 +171,14 @@ const RoomUploader = ({
       } = await supabase.auth.getUser();
 
       if (count === 1) {
-        // Single style — existing flow
+        // Atomic check-and-increment before staging
+        const allowed = await onStagingComplete();
+        if (!allowed) {
+          toast.error("You've reached your free staging limit this month.");
+          setIsProcessing(false);
+          return;
+        }
+
         setProgressText("Staging your room with AI...");
         const instrTrimmed = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
         const { data, error } = await supabase.functions.invoke("stage-room", {
@@ -203,10 +205,8 @@ const RoomUploader = ({
             custom_instructions: instrTrimmed || null,
             aspect_ratio: aspectRatio || null,
           } as any);
-          onStagingComplete();
           onResult(originalUrl, stagedUrl, data.isWatermarked);
         } else {
-          onStagingComplete();
           onResult(image, data.stagedImageUrl, data.isWatermarked);
         }
         toast.success("Room staged successfully!");
@@ -219,6 +219,13 @@ const RoomUploader = ({
         for (let i = 0; i < stylesToStage.length; i++) {
           if (cancelledRef.current) {
             toast.info(`Cancelled — ${completedResults.length} of ${count} styles completed`);
+            break;
+          }
+
+          // Atomic check-and-increment before each style
+          const allowed = await onStagingComplete();
+          if (!allowed) {
+            toast.info(`Limit reached after ${completedResults.length} style${completedResults.length !== 1 ? "s" : ""}. Upgrade for more.`);
             break;
           }
 
@@ -259,7 +266,6 @@ const RoomUploader = ({
           }
 
           completedResults.push(finalResult);
-          onStagingComplete();
 
           // Stream result to ComparisonView — remaining styles become pending
           onMultiProgress(finalResult, cancelledRef.current ? [] : remaining);
