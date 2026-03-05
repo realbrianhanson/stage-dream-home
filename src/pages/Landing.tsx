@@ -336,14 +336,15 @@ const Landing = () => {
                 viewport={{ once: true, margin: "-50px" }}
                 variants={fadeUp}
                 custom={i}
-                className="p-8 rounded-2xl border border-border bg-card/50"
+                className="p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm hover:border-accent/15 transition-all duration-500"
               >
                 <div className="flex gap-1 mb-6">
                   {[...Array(5)].map((_, j) => (
-                    <Star key={j} className="w-4 h-4 fill-accent text-accent" />
+                    <Star key={j} className={`w-3.5 h-3.5 fill-accent text-accent${j === 0 ? ' drop-shadow-[0_0_4px_hsl(38_60%_55%/0.5)]' : ''}`} />
                   ))}
                 </div>
-                <p className="font-body text-foreground/80 leading-relaxed mb-8 text-sm">"{t.quote}"</p>
+                <span className="font-display text-3xl text-accent/20 leading-none block mb-2">"</span>
+                <p className="font-body text-foreground/80 leading-relaxed mb-8 text-sm">{t.quote}</p>
                 <div>
                   <p className="font-display font-medium text-sm">{t.name}</p>
                   <p className="font-body text-xs text-muted-foreground">{t.role}</p>
@@ -387,10 +388,10 @@ const Landing = () => {
                 viewport={{ once: true, margin: "-50px" }}
                 variants={fadeUp}
                 custom={i}
-                className={`p-8 rounded-2xl border relative ${
+                className={`rounded-2xl border relative ${
                   plan.highlight
-                    ? "border-accent bg-foreground text-primary-foreground shadow-elevated scale-105"
-                    : "border-border bg-background"
+                    ? "p-10 border-accent/25 bg-accent/[0.04] text-primary-foreground shadow-glow-gold animate-pulse-glow"
+                    : "p-8 border-white/[0.06] bg-white/[0.02] backdrop-blur-sm"
                 }`}
               >
                 {plan.highlight && (
@@ -400,23 +401,23 @@ const Landing = () => {
                 )}
                 <p className="font-display text-lg font-medium mb-2">{plan.name}</p>
                 <div className="flex items-baseline gap-1 mb-8">
-                  <span className="font-display text-4xl font-semibold">{plan.price}</span>
+                  <span className={`font-display text-4xl font-semibold ${plan.highlight ? "text-accent" : ""}`}>{plan.price}</span>
                   <span className={`font-body text-sm ${plan.highlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>{plan.period}</span>
                 </div>
                 <ul className="space-y-3 mb-8">
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-center gap-3 font-body text-sm">
-                      <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${plan.highlight ? "text-accent" : "text-accent"}`} />
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-accent" />
                       <span className={plan.highlight ? "text-primary-foreground/80" : "text-muted-foreground"}>{f}</span>
                     </li>
                   ))}
                 </ul>
                 <button
                   onClick={() => navigate("/auth")}
-                  className={`w-full font-body font-semibold text-sm py-3.5 rounded-lg transition-opacity ${
+                  className={`w-full font-body font-semibold text-sm py-3.5 rounded-lg transition-all ${
                     plan.highlight
-                      ? "gold-gradient text-accent-foreground hover:opacity-90"
-                      : "border border-border hover:border-accent/40 text-foreground"
+                      ? "gold-gradient-animated text-accent-foreground hover:opacity-90"
+                      : "border border-border hover:border-accent/30 hover:text-accent text-foreground"
                   }`}
                 >
                   Get Started
