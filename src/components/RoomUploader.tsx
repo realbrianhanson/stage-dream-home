@@ -70,6 +70,17 @@ const RoomUploader = ({ onResult }: RoomUploaderProps) => {
       if (error) throw error;
 
       if (data?.stagedImageUrl) {
+        // Save to stagings history
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from("stagings").insert({
+            user_id: user.id,
+            original_image_url: image,
+            staged_image_url: data.stagedImageUrl,
+            room_type: roomType,
+            style: style,
+          });
+        }
         onResult(image, data.stagedImageUrl);
         toast.success("Room staged successfully!");
       } else {

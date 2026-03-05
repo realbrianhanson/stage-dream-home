@@ -14,7 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      stagings: {
+        Row: {
+          created_at: string
+          id: string
+          original_image_url: string
+          property_address: string | null
+          room_type: string
+          staged_image_url: string
+          style: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          original_image_url: string
+          property_address?: string | null
+          room_type: string
+          staged_image_url: string
+          style: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          original_image_url?: string
+          property_address?: string | null
+          room_type?: string
+          staged_image_url?: string
+          style?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
