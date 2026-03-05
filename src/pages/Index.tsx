@@ -2,8 +2,12 @@ import { useState, useRef } from "react";
 import HeroSection from "@/components/HeroSection";
 import RoomUploader from "@/components/RoomUploader";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
+import Logo from "@/components/Logo";
+import { useAuth } from "@/hooks/useAuth";
+import { LogOut } from "lucide-react";
 
 const Index = () => {
+  const { signOut } = useAuth();
   const [result, setResult] = useState<{ original: string; staged: string } | null>(null);
   const uploadRef = useRef<HTMLDivElement>(null);
 
@@ -21,15 +25,22 @@ const Index = () => {
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <h2 className="font-display text-xl font-semibold text-primary-foreground">
-            StageAI
-          </h2>
-          <button
-            onClick={scrollToUpload}
-            className="font-body text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors"
-          >
-            Get Started →
-          </button>
+          <Logo light />
+          <div className="flex items-center gap-4">
+            <button
+              onClick={scrollToUpload}
+              className="font-body text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+            >
+              Get Started →
+            </button>
+            <button
+              onClick={() => signOut()}
+              className="font-body text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors flex items-center gap-1.5"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Sign Out
+            </button>
+          </div>
         </div>
       </nav>
 
