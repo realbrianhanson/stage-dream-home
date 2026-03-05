@@ -55,6 +55,7 @@ export type Database = {
           created_at: string
           id: string
           month_reset_at: string | null
+          onboarding_complete: boolean
           plan: string
           stagings_this_month: number
           user_id: string
@@ -63,6 +64,7 @@ export type Database = {
           created_at?: string
           id?: string
           month_reset_at?: string | null
+          onboarding_complete?: boolean
           plan?: string
           stagings_this_month?: number
           user_id: string
@@ -71,6 +73,7 @@ export type Database = {
           created_at?: string
           id?: string
           month_reset_at?: string | null
+          onboarding_complete?: boolean
           plan?: string
           stagings_this_month?: number
           user_id?: string

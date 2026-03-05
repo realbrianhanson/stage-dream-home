@@ -6,6 +6,7 @@ interface UsageData {
   plan: string;
   stagings_this_month: number;
   month_reset_at: string;
+  onboarding_complete: boolean;
 }
 
 const FREE_LIMIT = 3;
@@ -22,7 +23,7 @@ export const useUsage = () => {
     // Try to fetch existing usage row
     let { data, error } = await supabase
       .from("usage")
-      .select("plan, stagings_this_month, month_reset_at")
+      .select("plan, stagings_this_month, month_reset_at, onboarding_complete")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -31,7 +32,7 @@ export const useUsage = () => {
       const { data: inserted } = await supabase
         .from("usage")
         .insert({ user_id: user.id })
-        .select("plan, stagings_this_month, month_reset_at")
+        .select("plan, stagings_this_month, month_reset_at, onboarding_complete")
         .single();
       data = inserted;
     }
