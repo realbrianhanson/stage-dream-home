@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Upload, Image as ImageIcon, X, Loader2, Lock, ToggleLeft, ToggleRight, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { uploadStagingImage } from "@/lib/uploadStagingImage";
 
 const INSTRUCTION_CHIPS = [
   "Pet-friendly furniture",
@@ -173,18 +174,28 @@ const RoomUploader = ({
         if (!data?.stagedImageUrl) throw new Error("No staged image returned");
 
         if (user) {
+          const stagingId = crypto.randomUUID();
+          const [originalUrl, stagedUrl] = await Promise.all([
+            uploadStagingImage(user.id, stagingId, image, "original"),
+            uploadStagingImage(user.id, stagingId, data.stagedImageUrl, "staged"),
+          ]);
+
           await supabase.from("stagings").insert({
+            id: stagingId,
             user_id: user.id,
-            original_image_url: image,
-            staged_image_url: data.stagedImageUrl,
+            original_image_url: originalUrl,
+            staged_image_url: stagedUrl,
             room_type: roomType,
             style: stylesToStage[0],
             property_address: propertyName.trim() || null,
             custom_instructions: instrTrimmed || null,
           });
+          onStagingComplete();
+          onResult(originalUrl, stagedUrl);
+        } else {
+          onStagingComplete();
+          onResult(image, data.stagedImageUrl);
         }
-        onStagingComplete();
-        onResult(image, data.stagedImageUrl);
         toast.success("Room staged successfully!");
       } else {
         // Multi-style — sequential calls
@@ -203,17 +214,27 @@ const RoomUploader = ({
 
           results.push({ style: currentStyle, stagedImageUrl: data.stagedImageUrl });
 
-          // Save each result to db
+          // Upload to storage and save to db
           if (user) {
+            const stagingId = crypto.randomUUID();
+            const [originalUrl, stagedUrl] = await Promise.all([
+              uploadStagingImage(user.id, stagingId, image, "original"),
+              uploadStagingImage(user.id, stagingId, data.stagedImageUrl, "staged"),
+            ]);
+
             await supabase.from("stagings").insert({
+              id: stagingId,
               user_id: user.id,
-              original_image_url: image,
-              staged_image_url: data.stagedImageUrl,
+              original_image_url: originalUrl,
+              staged_image_url: stagedUrl,
               room_type: roomType,
               style: currentStyle,
               property_address: propertyName.trim() || null,
               custom_instructions: instrTrimmed || null,
             });
+
+            // Update the result with storage URL for the comparison view
+            results[results.length - 1].stagedImageUrl = stagedUrl;
           }
           onStagingComplete();
         }
