@@ -45,6 +45,7 @@ const Auth = () => {
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 bg-foreground" />
         <div className="absolute inset-0 gold-gradient opacity-20" />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 30% 70%, hsl(38 60% 55% / 0.1) 0%, transparent 50%)' }} />
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           <Logo light />
           <div>
@@ -95,7 +96,7 @@ const Auth = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full font-body text-sm bg-card border border-border rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all placeholder:text-muted-foreground/50"
+                  className="w-full font-body text-sm bg-card border border-border rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all placeholder:text-muted-foreground/50"
                 />
               </div>
             </div>
@@ -113,7 +114,7 @@ const Auth = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   minLength={6}
-                  className="w-full font-body text-sm bg-card border border-border rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all placeholder:text-muted-foreground/50"
+                  className="w-full font-body text-sm bg-card border border-border rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all placeholder:text-muted-foreground/50"
                 />
               </div>
             </div>
@@ -123,7 +124,7 @@ const Auth = () => {
               disabled={loading}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
-              className="w-full gold-gradient text-accent-foreground font-body font-semibold text-sm py-3.5 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-60 mt-6"
+              className="w-full gold-gradient-animated text-accent-foreground font-body font-semibold text-sm py-3.5 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-60 mt-6"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -135,6 +136,12 @@ const Auth = () => {
               )}
             </motion.button>
           </form>
+
+          <div className="text-center mt-4">
+            <button className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">
+              Forgot password?
+            </button>
+          </div>
 
           <p className="font-body text-sm text-muted-foreground text-center mt-6">
             {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
