@@ -57,7 +57,7 @@ const Auth = () => {
             </p>
           </div>
           <p className="font-body text-primary-foreground/30 text-sm">
-            © 2026 StageAI
+            © 2026 RealVision
           </p>
         </div>
       </div>

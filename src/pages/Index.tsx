@@ -62,9 +62,9 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t border-border py-8 px-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="font-display text-lg font-medium">StageAI</p>
+          <p className="font-display text-lg font-medium">RealVision</p>
           <p className="font-body text-sm text-muted-foreground">
-            © 2026 StageAI. AI-powered virtual staging for real estate.
+            © 2026 RealVision. AI-powered virtual staging for real estate.
           </p>
         </div>
       </footer>

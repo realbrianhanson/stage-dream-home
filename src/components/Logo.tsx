@@ -15,7 +15,7 @@ const Logo = ({ className = "", light = false }: LogoProps) => {
       </div>
       <div className="flex flex-col leading-none">
         <span className={`font-display text-lg font-semibold tracking-tight ${light ? "text-primary-foreground" : "text-foreground"}`}>
-          Stage<span className="text-accent">AI</span>
+          Real<span className="text-accent">Vision</span>
         </span>
         <span className={`font-body text-[10px] tracking-[0.15em] uppercase ${light ? "text-primary-foreground/50" : "text-muted-foreground"}`}>
           Virtual Staging
