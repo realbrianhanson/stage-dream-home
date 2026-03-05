@@ -6,9 +6,10 @@ interface BeforeAfterSliderProps {
   before: string;
   after: string;
   onReset: () => void;
+  isWatermarked?: boolean;
 }
 
-const BeforeAfterSlider = ({ before, after, onReset }: BeforeAfterSliderProps) => {
+const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfterSliderProps) => {
   const [sliderPos, setSliderPos] = useState(50);
   const [containerWidth, setContainerWidth] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -78,6 +79,13 @@ const BeforeAfterSlider = ({ before, after, onReset }: BeforeAfterSliderProps) =
           {/* After (full) */}
           <img src={after} alt="Staged room" className="absolute inset-0 w-full h-full object-cover" />
           
+          {/* Watermark overlay */}
+          {isWatermarked && (
+            <div className="absolute bottom-4 right-4 z-[5] bg-foreground/40 backdrop-blur-sm rounded-full px-3 py-1">
+              <span className="font-body text-xs text-primary-foreground/40 select-none">RealVision</span>
+            </div>
+          )}
+          
           {/* Before (clipped) */}
           <div
             className="absolute inset-0 overflow-hidden"
@@ -118,7 +126,7 @@ const BeforeAfterSlider = ({ before, after, onReset }: BeforeAfterSliderProps) =
 
         {/* Actions */}
         <div className="flex justify-center gap-4 mt-8">
-          <DownloadWithPresets imageUrl={after} filename="staged-room" variant="gold" />
+          <DownloadWithPresets imageUrl={after} filename="staged-room" variant="gold" isWatermarked={isWatermarked} />
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -128,6 +136,24 @@ const BeforeAfterSlider = ({ before, after, onReset }: BeforeAfterSliderProps) =
             Stage Another Room
           </motion.button>
         </div>
+
+        {/* Upgrade nudge for free users */}
+        {isWatermarked && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="text-center mt-6"
+          >
+            <p className="font-body text-sm text-muted-foreground">
+              Free images include a small watermark.{" "}
+              <a href="#" className="text-accent hover:underline transition-colors">
+                Upgrade to Pro
+              </a>{" "}
+              for clean, watermark-free exports.
+            </p>
+          </motion.div>
+        )}
       </div>
     </section>
   );

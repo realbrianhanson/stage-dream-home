@@ -15,8 +15,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { LogOut, ImageIcon, HelpCircle } from "lucide-react";
 
 type ResultState =
-  | { type: "single"; original: string; staged: string }
-  | { type: "multi"; original: string; results: StagingResult[] }
+  | { type: "single"; original: string; staged: string; isWatermarked?: boolean }
+  | { type: "multi"; original: string; results: StagingResult[]; isWatermarked?: boolean }
   | null;
 
 const Index = () => {
@@ -64,14 +64,14 @@ const Index = () => {
     document.getElementById("upload-section")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleResult = (original: string, staged: string) => {
-    setResult({ type: "single", original, staged });
+  const handleResult = (original: string, staged: string, isWatermarked?: boolean) => {
+    setResult({ type: "single", original, staged, isWatermarked });
     setStagingCount((prev) => prev + 1);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleMultiResult = (original: string, results: StagingResult[]) => {
-    setResult({ type: "multi", original, results });
+  const handleMultiResult = (original: string, results: StagingResult[], isWatermarked?: boolean) => {
+    setResult({ type: "multi", original, results, isWatermarked });
     setStagingCount((prev) => prev + results.length);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -139,6 +139,7 @@ const Index = () => {
             before={result.original}
             after={result.staged}
             onReset={() => setResult(null)}
+            isWatermarked={result.isWatermarked}
           />
         </div>
       ) : result?.type === "multi" ? (
@@ -146,6 +147,7 @@ const Index = () => {
           original={result.original}
           results={result.results}
           onReset={() => setResult(null)}
+          isWatermarked={result.isWatermarked}
         />
       ) : (
         <>

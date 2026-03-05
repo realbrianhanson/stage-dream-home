@@ -41,6 +41,17 @@ serve(async (req) => {
       );
     }
 
+    const userId = data.claims.sub as string;
+
+    // Query user's plan
+    const { data: usageData } = await supabaseClient
+      .from("usage")
+      .select("plan")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const userPlan = usageData?.plan || "free";
+
     const { image, roomType, style, customInstructions, aspectRatio } = await req.json();
 
     if (!image) {
@@ -139,7 +150,7 @@ Add appropriate furniture like sofas, tables, chairs, rugs, lamps, artwork, plan
     }
 
     return new Response(
-      JSON.stringify({ stagedImageUrl }),
+      JSON.stringify({ stagedImageUrl, plan: userPlan, isWatermarked: userPlan === "free" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
