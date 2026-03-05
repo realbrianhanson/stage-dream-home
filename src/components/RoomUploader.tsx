@@ -1,9 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Image as ImageIcon, X, Loader2 } from "lucide-react";
+import { Upload, Image as ImageIcon, X, Loader2, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useSearchParams } from "react-router-dom";
 
 const ROOM_TYPES = [
   "Living Room",
@@ -28,9 +27,22 @@ interface RoomUploaderProps {
   initialImage?: string | null;
   initialRoomType?: string;
   initialStyle?: string;
+  canStage: boolean;
+  onStagingComplete: () => void;
+  usage: { plan: string; stagings_this_month: number } | null;
+  freeLimit: number;
 }
 
-const RoomUploader = ({ onResult, initialImage, initialRoomType, initialStyle }: RoomUploaderProps) => {
+const RoomUploader = ({
+  onResult,
+  initialImage,
+  initialRoomType,
+  initialStyle,
+  canStage,
+  onStagingComplete,
+  usage,
+  freeLimit,
+}: RoomUploaderProps) => {
   const [image, setImage] = useState<string | null>(initialImage || null);
   const [roomType, setRoomType] = useState(initialRoomType || "Living Room");
   const [style, setStyle] = useState(initialStyle || "Modern");
@@ -71,6 +83,12 @@ const RoomUploader = ({ onResult, initialImage, initialRoomType, initialStyle }:
 
   const handleStage = async () => {
     if (!image) return;
+
+    if (!canStage) {
+      toast.error("You've reached your free staging limit this month.");
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
@@ -81,7 +99,9 @@ const RoomUploader = ({ onResult, initialImage, initialRoomType, initialStyle }:
       if (error) throw error;
 
       if (data?.stagedImageUrl) {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (user) {
           await supabase.from("stagings").insert({
             user_id: user.id,
@@ -92,6 +112,7 @@ const RoomUploader = ({ onResult, initialImage, initialRoomType, initialStyle }:
             property_address: propertyName.trim() || null,
           });
         }
+        onStagingComplete();
         onResult(image, data.stagedImageUrl);
         toast.success("Room staged successfully!");
       } else {
@@ -104,6 +125,8 @@ const RoomUploader = ({ onResult, initialImage, initialRoomType, initialStyle }:
       setIsProcessing(false);
     }
   };
+
+  const limitReached = usage && usage.plan === "free" && !canStage;
 
   return (
     <section id="upload-section" className="py-24 px-6">
@@ -253,23 +276,41 @@ const RoomUploader = ({ onResult, initialImage, initialRoomType, initialStyle }:
                   </div>
                 </div>
 
-                {/* Stage button */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleStage}
-                  disabled={isProcessing}
-                  className="w-full gold-gradient-animated text-accent-foreground font-body font-semibold text-base py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity disabled:opacity-60"
-                >
-                  {isProcessing ? (
-                    <span className="flex items-center justify-center gap-3">
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Staging your room with AI...
-                    </span>
-                  ) : (
-                    "Stage This Room"
-                  )}
-                </motion.button>
+                {/* Limit reached or stage button */}
+                {limitReached ? (
+                  <div className="text-center py-6 border border-white/[0.06] rounded-2xl bg-white/[0.02]">
+                    <Lock className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
+                    <p className="font-display text-lg font-medium mb-1">
+                      You've used all {freeLimit} free stagings this month
+                    </p>
+                    <p className="font-body text-sm text-muted-foreground mb-5">
+                      Upgrade for unlimited AI-powered virtual staging
+                    </p>
+                    <a
+                      href="/#pricing"
+                      className="inline-block gold-gradient-animated text-accent-foreground font-body font-semibold text-sm px-8 py-3 rounded-lg hover:opacity-90 transition-opacity"
+                    >
+                      Upgrade to Pro — Unlimited Stagings
+                    </a>
+                  </div>
+                ) : (
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleStage}
+                    disabled={isProcessing}
+                    className="w-full gold-gradient-animated text-accent-foreground font-body font-semibold text-base py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity disabled:opacity-60"
+                  >
+                    {isProcessing ? (
+                      <span className="flex items-center justify-center gap-3">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Staging your room with AI...
+                      </span>
+                    ) : (
+                      "Stage This Room"
+                    )}
+                  </motion.button>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

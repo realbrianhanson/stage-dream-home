@@ -3,8 +3,10 @@ import { useNavigate, useLocation } from "react-router-dom";
 import HeroSection from "@/components/HeroSection";
 import RoomUploader from "@/components/RoomUploader";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
+import UsageIndicator from "@/components/UsageIndicator";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
+import { useUsage } from "@/hooks/useUsage";
 import { supabase } from "@/integrations/supabase/client";
 import { LogOut, ImageIcon } from "lucide-react";
 
@@ -12,11 +14,10 @@ const Index = () => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { usage, canStage, increment, freeLimit, loading: usageLoading } = useUsage();
   const [result, setResult] = useState<{ original: string; staged: string } | null>(null);
-  const uploadRef = useRef<HTMLDivElement>(null);
   const [stagingCount, setStagingCount] = useState(0);
 
-  // Re-stage state from gallery navigation
   const reStageState = location.state as {
     reStageImage?: string;
     reStageRoomType?: string;
@@ -33,7 +34,6 @@ const Index = () => {
     fetchCount();
   }, []);
 
-  // Auto-scroll to upload section if re-staging
   useEffect(() => {
     if (reStageState?.reStageImage) {
       setTimeout(() => {
@@ -54,11 +54,17 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 backdrop-blur-md bg-foreground/40 border-b border-border/10">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Logo light />
           <div className="flex items-center gap-4">
+            {usage && (
+              <UsageIndicator
+                plan={usage.plan}
+                used={usage.stagings_this_month}
+                limit={freeLimit}
+              />
+            )}
             <button
               onClick={scrollToUpload}
               className="font-body text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors"
@@ -104,11 +110,14 @@ const Index = () => {
             initialImage={reStageState?.reStageImage}
             initialRoomType={reStageState?.reStageRoomType}
             initialStyle={reStageState?.reStageStyle}
+            canStage={canStage}
+            onStagingComplete={increment}
+            usage={usage}
+            freeLimit={freeLimit}
           />
         </>
       )}
 
-      {/* Footer */}
       <footer className="border-t border-white/[0.04] py-8 px-6 bg-foreground/[0.03]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="font-display text-lg font-medium">RealVision</p>

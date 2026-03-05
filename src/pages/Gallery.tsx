@@ -4,9 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { Trash2, X, Upload, ArrowLeft, LogOut, Download, RefreshCw, Search, ChevronDown, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useUsage } from "@/hooks/useUsage";
 import { toast } from "sonner";
 import Logo from "@/components/Logo";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
+import UsageIndicator from "@/components/UsageIndicator";
 
 interface Staging {
   id: string;
@@ -20,6 +22,7 @@ interface Staging {
 
 const Gallery = () => {
   const { signOut } = useAuth();
+  const { usage, freeLimit } = useUsage();
   const navigate = useNavigate();
   const [stagings, setStagings] = useState<Staging[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,6 +127,13 @@ const Gallery = () => {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Logo />
           <div className="flex items-center gap-4">
+            {usage && (
+              <UsageIndicator
+                plan={usage.plan}
+                used={usage.stagings_this_month}
+                limit={freeLimit}
+              />
+            )}
             <button
               onClick={() => navigate("/app")}
               className="font-body text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"

@@ -47,6 +47,33 @@ export type Database = {
         }
         Relationships: []
       }
+      usage: {
+        Row: {
+          created_at: string
+          id: string
+          month_reset_at: string | null
+          plan: string
+          stagings_this_month: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month_reset_at?: string | null
+          plan?: string
+          stagings_this_month?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month_reset_at?: string | null
+          plan?: string
+          stagings_this_month?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
