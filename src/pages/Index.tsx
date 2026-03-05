@@ -29,6 +29,7 @@ const Index = () => {
     reStageImage?: string;
     reStageRoomType?: string;
     reStageStyle?: string;
+    reStageCustomInstructions?: string;
   } | null;
 
   useEffect(() => {
@@ -130,6 +131,7 @@ const Index = () => {
             initialImage={reStageState?.reStageImage}
             initialRoomType={reStageState?.reStageRoomType}
             initialStyle={reStageState?.reStageStyle}
+            initialCustomInstructions={reStageState?.reStageCustomInstructions}
             canStage={canStage}
             remainingStagings={remainingStagings}
             onStagingComplete={increment}

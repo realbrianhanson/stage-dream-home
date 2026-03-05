@@ -17,6 +17,7 @@ export type Database = {
       stagings: {
         Row: {
           created_at: string
+          custom_instructions: string | null
           id: string
           original_image_url: string
           property_address: string | null
@@ -27,6 +28,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          custom_instructions?: string | null
           id?: string
           original_image_url: string
           property_address?: string | null
@@ -37,6 +39,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          custom_instructions?: string | null
           id?: string
           original_image_url?: string
           property_address?: string | null

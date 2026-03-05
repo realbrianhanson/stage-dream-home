@@ -17,6 +17,7 @@ interface Staging {
   room_type: string;
   style: string;
   property_address: string | null;
+  custom_instructions: string | null;
   created_at: string;
 }
 
@@ -67,6 +68,7 @@ const Gallery = () => {
         reStageImage: staging.original_image_url,
         reStageRoomType: staging.room_type,
         reStageStyle: staging.style,
+        reStageCustomInstructions: staging.custom_instructions || "",
       },
     });
   };
