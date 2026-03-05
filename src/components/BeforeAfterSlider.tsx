@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Download } from "lucide-react";
+import DownloadWithPresets from "@/components/DownloadWithPresets";
 
 interface BeforeAfterSliderProps {
   before: string;
@@ -41,12 +41,7 @@ const BeforeAfterSlider = ({ before, after, onReset }: BeforeAfterSliderProps) =
     updateSlider(e.touches[0].clientX);
   };
 
-  const handleDownload = () => {
-    const link = document.createElement("a");
-    link.href = after;
-    link.download = "staged-room.png";
-    link.click();
-  };
+  
 
   return (
     <section className="py-24 px-6">
@@ -123,15 +118,7 @@ const BeforeAfterSlider = ({ before, after, onReset }: BeforeAfterSliderProps) =
 
         {/* Actions */}
         <div className="flex justify-center gap-4 mt-8">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleDownload}
-            className="gold-gradient-animated text-accent-foreground font-body font-semibold text-sm px-8 py-3 rounded-lg flex items-center gap-2"
-          >
-            <Download className="w-4 h-4" />
-            Download Staged Photo
-          </motion.button>
+          <DownloadWithPresets imageUrl={after} filename="staged-room" variant="gold" />
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
