@@ -72,7 +72,7 @@ const BeforeAfterSlider = ({ before, after, onReset }: BeforeAfterSliderProps) =
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
           ref={containerRef}
-          className="relative rounded-2xl overflow-hidden shadow-elevated cursor-col-resize select-none"
+          className="relative rounded-2xl overflow-hidden shadow-elevated border border-white/[0.06] cursor-col-resize select-none"
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
@@ -104,8 +104,8 @@ const BeforeAfterSlider = ({ before, after, onReset }: BeforeAfterSliderProps) =
             onTouchStart={handleMouseDown}
           >
             <div className="w-0.5 h-full bg-primary-foreground/80" />
-            <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-primary-foreground shadow-elevated flex items-center justify-center">
-              <svg width="16" height="16" viewBox="0 0 16 16" className="text-foreground">
+            <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, hsl(38 55% 45%), hsl(40 70% 62%))', boxShadow: '0 4px 20px hsl(38 60% 55% / 0.3)' }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" className="text-accent-foreground">
                 <path d="M5 3L2 8L5 13" stroke="currentColor" strokeWidth="1.5" fill="none" />
                 <path d="M11 3L14 8L11 13" stroke="currentColor" strokeWidth="1.5" fill="none" />
               </svg>
@@ -127,7 +127,7 @@ const BeforeAfterSlider = ({ before, after, onReset }: BeforeAfterSliderProps) =
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleDownload}
-            className="gold-gradient text-accent-foreground font-body font-semibold text-sm px-8 py-3 rounded-lg flex items-center gap-2"
+            className="gold-gradient-animated text-accent-foreground font-body font-semibold text-sm px-8 py-3 rounded-lg flex items-center gap-2"
           >
             <Download className="w-4 h-4" />
             Download Staged Photo
@@ -136,7 +136,7 @@ const BeforeAfterSlider = ({ before, after, onReset }: BeforeAfterSliderProps) =
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={onReset}
-            className="border border-border font-body font-semibold text-sm px-8 py-3 rounded-lg text-muted-foreground hover:border-accent/40 transition-colors"
+            className="border border-border font-body font-semibold text-sm px-8 py-3 rounded-lg text-muted-foreground hover:border-accent/30 hover:text-accent transition-colors"
           >
             Stage Another Room
           </motion.button>
