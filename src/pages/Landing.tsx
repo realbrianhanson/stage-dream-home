@@ -193,7 +193,7 @@ const Landing = () => {
             variants={fadeUp}
             className="text-center mb-20"
           >
-            <p className="text-accent font-body text-xs tracking-[0.3em] uppercase mb-4">Why StageAI</p>
+            <p className="text-accent font-body text-xs tracking-[0.3em] uppercase mb-4">Why RealVision</p>
             <h2 className="font-display text-4xl md:text-6xl font-medium">
               The Future of <span className="italic text-accent">Staging</span>
             </h2>
@@ -294,8 +294,8 @@ const Landing = () => {
 
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { name: "Sarah Mitchell", role: "Luxury Real Estate, NYC", quote: "StageAI cut my listing time in half. The quality is indistinguishable from professional photography." },
-              { name: "James Rivera", role: "Commercial Broker, LA", quote: "I've tried every virtual staging tool. Nothing comes close to the realism StageAI delivers." },
+              { name: "Sarah Mitchell", role: "Luxury Real Estate, NYC", quote: "RealVision cut my listing time in half. The quality is indistinguishable from professional photography." },
+              { name: "James Rivera", role: "Commercial Broker, LA", quote: "I've tried every virtual staging tool. Nothing comes close to the realism RealVision delivers." },
               { name: "Emily Chen", role: "Property Developer, SF", quote: "We stage 50+ units per month now. The ROI is extraordinary — every property sells faster." },
             ].map((t, i) => (
               <motion.div
@@ -426,7 +426,7 @@ const Landing = () => {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <Logo />
           <p className="font-body text-sm text-muted-foreground">
-            © 2026 StageAI. AI-powered virtual staging for real estate professionals.
+            © 2026 RealVision. AI-powered virtual staging for real estate professionals.
           </p>
           <div className="flex gap-6">
             <a href="#" className="font-body text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy</a>
