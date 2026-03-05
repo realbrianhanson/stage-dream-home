@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Image as ImageIcon, X, Loader2, Lock, ToggleLeft, ToggleRight, ChevronDown, ChevronUp } from "lucide-react";
+import { Upload, Image as ImageIcon, X, Loader2, Lock, ToggleLeft, ToggleRight, ChevronDown, ChevronUp, StopCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { uploadStagingImage } from "@/lib/uploadStagingImage";
@@ -53,6 +53,8 @@ export interface StagingResult {
 interface RoomUploaderProps {
   onResult: (original: string, staged: string, isWatermarked?: boolean) => void;
   onMultiResult: (original: string, results: StagingResult[], isWatermarked?: boolean) => void;
+  onMultiStart: (original: string, pendingStyles: string[]) => void;
+  onMultiProgress: (result: StagingResult, remainingStyles: string[]) => void;
   initialImage?: string | null;
   initialRoomType?: string;
   initialStyle?: string;
@@ -67,6 +69,8 @@ interface RoomUploaderProps {
 const RoomUploader = ({
   onResult,
   onMultiResult,
+  onMultiStart,
+  onMultiProgress,
   initialImage,
   initialRoomType,
   initialStyle,
@@ -90,6 +94,7 @@ const RoomUploader = ({
   const [progressText, setProgressText] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cancelledRef = useRef(false);
 
   useEffect(() => {
     if (initialImage) setImage(initialImage);
@@ -141,6 +146,11 @@ const RoomUploader = ({
     });
   };
 
+  const handleCancel = () => {
+    cancelledRef.current = true;
+    toast.info("Cancelling remaining styles...");
+  };
+
   const handleStage = async () => {
     if (!image) return;
 
@@ -158,6 +168,7 @@ const RoomUploader = ({
     }
 
     setIsProcessing(true);
+    cancelledRef.current = false;
 
     try {
       const {
@@ -200,11 +211,19 @@ const RoomUploader = ({
         }
         toast.success("Room staged successfully!");
       } else {
-        // Multi-style — sequential calls
-        const results: StagingResult[] = [];
+        // Multi-style — progressive streaming
+        onMultiStart(image, [...stylesToStage]);
+
+        const completedResults: StagingResult[] = [];
 
         for (let i = 0; i < stylesToStage.length; i++) {
+          if (cancelledRef.current) {
+            toast.info(`Cancelled — ${completedResults.length} of ${count} styles completed`);
+            break;
+          }
+
           const currentStyle = stylesToStage[i];
+          const remaining = stylesToStage.slice(i + 1);
           setProgressText(`Staging ${i + 1} of ${count}... ${currentStyle}`);
 
           const instrTrimmed = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
@@ -214,7 +233,7 @@ const RoomUploader = ({
           if (error) throw error;
           if (!data?.stagedImageUrl) throw new Error(`No staged image returned for ${currentStyle}`);
 
-          results.push({ style: currentStyle, stagedImageUrl: data.stagedImageUrl, isWatermarked: data.isWatermarked });
+          let finalResult: StagingResult = { style: currentStyle, stagedImageUrl: data.stagedImageUrl, isWatermarked: data.isWatermarked };
 
           // Upload to storage and save to db
           if (user) {
@@ -236,14 +255,21 @@ const RoomUploader = ({
               aspect_ratio: aspectRatio || null,
             } as any);
 
-            // Update the result with storage URL for the comparison view
-            results[results.length - 1].stagedImageUrl = stagedUrl;
+            finalResult.stagedImageUrl = stagedUrl;
           }
+
+          completedResults.push(finalResult);
           onStagingComplete();
+
+          // Stream result to ComparisonView — remaining styles become pending
+          onMultiProgress(finalResult, cancelledRef.current ? [] : remaining);
         }
 
-        onMultiResult(image, results, results.some(r => r.isWatermarked));
-        toast.success(`Room staged in ${count} styles!`);
+        toast.success(
+          cancelledRef.current
+            ? `${completedResults.length} style${completedResults.length !== 1 ? "s" : ""} staged`
+            : `Room staged in ${count} styles!`
+        );
       }
     } catch (err: any) {
       console.error("Staging error:", err);
@@ -251,6 +277,7 @@ const RoomUploader = ({
     } finally {
       setIsProcessing(false);
       setProgressText("");
+      cancelledRef.current = false;
     }
   };
 
@@ -545,24 +572,47 @@ const RoomUploader = ({
                       </a>
                     </div>
                   ) : (
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={handleStage}
-                      disabled={isProcessing}
-                      className="w-full gold-gradient-animated text-accent-foreground font-body font-semibold text-base py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity disabled:opacity-60"
-                    >
-                      {isProcessing ? (
-                        <span className="flex items-center justify-center gap-3">
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          {progressText || "Staging your room with AI..."}
-                        </span>
-                      ) : compareMode && selectedStyles.length > 1 ? (
-                        `Stage in ${selectedStyles.length} Styles`
-                      ) : (
-                        "Stage This Room"
+                    <div className="space-y-3">
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleStage}
+                        disabled={isProcessing}
+                        className="w-full gold-gradient-animated text-accent-foreground font-body font-semibold text-base py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity disabled:opacity-60"
+                      >
+                        {isProcessing ? (
+                          <span className="flex items-center justify-center gap-3">
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            {progressText || "Staging your room with AI..."}
+                          </span>
+                        ) : compareMode && selectedStyles.length > 1 ? (
+                          `Stage in ${selectedStyles.length} Styles`
+                        ) : (
+                          "Stage This Room"
+                        )}
+                      </motion.button>
+
+                      {/* Cancel button during multi-style processing */}
+                      {isProcessing && compareMode && selectedStyles.length > 1 && (
+                        <motion.button
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          onClick={handleCancel}
+                          disabled={cancelledRef.current}
+                          className="w-full border border-border font-body text-sm py-3 rounded-lg text-muted-foreground hover:border-destructive/30 hover:text-destructive transition-colors flex items-center justify-center gap-2"
+                        >
+                          <StopCircle className="w-4 h-4" />
+                          Cancel Remaining Styles
+                        </motion.button>
                       )}
-                    </motion.button>
+
+                      {/* Time estimate for multi-style */}
+                      {compareMode && selectedStyles.length > 1 && !isProcessing && (
+                        <p className="font-body text-xs text-muted-foreground/50 text-center">
+                          Comparing {selectedStyles.length} styles takes about {selectedStyles.length * 10}–{selectedStyles.length * 15} seconds total
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               </motion.div>
