@@ -20,14 +20,12 @@ export const useUsage = () => {
   const fetchOrCreate = useCallback(async () => {
     if (!user) return;
 
-    // Try to fetch existing usage row
     let { data, error } = await supabase
       .from("usage")
       .select("plan, stagings_this_month, month_reset_at, onboarding_complete")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    // Auto-create if missing (for users created before trigger)
     if (!data && !error) {
       const { data: inserted } = await supabase
         .from("usage")
@@ -38,15 +36,10 @@ export const useUsage = () => {
     }
 
     if (data) {
-      // Check if month needs reset
+      // Client-side reset check for display purposes only
       const resetAt = new Date(data.month_reset_at).getTime();
       if (Date.now() - resetAt > MONTH_MS) {
-        await supabase
-          .from("usage")
-          .update({ stagings_this_month: 0, month_reset_at: new Date().toISOString() })
-          .eq("user_id", user.id);
         data.stagings_this_month = 0;
-        data.month_reset_at = new Date().toISOString();
       }
       setUsage(data);
     }
@@ -67,14 +60,21 @@ export const useUsage = () => {
       : Math.max(0, FREE_LIMIT - usage.stagings_this_month)
     : 0;
 
-  const increment = async () => {
-    if (!user || !usage) return;
-    const newCount = usage.stagings_this_month + 1;
-    await supabase
-      .from("usage")
-      .update({ stagings_this_month: newCount })
-      .eq("user_id", user.id);
-    setUsage({ ...usage, stagings_this_month: newCount });
+  // Atomic check-and-increment via RPC. Returns true if allowed.
+  const checkAndIncrement = async (): Promise<boolean> => {
+    if (!user) return false;
+    const { data, error } = await supabase.rpc("check_and_increment_staging", {
+      p_user_id: user.id,
+    });
+    if (error) {
+      console.error("check_and_increment_staging error:", error);
+      return false;
+    }
+    const allowed = data === true;
+    if (allowed && usage) {
+      setUsage({ ...usage, stagings_this_month: usage.stagings_this_month + 1 });
+    }
+    return allowed;
   };
 
   return {
@@ -82,7 +82,7 @@ export const useUsage = () => {
     loading,
     canStage,
     remainingStagings,
-    increment,
+    increment: checkAndIncrement,
     freeLimit: FREE_LIMIT,
     refresh: fetchOrCreate,
   };
