@@ -41,7 +41,7 @@ serve(async (req) => {
       );
     }
 
-    const { image, roomType, style, customInstructions } = await req.json();
+    const { image, roomType, style, customInstructions, aspectRatio } = await req.json();
 
     if (!image) {
       return new Response(
@@ -69,6 +69,14 @@ Add appropriate furniture like sofas, tables, chairs, rugs, lamps, artwork, plan
 
     if (sanitizedInstructions) {
       prompt += `\n\nAdditional staging requirements from the client: ${sanitizedInstructions}`;
+    }
+
+    // Validate and apply aspect ratio
+    const validRatios = ["16:9", "4:3", "3:4", "1:1"];
+    const sanitizedAspectRatio = typeof aspectRatio === "string" && validRatios.includes(aspectRatio) ? aspectRatio : null;
+
+    if (sanitizedAspectRatio) {
+      prompt += `\n\nIMPORTANT: Generate the staged image with a ${sanitizedAspectRatio} aspect ratio.`;
     }
 
     const response = await fetch(
