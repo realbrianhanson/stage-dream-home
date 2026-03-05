@@ -7,7 +7,7 @@ interface HeroSectionProps {
 
 const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden grain-overlay">
       {/* Background image */}
       <div className="absolute inset-0">
         <img
@@ -16,18 +16,20 @@ const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-foreground/50" />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, hsl(38 60% 55% / 0.05) 0%, transparent 50%)' }} />
       </div>
 
       {/* Content */}
       <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
-        <motion.p
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-accent font-body text-sm tracking-[0.3em] uppercase mb-6"
+          className="flex items-center justify-center gap-2 mb-6"
         >
-          AI-Powered Virtual Staging
-        </motion.p>
+          <div className="w-1.5 h-1.5 rounded-full bg-accent" style={{ boxShadow: '0 0 8px hsl(38 60% 55% / 0.5)' }} />
+          <span className="text-accent font-body text-sm tracking-[0.3em] uppercase">AI-Powered Virtual Staging</span>
+        </motion.div>
 
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
@@ -56,7 +58,7 @@ const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.98 }}
           onClick={onGetStarted}
-          className="gold-gradient text-accent-foreground font-body font-semibold text-base px-10 py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity"
+          className="gold-gradient-animated text-accent-foreground font-body font-semibold text-base px-10 py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity"
         >
           Stage Your First Room
         </motion.button>

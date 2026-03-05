@@ -125,10 +125,10 @@ const RoomUploader = ({ onResult }: RoomUploaderProps) => {
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-2xl p-16 text-center cursor-pointer transition-all duration-300 ${
+                className={`border border-dashed rounded-2xl p-16 text-center cursor-pointer transition-all duration-300 ${
                   dragOver
-                    ? "border-accent bg-accent/5"
-                    : "border-border hover:border-accent/50"
+                    ? "border-accent/40 bg-accent/[0.04]"
+                    : "border-white/[0.08] hover:border-accent/30 bg-white/[0.02] backdrop-blur-sm"
                 }`}
               >
                 <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
@@ -187,7 +187,7 @@ const RoomUploader = ({ onResult }: RoomUploaderProps) => {
                           onClick={() => setRoomType(type)}
                           className={`font-body text-sm px-4 py-2 rounded-lg border transition-all ${
                             roomType === type
-                              ? "border-accent bg-accent/10 text-accent-foreground"
+                              ? "border-accent/30 bg-accent/[0.08] text-accent"
                               : "border-border text-muted-foreground hover:border-accent/40"
                           }`}
                         >
@@ -207,7 +207,7 @@ const RoomUploader = ({ onResult }: RoomUploaderProps) => {
                           onClick={() => setStyle(s)}
                           className={`font-body text-sm px-4 py-2 rounded-lg border transition-all ${
                             style === s
-                              ? "border-accent bg-accent/10 text-accent-foreground"
+                              ? "border-accent/30 bg-accent/[0.08] text-accent"
                               : "border-border text-muted-foreground hover:border-accent/40"
                           }`}
                         >
@@ -224,7 +224,7 @@ const RoomUploader = ({ onResult }: RoomUploaderProps) => {
                   whileTap={{ scale: 0.98 }}
                   onClick={handleStage}
                   disabled={isProcessing}
-                  className="w-full gold-gradient text-accent-foreground font-body font-semibold text-base py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity disabled:opacity-60"
+                  className="w-full gold-gradient-animated text-accent-foreground font-body font-semibold text-base py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity disabled:opacity-60"
                 >
                   {isProcessing ? (
                     <span className="flex items-center justify-center gap-3">
