@@ -238,10 +238,10 @@ const Landing = () => {
                 viewport={{ once: true, margin: "-50px" }}
                 variants={fadeUp}
                 custom={i}
-                className="group p-8 rounded-2xl border border-border hover:border-accent/30 transition-all duration-500 hover:shadow-elevated bg-card/50"
+                className="group p-8 rounded-2xl border border-white/[0.06] hover:border-accent/25 transition-all duration-500 bg-white/[0.02] backdrop-blur-sm hover:bg-white/[0.04] hover:shadow-dramatic hover:-translate-y-1"
               >
-                <div className="w-12 h-12 rounded-xl gold-gradient flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
-                  <feature.icon className="w-5 h-5 text-accent-foreground" />
+                <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/15 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
+                  <feature.icon className="w-5 h-5 text-accent" />
                 </div>
                 <h3 className="font-display text-xl font-medium mb-3">{feature.title}</h3>
                 <p className="font-body text-muted-foreground text-sm leading-relaxed">{feature.desc}</p>
@@ -286,16 +286,16 @@ const Landing = () => {
                 viewport={{ once: true, margin: "-50px" }}
                 variants={fadeUp}
                 custom={i}
-                className="group relative rounded-2xl overflow-hidden aspect-[4/5] cursor-pointer"
+                className="group relative rounded-2xl overflow-hidden aspect-[4/5] cursor-pointer border border-white/[0.04] hover:shadow-dramatic transition-shadow duration-500"
               >
                 <img
                   src={item.img}
                   alt={item.label}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-transparent" />
                 <div className="absolute bottom-6 left-6">
-                  <p className="font-body text-xs tracking-[0.2em] uppercase text-accent mb-1">AI Staged</p>
+                  <p className="font-body text-xs tracking-[0.2em] uppercase text-accent mb-1"><span className="inline-block w-1 h-1 rounded-full bg-accent mr-2 mb-[1px]" />AI Staged</p>
                   <p className="font-display text-xl text-primary-foreground font-medium">{item.label}</p>
                 </div>
               </motion.div>
