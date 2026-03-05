@@ -34,7 +34,7 @@ const Landing = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="min-h-screen bg-background overflow-x-hidden grain-overlay">
       {/* Navbar */}
       <nav className={`fixed top-0 left-0 right-0 z-50 px-6 transition-all duration-300 border-b border-border/10 ${scrolled ? "py-3 backdrop-blur-xl bg-foreground/95" : "py-5 backdrop-blur-md bg-background/20"}`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
