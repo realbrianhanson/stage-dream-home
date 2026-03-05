@@ -189,13 +189,13 @@ const Landing = () => {
             className="grid md:grid-cols-2 gap-6"
           >
             <div className="relative rounded-2xl overflow-hidden shadow-elevated border border-border/30 group hover:shadow-dramatic transition-shadow duration-500">
-              <img src={beforeVacant} alt="Vacant unfurnished room" className="w-full h-full object-cover" />
+              <img src={beforeVacant} alt="Vacant unfurnished room" className="w-full h-full object-cover" loading="lazy" />
               <div className="absolute top-4 left-4 bg-foreground/70 text-primary-foreground rounded-lg px-4 py-2 text-sm font-body font-semibold tracking-wide">
                 Before
               </div>
             </div>
             <div className="relative rounded-2xl overflow-hidden shadow-elevated border border-border/30 group hover:shadow-dramatic transition-shadow duration-500">
-              <img src={afterStaged} alt="Same room virtually staged with furniture" className="w-full h-full object-cover" />
+              <img src={afterStaged} alt="Same room virtually staged with furniture" className="w-full h-full object-cover" loading="lazy" />
               <div className="absolute top-4 left-4 gold-gradient-animated text-accent-foreground rounded-lg px-4 py-2 text-sm font-body font-semibold tracking-wide">
                 After
               </div>
@@ -292,6 +292,7 @@ const Landing = () => {
                   src={item.img}
                   alt={item.label}
                   className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700"
+                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-transparent" />
                 <div className="absolute bottom-6 left-6">
@@ -434,7 +435,7 @@ const Landing = () => {
       {/* Final CTA */}
       <section className="py-32 px-6 relative overflow-hidden">
         <div className="absolute inset-0">
-          <img src={heroImage} alt="" className="w-full h-full object-cover" />
+          <img src={heroImage} alt="" className="w-full h-full object-cover" loading="lazy" />
           <div className="absolute inset-0 bg-gradient-to-b from-foreground/60 via-foreground/80 to-foreground/95" />
         </div>
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, hsl(38 60% 55% / 0.06) 0%, transparent 50%)' }} />
