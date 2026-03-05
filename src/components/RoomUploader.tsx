@@ -37,8 +37,8 @@ const STYLES = [
 ];
 
 const ASPECT_RATIOS = [
-  { value: "", label: "Match Original" },
-  { value: "16:9", label: "Landscape 16:9" },
+  { value: "", label: "Match Photo" },
+  { value: "16:9", label: "Wide 16:9" },
   { value: "4:3", label: "Standard 4:3" },
   { value: "3:4", label: "Portrait 3:4" },
   { value: "1:1", label: "Square 1:1" },
@@ -190,7 +190,8 @@ const RoomUploader = ({
             style: stylesToStage[0],
             property_address: propertyName.trim() || null,
             custom_instructions: instrTrimmed || null,
-          });
+            aspect_ratio: aspectRatio || null,
+          } as any);
           onStagingComplete();
           onResult(originalUrl, stagedUrl, data.isWatermarked);
         } else {
@@ -232,7 +233,8 @@ const RoomUploader = ({
               style: currentStyle,
               property_address: propertyName.trim() || null,
               custom_instructions: instrTrimmed || null,
-            });
+              aspect_ratio: aspectRatio || null,
+            } as any);
 
             // Update the result with storage URL for the comparison view
             results[results.length - 1].stagedImageUrl = stagedUrl;
@@ -440,7 +442,7 @@ const RoomUploader = ({
                 {/* Output Aspect Ratio */}
                 <div className="mb-6">
                   <label className="font-body text-sm font-medium text-muted-foreground block mb-3">
-                    Output Aspect Ratio
+                    Output Shape
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {ASPECT_RATIOS.map((ar) => (
