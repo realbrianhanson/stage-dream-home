@@ -435,8 +435,9 @@ const Landing = () => {
       <section className="py-32 px-6 relative overflow-hidden">
         <div className="absolute inset-0">
           <img src={heroImage} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-foreground/75" />
+          <div className="absolute inset-0 bg-gradient-to-b from-foreground/60 via-foreground/80 to-foreground/95" />
         </div>
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, hsl(38 60% 55% / 0.06) 0%, transparent 50%)' }} />
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -444,6 +445,7 @@ const Landing = () => {
           variants={fadeUp}
           className="relative z-10 text-center max-w-3xl mx-auto"
         >
+          <div className="mx-auto mb-8" style={{ width: 60, height: 1, background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.4), transparent)' }} />
           <h2 className="font-display text-4xl md:text-6xl lg:text-7xl font-medium text-primary-foreground mb-6 leading-[1.05]">
             Ready to <span className="italic text-accent">Transform</span> Your Listings?
           </h2>
@@ -452,7 +454,7 @@ const Landing = () => {
           </p>
           <button
             onClick={() => navigate("/auth")}
-            className="gold-gradient text-accent-foreground font-body font-semibold text-base px-12 py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity inline-flex items-center gap-2 group"
+            className="gold-gradient-animated text-accent-foreground font-body font-semibold text-base px-12 py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity inline-flex items-center gap-2 group"
           >
             Start Staging Free
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -461,16 +463,16 @@ const Landing = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border py-12 px-6 bg-background">
+      <footer className="border-t border-white/[0.04] py-12 px-6 bg-foreground/[0.03]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <Logo />
           <p className="font-body text-sm text-muted-foreground">
             © 2026 RealVision. AI-powered virtual staging for real estate professionals.
           </p>
           <div className="flex gap-6">
-            <a href="#" className="font-body text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy</a>
-            <a href="#" className="font-body text-xs text-muted-foreground hover:text-foreground transition-colors">Terms</a>
-            <a href="#" className="font-body text-xs text-muted-foreground hover:text-foreground transition-colors">Contact</a>
+            <a href="#" className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">Privacy</a>
+            <a href="#" className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">Terms</a>
+            <a href="#" className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">Contact</a>
           </div>
         </div>
       </footer>
