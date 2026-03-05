@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Image as ImageIcon, X, Loader2, Lock } from "lucide-react";
+import { Upload, Image as ImageIcon, X, Loader2, Lock, ToggleLeft, ToggleRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -22,12 +22,19 @@ const STYLES = [
   "Luxury",
 ];
 
+export interface StagingResult {
+  style: string;
+  stagedImageUrl: string;
+}
+
 interface RoomUploaderProps {
   onResult: (original: string, staged: string) => void;
+  onMultiResult: (original: string, results: StagingResult[]) => void;
   initialImage?: string | null;
   initialRoomType?: string;
   initialStyle?: string;
   canStage: boolean;
+  remainingStagings: number;
   onStagingComplete: () => void;
   usage: { plan: string; stagings_this_month: number } | null;
   freeLimit: number;
@@ -35,10 +42,12 @@ interface RoomUploaderProps {
 
 const RoomUploader = ({
   onResult,
+  onMultiResult,
   initialImage,
   initialRoomType,
   initialStyle,
   canStage,
+  remainingStagings,
   onStagingComplete,
   usage,
   freeLimit,
@@ -46,15 +55,21 @@ const RoomUploader = ({
   const [image, setImage] = useState<string | null>(initialImage || null);
   const [roomType, setRoomType] = useState(initialRoomType || "Living Room");
   const [style, setStyle] = useState(initialStyle || "Modern");
+  const [selectedStyles, setSelectedStyles] = useState<string[]>([initialStyle || "Modern"]);
+  const [compareMode, setCompareMode] = useState(false);
   const [propertyName, setPropertyName] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [progressText, setProgressText] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (initialImage) setImage(initialImage);
     if (initialRoomType) setRoomType(initialRoomType);
-    if (initialStyle) setStyle(initialStyle);
+    if (initialStyle) {
+      setStyle(initialStyle);
+      setSelectedStyles([initialStyle]);
+    }
   }, [initialImage, initialRoomType, initialStyle]);
 
   const handleFile = useCallback((file: File) => {
@@ -81,34 +96,58 @@ const RoomUploader = ({
     [handleFile]
   );
 
+  const toggleStyleSelection = (s: string) => {
+    setSelectedStyles((prev) => {
+      if (prev.includes(s)) {
+        return prev.length > 1 ? prev.filter((x) => x !== s) : prev;
+      }
+      if (prev.length >= 3) {
+        toast.error("Maximum 3 styles for comparison");
+        return prev;
+      }
+      return [...prev, s];
+    });
+  };
+
   const handleStage = async () => {
     if (!image) return;
+
+    const stylesToStage = compareMode ? selectedStyles : [style];
+    const count = stylesToStage.length;
 
     if (!canStage) {
       toast.error("You've reached your free staging limit this month.");
       return;
     }
 
+    if (usage?.plan === "free" && remainingStagings < count) {
+      toast.error(`You only have ${remainingStagings} staging${remainingStagings !== 1 ? "s" : ""} left this month. Select fewer styles or upgrade.`);
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke("stage-room", {
-        body: { image, roomType, style },
-      });
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      if (error) throw error;
+      if (count === 1) {
+        // Single style — existing flow
+        setProgressText("Staging your room with AI...");
+        const { data, error } = await supabase.functions.invoke("stage-room", {
+          body: { image, roomType, style: stylesToStage[0] },
+        });
+        if (error) throw error;
+        if (!data?.stagedImageUrl) throw new Error("No staged image returned");
 
-      if (data?.stagedImageUrl) {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
         if (user) {
           await supabase.from("stagings").insert({
             user_id: user.id,
             original_image_url: image,
             staged_image_url: data.stagedImageUrl,
             room_type: roomType,
-            style: style,
+            style: stylesToStage[0],
             property_address: propertyName.trim() || null,
           });
         }
@@ -116,17 +155,49 @@ const RoomUploader = ({
         onResult(image, data.stagedImageUrl);
         toast.success("Room staged successfully!");
       } else {
-        throw new Error("No staged image returned");
+        // Multi-style — sequential calls
+        const results: StagingResult[] = [];
+
+        for (let i = 0; i < stylesToStage.length; i++) {
+          const currentStyle = stylesToStage[i];
+          setProgressText(`Staging ${i + 1} of ${count}... ${currentStyle}`);
+
+          const { data, error } = await supabase.functions.invoke("stage-room", {
+            body: { image, roomType, style: currentStyle },
+          });
+          if (error) throw error;
+          if (!data?.stagedImageUrl) throw new Error(`No staged image returned for ${currentStyle}`);
+
+          results.push({ style: currentStyle, stagedImageUrl: data.stagedImageUrl });
+
+          // Save each result to db
+          if (user) {
+            await supabase.from("stagings").insert({
+              user_id: user.id,
+              original_image_url: image,
+              staged_image_url: data.stagedImageUrl,
+              room_type: roomType,
+              style: currentStyle,
+              property_address: propertyName.trim() || null,
+            });
+          }
+          onStagingComplete();
+        }
+
+        onMultiResult(image, results);
+        toast.success(`Room staged in ${count} styles!`);
       }
     } catch (err: any) {
       console.error("Staging error:", err);
       toast.error(err.message || "Failed to stage room. Please try again.");
     } finally {
       setIsProcessing(false);
+      setProgressText("");
     }
   };
 
   const limitReached = usage && usage.plan === "free" && !canStage;
+  const activeStyleCount = compareMode ? selectedStyles.length : 1;
 
   return (
     <section id="upload-section" className="py-24 px-6">
@@ -233,7 +304,7 @@ const RoomUploader = ({
                 </div>
 
                 {/* Options */}
-                <div className="grid md:grid-cols-2 gap-8 mb-10">
+                <div className="grid md:grid-cols-2 gap-8 mb-6">
                   <div>
                     <label className="font-body text-sm font-medium text-muted-foreground block mb-3">
                       Room Type
@@ -255,62 +326,100 @@ const RoomUploader = ({
                     </div>
                   </div>
                   <div>
-                    <label className="font-body text-sm font-medium text-muted-foreground block mb-3">
-                      Design Style
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {STYLES.map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => setStyle(s)}
-                          className={`font-body text-sm px-4 py-2 rounded-lg border transition-all ${
-                            style === s
-                              ? "border-accent/30 bg-accent/[0.08] text-accent"
-                              : "border-border text-muted-foreground hover:border-accent/40"
-                          }`}
-                        >
-                          {s}
-                        </button>
-                      ))}
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="font-body text-sm font-medium text-muted-foreground">
+                        Design Style
+                      </label>
+                      <button
+                        onClick={() => {
+                          setCompareMode(!compareMode);
+                          if (!compareMode) {
+                            setSelectedStyles([style]);
+                          }
+                        }}
+                        className="flex items-center gap-1.5 font-body text-xs text-muted-foreground hover:text-accent transition-colors"
+                      >
+                        {compareMode ? (
+                          <ToggleRight className="w-4 h-4 text-accent" />
+                        ) : (
+                          <ToggleLeft className="w-4 h-4" />
+                        )}
+                        Compare styles
+                      </button>
                     </div>
+                    <div className="flex flex-wrap gap-2">
+                      {STYLES.map((s) => {
+                        const isSelected = compareMode
+                          ? selectedStyles.includes(s)
+                          : style === s;
+                        return (
+                          <button
+                            key={s}
+                            onClick={() => {
+                              if (compareMode) {
+                                toggleStyleSelection(s);
+                              } else {
+                                setStyle(s);
+                              }
+                            }}
+                            className={`font-body text-sm px-4 py-2 rounded-lg border transition-all ${
+                              isSelected
+                                ? "border-accent/30 bg-accent/[0.08] text-accent"
+                                : "border-border text-muted-foreground hover:border-accent/40"
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {compareMode && (
+                      <p className="font-body text-[11px] text-muted-foreground/60 mt-2">
+                        Select 2–3 styles · Each counts as one staging
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 {/* Limit reached or stage button */}
-                {limitReached ? (
-                  <div className="text-center py-6 border border-white/[0.06] rounded-2xl bg-white/[0.02]">
-                    <Lock className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
-                    <p className="font-display text-lg font-medium mb-1">
-                      You've used all {freeLimit} free stagings this month
-                    </p>
-                    <p className="font-body text-sm text-muted-foreground mb-5">
-                      Upgrade for unlimited AI-powered virtual staging
-                    </p>
-                    <a
-                      href="/#pricing"
-                      className="inline-block gold-gradient-animated text-accent-foreground font-body font-semibold text-sm px-8 py-3 rounded-lg hover:opacity-90 transition-opacity"
+                <div className="mt-10">
+                  {limitReached ? (
+                    <div className="text-center py-6 border border-white/[0.06] rounded-2xl bg-white/[0.02]">
+                      <Lock className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
+                      <p className="font-display text-lg font-medium mb-1">
+                        You've used all {freeLimit} free stagings this month
+                      </p>
+                      <p className="font-body text-sm text-muted-foreground mb-5">
+                        Upgrade for unlimited AI-powered virtual staging
+                      </p>
+                      <a
+                        href="/#pricing"
+                        className="inline-block gold-gradient-animated text-accent-foreground font-body font-semibold text-sm px-8 py-3 rounded-lg hover:opacity-90 transition-opacity"
+                      >
+                        Upgrade to Pro — Unlimited Stagings
+                      </a>
+                    </div>
+                  ) : (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleStage}
+                      disabled={isProcessing}
+                      className="w-full gold-gradient-animated text-accent-foreground font-body font-semibold text-base py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity disabled:opacity-60"
                     >
-                      Upgrade to Pro — Unlimited Stagings
-                    </a>
-                  </div>
-                ) : (
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={handleStage}
-                    disabled={isProcessing}
-                    className="w-full gold-gradient-animated text-accent-foreground font-body font-semibold text-base py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity disabled:opacity-60"
-                  >
-                    {isProcessing ? (
-                      <span className="flex items-center justify-center gap-3">
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Staging your room with AI...
-                      </span>
-                    ) : (
-                      "Stage This Room"
-                    )}
-                  </motion.button>
-                )}
+                      {isProcessing ? (
+                        <span className="flex items-center justify-center gap-3">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          {progressText || "Staging your room with AI..."}
+                        </span>
+                      ) : compareMode && selectedStyles.length > 1 ? (
+                        `Stage in ${selectedStyles.length} Styles`
+                      ) : (
+                        "Stage This Room"
+                      )}
+                    </motion.button>
+                  )}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
