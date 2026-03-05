@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import HeroSection from "@/components/HeroSection";
 import RoomUploader from "@/components/RoomUploader";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
@@ -11,9 +11,17 @@ import { LogOut, ImageIcon } from "lucide-react";
 const Index = () => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [result, setResult] = useState<{ original: string; staged: string } | null>(null);
   const uploadRef = useRef<HTMLDivElement>(null);
   const [stagingCount, setStagingCount] = useState(0);
+
+  // Re-stage state from gallery navigation
+  const reStageState = location.state as {
+    reStageImage?: string;
+    reStageRoomType?: string;
+    reStageStyle?: string;
+  } | null;
 
   useEffect(() => {
     const fetchCount = async () => {
@@ -24,6 +32,15 @@ const Index = () => {
     };
     fetchCount();
   }, []);
+
+  // Auto-scroll to upload section if re-staging
+  useEffect(() => {
+    if (reStageState?.reStageImage) {
+      setTimeout(() => {
+        document.getElementById("upload-section")?.scrollIntoView({ behavior: "smooth" });
+      }, 300);
+    }
+  }, [reStageState]);
 
   const scrollToUpload = () => {
     document.getElementById("upload-section")?.scrollIntoView({ behavior: "smooth" });
@@ -82,7 +99,12 @@ const Index = () => {
       ) : (
         <>
           <HeroSection onGetStarted={scrollToUpload} />
-          <RoomUploader onResult={handleResult} />
+          <RoomUploader
+            onResult={handleResult}
+            initialImage={reStageState?.reStageImage}
+            initialRoomType={reStageState?.reStageRoomType}
+            initialStyle={reStageState?.reStageStyle}
+          />
         </>
       )}
 
