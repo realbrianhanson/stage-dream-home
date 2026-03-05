@@ -1,8 +1,21 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Image as ImageIcon, X, Loader2, Lock, ToggleLeft, ToggleRight } from "lucide-react";
+import { Upload, Image as ImageIcon, X, Loader2, Lock, ToggleLeft, ToggleRight, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+const INSTRUCTION_CHIPS = [
+  "Pet-friendly furniture",
+  "Family-oriented",
+  "Warm earth tones",
+  "Bright and airy",
+  "Home office area",
+  "Large area rug",
+  "Statement lighting",
+  "Indoor plants",
+];
+
+const MAX_INSTRUCTIONS = 300;
 
 const ROOM_TYPES = [
   "Living Room",
@@ -33,6 +46,7 @@ interface RoomUploaderProps {
   initialImage?: string | null;
   initialRoomType?: string;
   initialStyle?: string;
+  initialCustomInstructions?: string;
   canStage: boolean;
   remainingStagings: number;
   onStagingComplete: () => void;
@@ -46,6 +60,7 @@ const RoomUploader = ({
   initialImage,
   initialRoomType,
   initialStyle,
+  initialCustomInstructions,
   canStage,
   remainingStagings,
   onStagingComplete,
@@ -58,6 +73,8 @@ const RoomUploader = ({
   const [selectedStyles, setSelectedStyles] = useState<string[]>([initialStyle || "Modern"]);
   const [compareMode, setCompareMode] = useState(false);
   const [propertyName, setPropertyName] = useState("");
+  const [customInstructions, setCustomInstructions] = useState(initialCustomInstructions || "");
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressText, setProgressText] = useState("");
   const [dragOver, setDragOver] = useState(false);
@@ -69,6 +86,10 @@ const RoomUploader = ({
     if (initialStyle) {
       setStyle(initialStyle);
       setSelectedStyles([initialStyle]);
+    }
+    if (initialCustomInstructions) {
+      setCustomInstructions(initialCustomInstructions);
+      setShowAdvanced(true);
     }
   }, [initialImage, initialRoomType, initialStyle]);
 
@@ -135,8 +156,9 @@ const RoomUploader = ({
       if (count === 1) {
         // Single style — existing flow
         setProgressText("Staging your room with AI...");
+        const instrTrimmed = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
         const { data, error } = await supabase.functions.invoke("stage-room", {
-          body: { image, roomType, style: stylesToStage[0] },
+          body: { image, roomType, style: stylesToStage[0], customInstructions: instrTrimmed },
         });
         if (error) throw error;
         if (!data?.stagedImageUrl) throw new Error("No staged image returned");
@@ -149,6 +171,7 @@ const RoomUploader = ({
             room_type: roomType,
             style: stylesToStage[0],
             property_address: propertyName.trim() || null,
+            custom_instructions: instrTrimmed || null,
           });
         }
         onStagingComplete();
@@ -162,8 +185,9 @@ const RoomUploader = ({
           const currentStyle = stylesToStage[i];
           setProgressText(`Staging ${i + 1} of ${count}... ${currentStyle}`);
 
+          const instrTrimmed = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
           const { data, error } = await supabase.functions.invoke("stage-room", {
-            body: { image, roomType, style: currentStyle },
+            body: { image, roomType, style: currentStyle, customInstructions: instrTrimmed },
           });
           if (error) throw error;
           if (!data?.stagedImageUrl) throw new Error(`No staged image returned for ${currentStyle}`);
@@ -179,6 +203,7 @@ const RoomUploader = ({
               room_type: roomType,
               style: currentStyle,
               property_address: propertyName.trim() || null,
+              custom_instructions: instrTrimmed || null,
             });
           }
           onStagingComplete();
@@ -379,6 +404,71 @@ const RoomUploader = ({
                       </p>
                     )}
                   </div>
+                </div>
+
+                {/* Advanced Options */}
+                <div className="mb-6">
+                  <button
+                    onClick={() => setShowAdvanced(!showAdvanced)}
+                    className="flex items-center gap-1.5 font-body text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Advanced Options
+                    {showAdvanced ? (
+                      <ChevronUp className="w-3.5 h-3.5" />
+                    ) : (
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+
+                  <AnimatePresence>
+                    {showAdvanced && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-4">
+                          <label className="font-body text-sm font-medium text-muted-foreground block mb-2">
+                            Custom Instructions (optional)
+                          </label>
+                          <textarea
+                            value={customInstructions}
+                            onChange={(e) => {
+                              if (e.target.value.length <= MAX_INSTRUCTIONS) {
+                                setCustomInstructions(e.target.value);
+                              }
+                            }}
+                            placeholder="e.g., Add a fireplace, use warm earth tones, include a large area rug, keep it pet-friendly with durable furniture..."
+                            rows={3}
+                            className="w-full font-body text-sm bg-white/[0.02] border border-white/[0.06] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all placeholder:text-muted-foreground/50 resize-none"
+                          />
+                          <div className="flex items-center justify-between mt-1.5">
+                            <div className="flex flex-wrap gap-1.5">
+                              {INSTRUCTION_CHIPS.map((chip) => (
+                                <button
+                                  key={chip}
+                                  onClick={() => {
+                                    const separator = customInstructions.trim() ? ", " : "";
+                                    const newVal = customInstructions.trim() + separator + chip;
+                                    if (newVal.length <= MAX_INSTRUCTIONS) {
+                                      setCustomInstructions(newVal);
+                                    }
+                                  }}
+                                  className="border border-white/[0.06] hover:border-accent/25 px-3 py-1.5 rounded-full text-xs font-body text-muted-foreground hover:text-accent transition-all"
+                                >
+                                  {chip}
+                                </button>
+                              ))}
+                            </div>
+                            <span className={`font-body text-[11px] flex-shrink-0 ml-3 ${customInstructions.length > MAX_INSTRUCTIONS * 0.9 ? "text-destructive" : "text-muted-foreground/50"}`}>
+                              {customInstructions.length}/{MAX_INSTRUCTIONS}
+                            </span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 {/* Limit reached or stage button */}

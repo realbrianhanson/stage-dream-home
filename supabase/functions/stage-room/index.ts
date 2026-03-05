@@ -41,7 +41,7 @@ serve(async (req) => {
       );
     }
 
-    const { image, roomType, style } = await req.json();
+    const { image, roomType, style, customInstructions } = await req.json();
 
     if (!image) {
       return new Response(
@@ -58,9 +58,18 @@ serve(async (req) => {
       );
     }
 
-    const prompt = `You are a professional interior designer and virtual stager. Take this photo of an empty/vacant ${roomType.toLowerCase()} and virtually stage it with beautiful ${style.toLowerCase()} style furniture and decor. 
+    // Sanitize custom instructions — strip to max 300 chars, alphanumeric + basic punctuation
+    const sanitizedInstructions = typeof customInstructions === "string"
+      ? customInstructions.slice(0, 300).trim()
+      : "";
+
+    let prompt = `You are a professional interior designer and virtual stager. Take this photo of an empty/vacant ${roomType.toLowerCase()} and virtually stage it with beautiful ${style.toLowerCase()} style furniture and decor. 
 
 Add appropriate furniture like sofas, tables, chairs, rugs, lamps, artwork, plants, and decorative accessories. Make the room look warm, inviting, and ready for a real estate listing. Keep the room's architecture, walls, windows, and flooring exactly the same. Only add furniture and decor. Make it look photorealistic and professionally staged.`;
+
+    if (sanitizedInstructions) {
+      prompt += `\n\nAdditional staging requirements from the client: ${sanitizedInstructions}`;
+    }
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",

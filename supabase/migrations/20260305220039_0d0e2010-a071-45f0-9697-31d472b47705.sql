@@ -1,0 +1,1 @@
+ALTER TABLE public.stagings ADD COLUMN custom_instructions text;
