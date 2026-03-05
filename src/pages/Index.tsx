@@ -1,15 +1,29 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import HeroSection from "@/components/HeroSection";
 import RoomUploader from "@/components/RoomUploader";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
-import { LogOut } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { LogOut, ImageIcon } from "lucide-react";
 
 const Index = () => {
   const { signOut } = useAuth();
+  const navigate = useNavigate();
   const [result, setResult] = useState<{ original: string; staged: string } | null>(null);
   const uploadRef = useRef<HTMLDivElement>(null);
+  const [stagingCount, setStagingCount] = useState(0);
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      const { count } = await supabase
+        .from("stagings")
+        .select("*", { count: "exact", head: true });
+      setStagingCount(count || 0);
+    };
+    fetchCount();
+  }, []);
 
   const scrollToUpload = () => {
     document.getElementById("upload-section")?.scrollIntoView({ behavior: "smooth" });
@@ -17,6 +31,7 @@ const Index = () => {
 
   const handleResult = (original: string, staged: string) => {
     setResult({ original, staged });
+    setStagingCount((prev) => prev + 1);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -32,6 +47,18 @@ const Index = () => {
               className="font-body text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors"
             >
               Get Started →
+            </button>
+            <button
+              onClick={() => navigate("/gallery")}
+              className="font-body text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors flex items-center gap-1.5"
+            >
+              <ImageIcon className="w-3.5 h-3.5" />
+              My Stagings
+              {stagingCount > 0 && (
+                <span className="ml-1 text-[10px] font-semibold bg-accent/20 text-accent border border-accent/30 rounded-full px-1.5 py-0.5 leading-none">
+                  {stagingCount}
+                </span>
+              )}
             </button>
             <button
               onClick={() => signOut()}
