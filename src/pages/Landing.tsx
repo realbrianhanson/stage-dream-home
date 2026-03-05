@@ -162,6 +162,7 @@ const Landing = () => {
       {/* Before/After Section */}
       <section className="py-32 px-6 bg-background relative">
         <div className="absolute inset-0 bg-gradient-to-b from-foreground/5 to-transparent h-40" />
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center top, hsl(38 60% 55% / 0.04) 0%, transparent 60%)' }} />
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial="hidden"
@@ -187,15 +188,15 @@ const Landing = () => {
             custom={1}
             className="grid md:grid-cols-2 gap-6"
           >
-            <div className="relative rounded-3xl overflow-hidden shadow-elevated group">
+            <div className="relative rounded-2xl overflow-hidden shadow-elevated border border-border/30 group hover:shadow-dramatic transition-shadow duration-500">
               <img src={beforeVacant} alt="Vacant unfurnished room" className="w-full h-full object-cover" />
-              <div className="absolute top-4 left-4 bg-foreground/60 text-primary-foreground rounded-lg px-4 py-2 text-sm font-body font-semibold tracking-wide">
+              <div className="absolute top-4 left-4 bg-foreground/70 text-primary-foreground rounded-lg px-4 py-2 text-sm font-body font-semibold tracking-wide">
                 Before
               </div>
             </div>
-            <div className="relative rounded-3xl overflow-hidden shadow-elevated group">
+            <div className="relative rounded-2xl overflow-hidden shadow-elevated border border-border/30 group hover:shadow-dramatic transition-shadow duration-500">
               <img src={afterStaged} alt="Same room virtually staged with furniture" className="w-full h-full object-cover" />
-              <div className="absolute top-4 left-4 bg-accent/90 text-accent-foreground rounded-lg px-4 py-2 text-sm font-body font-semibold tracking-wide">
+              <div className="absolute top-4 left-4 gold-gradient-animated text-accent-foreground rounded-lg px-4 py-2 text-sm font-body font-semibold tracking-wide">
                 After
               </div>
             </div>
@@ -203,8 +204,12 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* Divider */}
+      <div className="max-w-3xl mx-auto" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.15), transparent)' }} />
+
       {/* Features */}
-      <section id="features" className="py-32 px-6">
+      <section id="features" className="py-32 px-6 relative">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none" style={{ background: 'radial-gradient(ellipse, hsl(38 60% 55% / 0.04) 0%, transparent 70%)' }} />
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial="hidden"
@@ -245,6 +250,9 @@ const Landing = () => {
           </div>
         </div>
       </section>
+
+      {/* Divider */}
+      <div className="max-w-3xl mx-auto" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.15), transparent)' }} />
 
       {/* Showcase */}
       <section id="showcase" className="py-32 px-6 bg-card/50">
@@ -296,6 +304,9 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* Divider */}
+      <div className="max-w-3xl mx-auto" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.15), transparent)' }} />
+
       {/* Testimonials */}
       <section className="py-32 px-6">
         <div className="max-w-6xl mx-auto">
@@ -343,8 +354,12 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* Divider */}
+      <div className="max-w-3xl mx-auto" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.15), transparent)' }} />
+
       {/* Pricing */}
-      <section id="pricing" className="py-32 px-6 bg-card/50">
+      <section id="pricing" className="py-32 px-6 bg-card/50 relative">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none" style={{ background: 'radial-gradient(ellipse, hsl(38 60% 55% / 0.04) 0%, transparent 70%)' }} />
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial="hidden"
@@ -411,6 +426,9 @@ const Landing = () => {
           </div>
         </div>
       </section>
+
+      {/* Divider */}
+      <div className="max-w-3xl mx-auto" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.15), transparent)' }} />
 
       {/* Final CTA */}
       <section className="py-32 px-6 relative overflow-hidden">
