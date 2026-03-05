@@ -194,7 +194,7 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfte
           >
             <p className="font-body text-sm text-muted-foreground">
               Free images include a small watermark.{" "}
-              <a href="#" className="text-accent hover:underline transition-colors">
+              <a href="/#pricing" className="text-accent hover:underline transition-colors">
                 Upgrade to Pro
               </a>{" "}
               for clean, watermark-free exports.
