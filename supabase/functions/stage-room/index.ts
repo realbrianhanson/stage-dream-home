@@ -216,12 +216,10 @@ Add appropriate furniture like sofas, tables, chairs, rugs, lamps, artwork, plan
           }
 
           const encodedBytes = await img.encode();
-          // Chunk-safe base64 encoding to avoid max call stack on large images
           const uint8 = new Uint8Array(encodedBytes);
           let binary = "";
-          const chunkSize = 8192;
-          for (let ci = 0; ci < uint8.length; ci += chunkSize) {
-            binary += String.fromCharCode(...uint8.subarray(ci, ci + chunkSize));
+          for (let ci = 0; ci < uint8.length; ci++) {
+            binary += String.fromCharCode(uint8[ci]);
           }
           const encodedBase64 = btoa(binary);
           finalImageUrl = `data:image/png;base64,${encodedBase64}`;
