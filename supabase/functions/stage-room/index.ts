@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Image } from "https://deno.land/x/imagescript@1.3.0/mod.ts";
 
 serve(async (req) => {
   const corsHeaders = {
@@ -65,7 +66,7 @@ serve(async (req) => {
       );
     }
 
-    // Sanitize custom instructions — strip to max 300 chars, alphanumeric + basic punctuation
+    // Sanitize custom instructions
     const sanitizedInstructions = typeof customInstructions === "string"
       ? customInstructions.slice(0, 300).trim()
       : "";
@@ -78,7 +79,6 @@ Add appropriate furniture like sofas, tables, chairs, rugs, lamps, artwork, plan
       prompt += `\n\nAdditional staging requirements from the client: ${sanitizedInstructions}`;
     }
 
-    // Validate and apply aspect ratio
     const validRatios = ["16:9", "4:3", "3:4", "1:1"];
     const sanitizedAspectRatio = typeof aspectRatio === "string" && validRatios.includes(aspectRatio) ? aspectRatio : null;
 
@@ -145,8 +145,88 @@ Add appropriate furniture like sofas, tables, chairs, rugs, lamps, artwork, plan
       );
     }
 
+    let finalImageUrl = stagedImageUrl;
+
+    // Server-side watermark for free plan users
+    if (userPlan === "free") {
+      try {
+        // Extract base64 data from data URL
+        const base64Match = stagedImageUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+        if (base64Match) {
+          const base64Data = base64Match[2];
+          const imageBytes = Uint8Array.from(atob(base64Data), (c: string) => c.charCodeAt(0));
+
+          const img = await Image.decode(imageBytes);
+          const w = img.width;
+          const h = img.height;
+
+          // 30% opacity white and shadow colors
+          const wmColor = Image.rgbaToColor(255, 255, 255, 77);
+          const shColor = Image.rgbaToColor(0, 0, 0, 38);
+
+          const fontSize = Math.max(20, Math.floor(Math.min(w, h) / 18));
+          const thickness = Math.max(2, Math.floor(fontSize / 8));
+
+          // Draw "RV" watermark in a 3x3 grid across the image
+          const stepX = Math.floor(w / 3);
+          const stepY = Math.floor(h / 3);
+
+          for (let gy = 0; gy < 3; gy++) {
+            for (let gx = 0; gx < 3; gx++) {
+              const cx = stepX * gx + Math.floor(stepX / 2);
+              const cy = stepY * gy + Math.floor(stepY / 2);
+              const bw = Math.floor(fontSize * 2.5);
+              const bh = Math.floor(fontSize * 1.2);
+              const sx = Math.max(0, cx - Math.floor(bw / 2));
+              const sy = Math.max(0, cy - Math.floor(bh / 2));
+
+              for (let y = sy; y < Math.min(h, sy + bh); y++) {
+                for (let x = sx; x < Math.min(w, sx + bw); x++) {
+                  const lx = x - sx;
+                  const ly = y - sy;
+                  const cw = Math.floor(bw / 5);
+                  let draw = false;
+
+                  // R letter
+                  if (lx < cw * 2) {
+                    if (lx < thickness) draw = true;
+                    if (ly < thickness && lx < cw * 1.8) draw = true;
+                    if (Math.abs(ly - bh / 2) < thickness / 2 && lx < cw * 1.8) draw = true;
+                    if (lx >= cw * 1.8 - thickness && lx < cw * 1.8 && ly < bh / 2) draw = true;
+                    if (ly >= bh / 2) {
+                      const ex = thickness + (ly - bh / 2) * (cw * 1.5 / (bh / 2));
+                      if (Math.abs(lx - ex) < thickness) draw = true;
+                    }
+                  }
+
+                  // V letter
+                  if (lx >= cw * 2.5 && lx < cw * 5) {
+                    const vx = lx - cw * 2.5;
+                    const vw = cw * 2.5;
+                    if (Math.abs(vx - (ly / bh) * (vw / 2)) < thickness) draw = true;
+                    if (Math.abs(vx - (vw - (ly / bh) * (vw / 2))) < thickness) draw = true;
+                  }
+
+                  if (draw) {
+                    if (x + 1 < w && y + 1 < h) img.setPixelAt(x + 2, y + 2, shColor);
+                    img.setPixelAt(x + 1, y + 1, wmColor);
+                  }
+                }
+              }
+            }
+          }
+
+          const encodedBytes = await img.encode();
+          const encodedBase64 = btoa(String.fromCharCode(...new Uint8Array(encodedBytes)));
+          finalImageUrl = `data:image/png;base64,${encodedBase64}`;
+        }
+      } catch (wmError) {
+        console.error("Watermark error (returning unwatermarked):", wmError);
+      }
+    }
+
     return new Response(
-      JSON.stringify({ stagedImageUrl, plan: userPlan, isWatermarked: userPlan === "free" }),
+      JSON.stringify({ stagedImageUrl: finalImageUrl, plan: userPlan, isWatermarked: userPlan === "free" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
