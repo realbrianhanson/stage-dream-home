@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Download } from "lucide-react";
 
@@ -10,8 +10,20 @@ interface BeforeAfterSliderProps {
 
 const BeforeAfterSlider = ({ before, after, onReset }: BeforeAfterSliderProps) => {
   const [sliderPos, setSliderPos] = useState(50);
+  const [containerWidth, setContainerWidth] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   const updateSlider = useCallback((clientX: number) => {
     if (!containerRef.current) return;
@@ -80,7 +92,7 @@ const BeforeAfterSlider = ({ before, after, onReset }: BeforeAfterSliderProps) =
               src={before}
               alt="Original room"
               className="absolute inset-0 w-full h-full object-cover"
-              style={{ width: `${containerRef.current?.offsetWidth || 0}px`, maxWidth: "none" }}
+              style={{ width: `${containerWidth}px`, maxWidth: "none" }}
             />
           </div>
 
