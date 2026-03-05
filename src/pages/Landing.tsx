@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, Sparkles, Clock, Palette, TrendingUp, Star, CheckCircle2 } from "lucide-react";
 import Logo from "@/components/Logo";
 import heroImage from "@/assets/landing-hero.jpg";
-import beforeAfterImage from "@/assets/before-after-demo.jpg";
+import beforeVacant from "@/assets/before-vacant.jpg";
+import afterStaged from "@/assets/after-staged.jpg";
 import showcaseBedroom from "@/assets/showcase-bedroom.jpg";
 import showcaseKitchen from "@/assets/showcase-kitchen.jpg";
 import showcaseLiving from "@/assets/showcase-living.jpg";
@@ -164,9 +165,20 @@ const Landing = () => {
             viewport={{ once: true, margin: "-100px" }}
             variants={fadeUp}
             custom={1}
-            className="rounded-3xl overflow-hidden shadow-elevated"
+            className="grid md:grid-cols-2 gap-6"
           >
-            <img src={beforeAfterImage} alt="Before and after virtual staging comparison" className="w-full" />
+            <div className="relative rounded-3xl overflow-hidden shadow-elevated group">
+              <img src={beforeVacant} alt="Vacant unfurnished room" className="w-full h-full object-cover" />
+              <div className="absolute top-4 left-4 bg-foreground/60 text-primary-foreground rounded-lg px-4 py-2 text-sm font-body font-semibold tracking-wide">
+                Before
+              </div>
+            </div>
+            <div className="relative rounded-3xl overflow-hidden shadow-elevated group">
+              <img src={afterStaged} alt="Same room virtually staged with furniture" className="w-full h-full object-cover" />
+              <div className="absolute top-4 left-4 bg-accent/90 text-accent-foreground rounded-lg px-4 py-2 text-sm font-body font-semibold tracking-wide">
+                After
+              </div>
+            </div>
           </motion.div>
         </div>
       </section>
