@@ -1,8 +1,9 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, Image as ImageIcon, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useSearchParams } from "react-router-dom";
 
 const ROOM_TYPES = [
   "Living Room",
@@ -24,15 +25,25 @@ const STYLES = [
 
 interface RoomUploaderProps {
   onResult: (original: string, staged: string) => void;
+  initialImage?: string | null;
+  initialRoomType?: string;
+  initialStyle?: string;
 }
 
-const RoomUploader = ({ onResult }: RoomUploaderProps) => {
-  const [image, setImage] = useState<string | null>(null);
-  const [roomType, setRoomType] = useState("Living Room");
-  const [style, setStyle] = useState("Modern");
+const RoomUploader = ({ onResult, initialImage, initialRoomType, initialStyle }: RoomUploaderProps) => {
+  const [image, setImage] = useState<string | null>(initialImage || null);
+  const [roomType, setRoomType] = useState(initialRoomType || "Living Room");
+  const [style, setStyle] = useState(initialStyle || "Modern");
+  const [propertyName, setPropertyName] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (initialImage) setImage(initialImage);
+    if (initialRoomType) setRoomType(initialRoomType);
+    if (initialStyle) setStyle(initialStyle);
+  }, [initialImage, initialRoomType, initialStyle]);
 
   const handleFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -70,7 +81,6 @@ const RoomUploader = ({ onResult }: RoomUploaderProps) => {
       if (error) throw error;
 
       if (data?.stagedImageUrl) {
-        // Save to stagings history
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           await supabase.from("stagings").insert({
@@ -79,6 +89,7 @@ const RoomUploader = ({ onResult }: RoomUploaderProps) => {
             staged_image_url: data.stagedImageUrl,
             room_type: roomType,
             style: style,
+            property_address: propertyName.trim() || null,
           });
         }
         onResult(image, data.stagedImageUrl);
@@ -115,7 +126,6 @@ const RoomUploader = ({ onResult }: RoomUploaderProps) => {
           </p>
         </motion.div>
 
-        {/* Upload area */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -183,6 +193,20 @@ const RoomUploader = ({ onResult }: RoomUploaderProps) => {
                     <ImageIcon className="w-4 h-4" />
                     Original Photo
                   </div>
+                </div>
+
+                {/* Property name input */}
+                <div className="mb-8">
+                  <label className="font-body text-sm font-medium text-muted-foreground block mb-2">
+                    Property Name (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={propertyName}
+                    onChange={(e) => setPropertyName(e.target.value)}
+                    placeholder="e.g., 123 Oak Street or Lakeside Condo"
+                    className="w-full font-body text-sm bg-white/[0.02] border border-white/[0.08] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all placeholder:text-muted-foreground/50"
+                  />
                 </div>
 
                 {/* Options */}
