@@ -47,11 +47,12 @@ const ASPECT_RATIOS = [
 export interface StagingResult {
   style: string;
   stagedImageUrl: string;
+  isWatermarked?: boolean;
 }
 
 interface RoomUploaderProps {
-  onResult: (original: string, staged: string) => void;
-  onMultiResult: (original: string, results: StagingResult[]) => void;
+  onResult: (original: string, staged: string, isWatermarked?: boolean) => void;
+  onMultiResult: (original: string, results: StagingResult[], isWatermarked?: boolean) => void;
   initialImage?: string | null;
   initialRoomType?: string;
   initialStyle?: string;
@@ -191,10 +192,10 @@ const RoomUploader = ({
             custom_instructions: instrTrimmed || null,
           });
           onStagingComplete();
-          onResult(originalUrl, stagedUrl);
+          onResult(originalUrl, stagedUrl, data.isWatermarked);
         } else {
           onStagingComplete();
-          onResult(image, data.stagedImageUrl);
+          onResult(image, data.stagedImageUrl, data.isWatermarked);
         }
         toast.success("Room staged successfully!");
       } else {
@@ -212,7 +213,7 @@ const RoomUploader = ({
           if (error) throw error;
           if (!data?.stagedImageUrl) throw new Error(`No staged image returned for ${currentStyle}`);
 
-          results.push({ style: currentStyle, stagedImageUrl: data.stagedImageUrl });
+          results.push({ style: currentStyle, stagedImageUrl: data.stagedImageUrl, isWatermarked: data.isWatermarked });
 
           // Upload to storage and save to db
           if (user) {
@@ -239,7 +240,7 @@ const RoomUploader = ({
           onStagingComplete();
         }
 
-        onMultiResult(image, results);
+        onMultiResult(image, results, results.some(r => r.isWatermarked));
         toast.success(`Room staged in ${count} styles!`);
       }
     } catch (err: any) {

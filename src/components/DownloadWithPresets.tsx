@@ -48,16 +48,72 @@ function cropAndResize(
   });
 }
 
+function burnWatermark(canvas: HTMLCanvasElement) {
+  const ctx = canvas.getContext("2d")!;
+  const fontSize = Math.max(14, Math.round(canvas.width * 0.018));
+  ctx.save();
+  ctx.font = `${fontSize}px 'DM Sans', sans-serif`;
+  ctx.fillStyle = `rgba(255, 255, 255, 0.3)`;
+  ctx.textAlign = "right";
+  ctx.textBaseline = "bottom";
+  ctx.fillText("Staged by RealVision", canvas.width - 16, canvas.height - 12);
+  ctx.restore();
+}
+
+function imageToWatermarkedBlob(img: HTMLImageElement): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(img, 0, 0);
+    burnWatermark(canvas);
+    canvas.toBlob((blob) => resolve(blob), "image/png");
+  });
+}
+
+function cropResizeAndWatermark(
+  img: HTMLImageElement,
+  targetW: number,
+  targetH: number
+): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    const targetRatio = targetW / targetH;
+    const srcRatio = img.naturalWidth / img.naturalHeight;
+    let cropW: number, cropH: number, cropX: number, cropY: number;
+    if (srcRatio > targetRatio) {
+      cropH = img.naturalHeight;
+      cropW = Math.round(cropH * targetRatio);
+      cropX = Math.round((img.naturalWidth - cropW) / 2);
+      cropY = 0;
+    } else {
+      cropW = img.naturalWidth;
+      cropH = Math.round(cropW / targetRatio);
+      cropX = 0;
+      cropY = Math.round((img.naturalHeight - cropH) / 2);
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = targetW;
+    canvas.height = targetH;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, targetW, targetH);
+    burnWatermark(canvas);
+    canvas.toBlob((blob) => resolve(blob), "image/png");
+  });
+}
+
 interface DownloadWithPresetsProps {
   imageUrl: string;
   filename?: string;
   variant?: "gold" | "outline";
+  isWatermarked?: boolean;
 }
 
 const DownloadWithPresets = ({
   imageUrl,
   filename = "staged-room",
   variant = "gold",
+  isWatermarked = false,
 }: DownloadWithPresetsProps) => {
   const [open, setOpen] = useState(false);
   const [imgSize, setImgSize] = useState<{ w: number; h: number } | null>(null);
@@ -90,14 +146,6 @@ const DownloadWithPresets = ({
     if (isPresetDisabled(preset)) return;
     setOpen(false);
 
-    if (!preset.width || !preset.height) {
-      const link = document.createElement("a");
-      link.href = imageUrl;
-      link.download = `${filename}.png`;
-      link.click();
-      return;
-    }
-
     setProcessing(true);
     try {
       const img = new Image();
@@ -108,13 +156,34 @@ const DownloadWithPresets = ({
         img.src = imageUrl;
       });
 
-      const blob = await cropAndResize(img, preset.width, preset.height);
+      let blob: Blob | null;
+
+      if (!preset.width || !preset.height) {
+        // Original size
+        if (isWatermarked) {
+          blob = await imageToWatermarkedBlob(img);
+        } else {
+          // Direct download for non-watermarked original
+          const link = document.createElement("a");
+          link.href = imageUrl;
+          link.download = `${filename}.png`;
+          link.click();
+          setProcessing(false);
+          return;
+        }
+      } else {
+        // Crop/resize
+        blob = isWatermarked
+          ? await cropResizeAndWatermark(img, preset.width, preset.height)
+          : await cropAndResize(img, preset.width, preset.height);
+      }
+
       if (!blob) throw new Error("Failed to process image");
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${filename}-${preset.width}x${preset.height}.png`;
+      link.download = `${filename}${preset.width ? `-${preset.width}x${preset.height}` : ""}.png`;
       link.click();
       URL.revokeObjectURL(url);
     } catch {

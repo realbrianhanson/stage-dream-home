@@ -9,9 +9,10 @@ interface ComparisonViewProps {
   original: string;
   results: StagingResult[];
   onReset: () => void;
+  isWatermarked?: boolean;
 }
 
-const ComparisonView = ({ original, results, onReset }: ComparisonViewProps) => {
+const ComparisonView = ({ original, results, onReset, isWatermarked }: ComparisonViewProps) => {
   const [selectedResult, setSelectedResult] = useState<StagingResult | null>(null);
 
   // download handled by DownloadWithPresets component
@@ -103,6 +104,7 @@ const ComparisonView = ({ original, results, onReset }: ComparisonViewProps) => 
                       imageUrl={result.stagedImageUrl}
                       filename={`staged-${result.style.toLowerCase().replace(/\s+/g, "-")}`}
                       variant="outline"
+                      isWatermarked={isWatermarked}
                     />
                   </div>
                 </div>
@@ -146,6 +148,7 @@ const ComparisonView = ({ original, results, onReset }: ComparisonViewProps) => 
               before={original}
               after={selectedResult.stagedImageUrl}
               onReset={() => setSelectedResult(null)}
+              isWatermarked={isWatermarked}
             />
           </motion.div>
         )}
