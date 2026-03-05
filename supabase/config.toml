@@ -1,1 +1,4 @@
 project_id = "tbzkbwzpdxegpizfhudu"
+
+[functions.stage-room]
+verify_jwt = false
