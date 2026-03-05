@@ -35,6 +35,14 @@ const STYLES = [
   "Luxury",
 ];
 
+const ASPECT_RATIOS = [
+  { value: "", label: "Match Original" },
+  { value: "16:9", label: "Landscape 16:9" },
+  { value: "4:3", label: "Standard 4:3" },
+  { value: "3:4", label: "Portrait 3:4" },
+  { value: "1:1", label: "Square 1:1" },
+];
+
 export interface StagingResult {
   style: string;
   stagedImageUrl: string;
@@ -74,6 +82,7 @@ const RoomUploader = ({
   const [compareMode, setCompareMode] = useState(false);
   const [propertyName, setPropertyName] = useState("");
   const [customInstructions, setCustomInstructions] = useState(initialCustomInstructions || "");
+  const [aspectRatio, setAspectRatio] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressText, setProgressText] = useState("");
@@ -158,7 +167,7 @@ const RoomUploader = ({
         setProgressText("Staging your room with AI...");
         const instrTrimmed = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
         const { data, error } = await supabase.functions.invoke("stage-room", {
-          body: { image, roomType, style: stylesToStage[0], customInstructions: instrTrimmed },
+          body: { image, roomType, style: stylesToStage[0], customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined },
         });
         if (error) throw error;
         if (!data?.stagedImageUrl) throw new Error("No staged image returned");
@@ -187,7 +196,7 @@ const RoomUploader = ({
 
           const instrTrimmed = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
           const { data, error } = await supabase.functions.invoke("stage-room", {
-            body: { image, roomType, style: currentStyle, customInstructions: instrTrimmed },
+            body: { image, roomType, style: currentStyle, customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined },
           });
           if (error) throw error;
           if (!data?.stagedImageUrl) throw new Error(`No staged image returned for ${currentStyle}`);
@@ -403,6 +412,28 @@ const RoomUploader = ({
                         Select 2–3 styles · Each counts as one staging
                       </p>
                     )}
+                  </div>
+                </div>
+
+                {/* Output Aspect Ratio */}
+                <div className="mb-6">
+                  <label className="font-body text-sm font-medium text-muted-foreground block mb-3">
+                    Output Aspect Ratio
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {ASPECT_RATIOS.map((ar) => (
+                      <button
+                        key={ar.value}
+                        onClick={() => setAspectRatio(ar.value)}
+                        className={`font-body text-sm px-4 py-2 rounded-lg border transition-all ${
+                          aspectRatio === ar.value
+                            ? "border-accent/30 bg-accent/[0.08] text-accent"
+                            : "border-border text-muted-foreground hover:border-accent/40"
+                        }`}
+                      >
+                        {ar.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
