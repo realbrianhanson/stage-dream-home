@@ -1,16 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import HeroSection from "@/components/HeroSection";
 import RoomUploader from "@/components/RoomUploader";
 import type { StagingResult } from "@/components/RoomUploader";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import ComparisonView from "@/components/ComparisonView";
 import UsageIndicator from "@/components/UsageIndicator";
+import OnboardingOverlay from "@/components/OnboardingOverlay";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
 import { useUsage } from "@/hooks/useUsage";
 import { supabase } from "@/integrations/supabase/client";
-import { LogOut, ImageIcon } from "lucide-react";
+import { LogOut, ImageIcon, HelpCircle } from "lucide-react";
 
 type ResultState =
   | { type: "single"; original: string; staged: string }
@@ -24,6 +26,14 @@ const Index = () => {
   const { usage, canStage, increment, freeLimit, remainingStagings, loading: usageLoading } = useUsage();
   const [result, setResult] = useState<ResultState>(null);
   const [stagingCount, setStagingCount] = useState(0);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Show onboarding for first-time users
+  useEffect(() => {
+    if (!usageLoading && usage && !(usage as any).onboarding_complete) {
+      setShowOnboarding(true);
+    }
+  }, [usageLoading, usage]);
 
   const reStageState = location.state as {
     reStageImage?: string;
@@ -68,6 +78,14 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <AnimatePresence>
+        {showOnboarding && (
+          <OnboardingOverlay
+            onComplete={() => setShowOnboarding(false)}
+            persistDismiss={!(usage as any)?.onboarding_complete}
+          />
+        )}
+      </AnimatePresence>
       <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 backdrop-blur-md bg-foreground/40 border-b border-border/10">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Logo light />
@@ -96,6 +114,13 @@ const Index = () => {
                   {stagingCount}
                 </span>
               )}
+            </button>
+            <button
+              onClick={() => setShowOnboarding(true)}
+              className="font-body text-primary-foreground/50 hover:text-primary-foreground transition-colors"
+              title="Help & Tour"
+            >
+              <HelpCircle className="w-4 h-4" />
             </button>
             <button
               onClick={() => signOut()}

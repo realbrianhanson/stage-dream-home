@@ -1,0 +1,1 @@
+ALTER TABLE public.usage ADD COLUMN onboarding_complete boolean NOT NULL DEFAULT false;
