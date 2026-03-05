@@ -1,0 +1,1 @@
+ALTER TABLE public.stagings ADD COLUMN aspect_ratio text;

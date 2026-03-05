@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       stagings: {
         Row: {
+          aspect_ratio: string | null
           created_at: string
           custom_instructions: string | null
           id: string
@@ -27,6 +28,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          aspect_ratio?: string | null
           created_at?: string
           custom_instructions?: string | null
           id?: string
@@ -38,6 +40,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          aspect_ratio?: string | null
           created_at?: string
           custom_instructions?: string | null
           id?: string
