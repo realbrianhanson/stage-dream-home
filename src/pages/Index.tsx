@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import HeroSection from "@/components/HeroSection";
@@ -16,7 +16,7 @@ import { LogOut, ImageIcon, HelpCircle } from "lucide-react";
 
 type ResultState =
   | { type: "single"; original: string; staged: string; isWatermarked?: boolean }
-  | { type: "multi"; original: string; results: StagingResult[]; isWatermarked?: boolean }
+  | { type: "multi"; original: string; results: StagingResult[]; pendingStyles: string[]; isWatermarked?: boolean }
   | null;
 
 const Index = () => {
@@ -70,8 +70,26 @@ const Index = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleMultiStart = useCallback((original: string, pendingStyles: string[]) => {
+    setResult({ type: "multi", original, results: [], pendingStyles, isWatermarked: false });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const handleMultiProgress = useCallback((newResult: StagingResult, remainingStyles: string[]) => {
+    setResult((prev) => {
+      if (!prev || prev.type !== "multi") return prev;
+      return {
+        ...prev,
+        results: [...prev.results, newResult],
+        pendingStyles: remainingStyles,
+        isWatermarked: prev.isWatermarked || newResult.isWatermarked,
+      };
+    });
+    setStagingCount((prev) => prev + 1);
+  }, []);
+
   const handleMultiResult = (original: string, results: StagingResult[], isWatermarked?: boolean) => {
-    setResult({ type: "multi", original, results, isWatermarked });
+    setResult({ type: "multi", original, results, pendingStyles: [], isWatermarked });
     setStagingCount((prev) => prev + results.length);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -146,6 +164,7 @@ const Index = () => {
         <ComparisonView
           original={result.original}
           results={result.results}
+          pendingStyles={result.pendingStyles}
           onReset={() => setResult(null)}
           isWatermarked={result.isWatermarked}
         />
@@ -155,6 +174,8 @@ const Index = () => {
           <RoomUploader
             onResult={handleResult}
             onMultiResult={handleMultiResult}
+            onMultiStart={handleMultiStart}
+            onMultiProgress={handleMultiProgress}
             initialImage={reStageState?.reStageImage}
             initialRoomType={reStageState?.reStageRoomType}
             initialStyle={reStageState?.reStageStyle}

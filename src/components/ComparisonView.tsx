@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check } from "lucide-react";
+import { X, Check, Loader2 } from "lucide-react";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import DownloadWithPresets from "@/components/DownloadWithPresets";
 import type { StagingResult } from "@/components/RoomUploader";
@@ -8,14 +8,17 @@ import type { StagingResult } from "@/components/RoomUploader";
 interface ComparisonViewProps {
   original: string;
   results: StagingResult[];
+  pendingStyles?: string[];
   onReset: () => void;
   isWatermarked?: boolean;
 }
 
-const ComparisonView = ({ original, results, onReset, isWatermarked }: ComparisonViewProps) => {
+const ComparisonView = ({ original, results, pendingStyles = [], onReset, isWatermarked }: ComparisonViewProps) => {
   const [selectedResult, setSelectedResult] = useState<StagingResult | null>(null);
 
-  // download handled by DownloadWithPresets component
+  const totalStyles = results.length + pendingStyles.length;
+  const isStillProcessing = pendingStyles.length > 0;
+  const progressPercent = totalStyles > 0 ? (results.length / totalStyles) * 100 : 0;
 
   return (
     <div className="pt-24 pb-16 px-6">
@@ -30,11 +33,40 @@ const ComparisonView = ({ original, results, onReset, isWatermarked }: Compariso
             Style Comparison
           </p>
           <h2 className="font-display text-3xl md:text-4xl font-medium mb-2">
-            Compare {results.length} Styles
+            {isStillProcessing
+              ? `Staging style ${results.length + 1} of ${totalStyles}`
+              : `Compare ${results.length} Styles`}
           </h2>
-          <p className="font-body text-sm text-muted-foreground">
-            Click any card to view the before & after slider
-          </p>
+          {isStillProcessing && (
+            <>
+              <p className="font-body text-sm text-accent mb-4">
+                {pendingStyles[0]}... <span className="text-muted-foreground">(typically 10–15 seconds per style)</span>
+              </p>
+              {/* Progress bar */}
+              <div className="max-w-md mx-auto mb-3">
+                <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{ background: "linear-gradient(90deg, hsl(38 55% 45%), hsl(40 70% 62%))" }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progressPercent}%` }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                  />
+                </div>
+                <p className="font-body text-[11px] text-muted-foreground/60 mt-2">
+                  {results.length} of {totalStyles} complete
+                </p>
+              </div>
+              <p className="font-body text-xs text-muted-foreground/50">
+                Comparing {totalStyles} styles takes about {totalStyles * 10}–{totalStyles * 15} seconds total
+              </p>
+            </>
+          )}
+          {!isStillProcessing && (
+            <p className="font-body text-sm text-muted-foreground">
+              Click any card to view the before & after slider
+            </p>
+          )}
         </motion.div>
 
         {/* Original image — compact */}
@@ -59,12 +91,13 @@ const ComparisonView = ({ original, results, onReset, isWatermarked }: Compariso
         {/* Results row */}
         <div className="overflow-x-auto pb-4 -mx-6 px-6">
           <div className="flex gap-5 min-w-min">
+            {/* Completed results */}
             {results.map((result, i) => (
               <motion.div
                 key={result.style}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 + i * 0.1 }}
+                transition={{ delay: 0.1 }}
                 className="group w-[320px] flex-shrink-0 rounded-2xl overflow-hidden border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm hover:border-accent/20 hover:shadow-dramatic hover:-translate-y-1 transition-all duration-500 cursor-pointer"
                 onClick={() => setSelectedResult(result)}
               >
@@ -107,6 +140,28 @@ const ComparisonView = ({ original, results, onReset, isWatermarked }: Compariso
                       isWatermarked={isWatermarked}
                     />
                   </div>
+                </div>
+              </motion.div>
+            ))}
+
+            {/* Pending style skeletons */}
+            {pendingStyles.map((styleName, i) => (
+              <motion.div
+                key={`pending-${styleName}`}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + i * 0.1 }}
+                className="w-[320px] flex-shrink-0 rounded-2xl overflow-hidden border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm"
+              >
+                <div className="relative aspect-[4/3] overflow-hidden bg-white/[0.03] flex flex-col items-center justify-center">
+                  <Loader2 className="w-8 h-8 text-muted-foreground/40 animate-spin mb-3" />
+                  <p className="font-display text-lg text-muted-foreground/50">{styleName}</p>
+                  <p className="font-body text-xs text-muted-foreground/30 mt-1">
+                    {i === 0 ? "Staging..." : "Queued"}
+                  </p>
+                </div>
+                <div className="p-4">
+                  <div className="h-10 rounded-lg bg-white/[0.03]" />
                 </div>
               </motion.div>
             ))}
