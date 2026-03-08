@@ -16,7 +16,9 @@ interface ComparisonViewProps {
 const ComparisonView = ({ original, results, pendingStyles = [], onReset, isWatermarked }: ComparisonViewProps) => {
   const [selectedResult, setSelectedResult] = useState<StagingResult | null>(null);
 
-  const totalStyles = results.length + pendingStyles.length;
+  // Filter out failed results (empty URLs from error fallback)
+  const validResults = results.filter((r) => r.stagedImageUrl);
+  const totalStyles = validResults.length + pendingStyles.length + results.filter((r) => !r.stagedImageUrl).length;
   const isStillProcessing = pendingStyles.length > 0;
   const progressPercent = totalStyles > 0 ? (results.length / totalStyles) * 100 : 0;
 
