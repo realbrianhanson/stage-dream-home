@@ -233,42 +233,50 @@ const RoomUploader = ({
           const remaining = stylesToStage.slice(i + 1);
           setProgressText(`Staging ${i + 1} of ${count}... ${currentStyle}`);
 
-          const instrTrimmed = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
-          const { data, error } = await supabase.functions.invoke("stage-room", {
-            body: { image, roomType, style: currentStyle, customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined },
-          });
-          if (error) throw error;
-          if (!data?.stagedImageUrl) throw new Error(`No staged image returned for ${currentStyle}`);
+          try {
+            const instrTrimmed = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
+            const { data, error } = await supabase.functions.invoke("stage-room", {
+              body: { image, roomType, style: currentStyle, customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined },
+            });
+            if (error) throw error;
+            if (!data?.stagedImageUrl) throw new Error(`No staged image returned for ${currentStyle}`);
 
-          let finalResult: StagingResult = { style: currentStyle, stagedImageUrl: data.stagedImageUrl, isWatermarked: data.isWatermarked };
+            let finalResult: StagingResult = { style: currentStyle, stagedImageUrl: data.stagedImageUrl, isWatermarked: data.isWatermarked };
 
-          // Upload to storage and save to db
-          if (user) {
-            const stagingId = crypto.randomUUID();
-            const [originalUrl, stagedUrl] = await Promise.all([
-              uploadStagingImage(user.id, stagingId, image, "original"),
-              uploadStagingImage(user.id, stagingId, data.stagedImageUrl, "staged"),
-            ]);
+            // Upload to storage and save to db
+            if (user) {
+              const stagingId = crypto.randomUUID();
+              const [originalUrl, stagedUrl] = await Promise.all([
+                uploadStagingImage(user.id, stagingId, image, "original"),
+                uploadStagingImage(user.id, stagingId, data.stagedImageUrl, "staged"),
+              ]);
 
-            await supabase.from("stagings").insert({
-              id: stagingId,
-              user_id: user.id,
-              original_image_url: originalUrl,
-              staged_image_url: stagedUrl,
-              room_type: roomType,
-              style: currentStyle,
-              property_address: propertyName.trim() || null,
-              custom_instructions: instrTrimmed || null,
-              aspect_ratio: aspectRatio || null,
-            } as any);
+              await supabase.from("stagings").insert({
+                id: stagingId,
+                user_id: user.id,
+                original_image_url: originalUrl,
+                staged_image_url: stagedUrl,
+                room_type: roomType,
+                style: currentStyle,
+                property_address: propertyName.trim() || null,
+                custom_instructions: instrTrimmed || null,
+                aspect_ratio: aspectRatio || null,
+              } as any);
 
-            finalResult.stagedImageUrl = stagedUrl;
+              finalResult.stagedImageUrl = stagedUrl;
+            }
+
+            completedResults.push(finalResult);
+            onMultiProgress(finalResult, cancelledRef.current ? [] : remaining);
+          } catch (styleErr: any) {
+            console.error(`Style "${currentStyle}" failed:`, styleErr);
+            toast.error(`Failed to stage "${currentStyle}" — skipping`);
+            // Remove this style from pending in the UI
+            onMultiProgress(
+              { style: currentStyle, stagedImageUrl: "", isWatermarked: false },
+              cancelledRef.current ? [] : remaining
+            );
           }
-
-          completedResults.push(finalResult);
-
-          // Stream result to ComparisonView — remaining styles become pending
-          onMultiProgress(finalResult, cancelledRef.current ? [] : remaining);
         }
 
         toast.success(
