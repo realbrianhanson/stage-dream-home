@@ -141,7 +141,10 @@ const Index = () => {
               <HelpCircle className="w-4 h-4" />
             </button>
             <button
-              onClick={() => signOut()}
+              onClick={async () => {
+                await signOut();
+                navigate("/");
+              }}
               className="font-body text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors flex items-center gap-1.5"
             >
               <LogOut className="w-3.5 h-3.5" />
