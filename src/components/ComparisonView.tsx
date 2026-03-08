@@ -37,7 +37,7 @@ const ComparisonView = ({ original, results, pendingStyles = [], onReset, isWate
           <h2 className="font-display text-3xl md:text-4xl font-medium mb-2">
             {isStillProcessing
               ? `Staging style ${results.length + 1} of ${totalStyles}`
-              : `Compare ${results.length} Styles`}
+              : `Compare ${validResults.length} Style${validResults.length !== 1 ? "s" : ""}`}
           </h2>
           {isStillProcessing && (
             <>
