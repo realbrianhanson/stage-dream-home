@@ -163,7 +163,10 @@ const Gallery = () => {
               Stage a Room
             </button>
             <button
-              onClick={() => signOut()}
+              onClick={async () => {
+                await signOut();
+                navigate("/");
+              }}
               className="font-body text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
             >
               <LogOut className="w-3.5 h-3.5" />
