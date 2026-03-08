@@ -137,11 +137,31 @@ const Auth = () => {
             </motion.button>
           </form>
 
-          <div className="text-center mt-4">
-            <button className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">
-              Forgot password?
-            </button>
-          </div>
+          {isLogin && (
+            <div className="text-center mt-4">
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!email) {
+                    toast.error("Enter your email first, then click Forgot Password");
+                    return;
+                  }
+                  try {
+                    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                      redirectTo: `${window.location.origin}/auth`,
+                    });
+                    if (error) throw error;
+                    toast.success("Password reset email sent! Check your inbox.");
+                  } catch (err: any) {
+                    toast.error(err.message);
+                  }
+                }}
+                className="font-body text-xs text-muted-foreground hover:text-accent transition-colors"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
 
           <p className="font-body text-sm text-muted-foreground text-center mt-6">
             {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}

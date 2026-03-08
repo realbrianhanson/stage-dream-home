@@ -68,7 +68,9 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfte
   const convertToPngBlob = (blob: Blob): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const img = new window.Image();
+      const objectUrl = URL.createObjectURL(blob);
       img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
         const canvas = document.createElement("canvas");
         canvas.width = img.naturalWidth;
         canvas.height = img.naturalHeight;
@@ -76,8 +78,11 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfte
         ctx.drawImage(img, 0, 0);
         canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("PNG conversion failed"))), "image/png");
       };
-      img.onerror = reject;
-      img.src = URL.createObjectURL(blob);
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Image load failed"));
+      };
+      img.src = objectUrl;
     });
   };
 
