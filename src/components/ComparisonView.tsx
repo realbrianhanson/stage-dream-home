@@ -94,7 +94,7 @@ const ComparisonView = ({ original, results, pendingStyles = [], onReset, isWate
         <div className="overflow-x-auto pb-4 -mx-6 px-6">
           <div className="flex gap-5 min-w-min">
             {/* Completed results */}
-            {results.map((result, i) => (
+            {validResults.map((result, i) => (
               <motion.div
                 key={result.style}
                 initial={{ opacity: 0, y: 30 }}
