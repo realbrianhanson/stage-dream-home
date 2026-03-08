@@ -216,6 +216,13 @@ const RoomUploader = ({
 
         const completedResults: StagingResult[] = [];
 
+        // Upload original image once and reuse URL
+        let sharedOriginalUrl: string | null = null;
+        if (user) {
+          const firstStagingId = crypto.randomUUID();
+          sharedOriginalUrl = await uploadStagingImage(user.id, firstStagingId, image, "original");
+        }
+
         for (let i = 0; i < stylesToStage.length; i++) {
           if (cancelledRef.current) {
             toast.info(`Cancelled — ${completedResults.length} of ${count} styles completed`);
@@ -243,18 +250,15 @@ const RoomUploader = ({
 
             let finalResult: StagingResult = { style: currentStyle, stagedImageUrl: data.stagedImageUrl, isWatermarked: data.isWatermarked };
 
-            // Upload to storage and save to db
-            if (user) {
+            // Upload staged image and save to db (reuse shared original)
+            if (user && sharedOriginalUrl) {
               const stagingId = crypto.randomUUID();
-              const [originalUrl, stagedUrl] = await Promise.all([
-                uploadStagingImage(user.id, stagingId, image, "original"),
-                uploadStagingImage(user.id, stagingId, data.stagedImageUrl, "staged"),
-              ]);
+              const stagedUrl = await uploadStagingImage(user.id, stagingId, data.stagedImageUrl, "staged");
 
               await supabase.from("stagings").insert({
                 id: stagingId,
                 user_id: user.id,
-                original_image_url: originalUrl,
+                original_image_url: sharedOriginalUrl,
                 staged_image_url: stagedUrl,
                 room_type: roomType,
                 style: currentStyle,
@@ -271,7 +275,6 @@ const RoomUploader = ({
           } catch (styleErr: any) {
             console.error(`Style "${currentStyle}" failed:`, styleErr);
             toast.error(`Failed to stage "${currentStyle}" — skipping`);
-            // Remove this style from pending in the UI
             onMultiProgress(
               { style: currentStyle, stagedImageUrl: "", isWatermarked: false },
               cancelledRef.current ? [] : remaining

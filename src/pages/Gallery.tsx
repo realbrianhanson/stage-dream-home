@@ -52,6 +52,25 @@ const Gallery = () => {
   }, []);
 
   const handleDelete = async (id: string) => {
+    // Find the staging to get storage paths before deleting
+    const staging = stagings.find((s) => s.id === id);
+    
+    // Delete storage objects first to avoid orphaned files
+    if (staging) {
+      const extractPath = (url: string) => {
+        try {
+          const match = url.match(/\/storage\/v1\/object\/public\/stagings\/(.+)$/);
+          return match?.[1] ?? null;
+        } catch { return null; }
+      };
+      const origPath = extractPath(staging.original_image_url);
+      const stagedPath = extractPath(staging.staged_image_url);
+      const filesToRemove = [origPath, stagedPath].filter(Boolean) as string[];
+      if (filesToRemove.length > 0) {
+        await supabase.storage.from("stagings").remove(filesToRemove);
+      }
+    }
+
     const { error } = await supabase.from("stagings").delete().eq("id", id);
     if (error) {
       toast.error("Failed to delete staging");
