@@ -16,7 +16,9 @@ interface ComparisonViewProps {
 const ComparisonView = ({ original, results, pendingStyles = [], onReset, isWatermarked }: ComparisonViewProps) => {
   const [selectedResult, setSelectedResult] = useState<StagingResult | null>(null);
 
-  const totalStyles = results.length + pendingStyles.length;
+  // Filter out failed results (empty URLs from error fallback)
+  const validResults = results.filter((r) => r.stagedImageUrl);
+  const totalStyles = validResults.length + pendingStyles.length + results.filter((r) => !r.stagedImageUrl).length;
   const isStillProcessing = pendingStyles.length > 0;
   const progressPercent = totalStyles > 0 ? (results.length / totalStyles) * 100 : 0;
 
@@ -35,7 +37,7 @@ const ComparisonView = ({ original, results, pendingStyles = [], onReset, isWate
           <h2 className="font-display text-3xl md:text-4xl font-medium mb-2">
             {isStillProcessing
               ? `Staging style ${results.length + 1} of ${totalStyles}`
-              : `Compare ${results.length} Styles`}
+              : `Compare ${validResults.length} Style${validResults.length !== 1 ? "s" : ""}`}
           </h2>
           {isStillProcessing && (
             <>
@@ -92,7 +94,7 @@ const ComparisonView = ({ original, results, pendingStyles = [], onReset, isWate
         <div className="overflow-x-auto pb-4 -mx-6 px-6">
           <div className="flex gap-5 min-w-min">
             {/* Completed results */}
-            {results.map((result, i) => (
+            {validResults.map((result, i) => (
               <motion.div
                 key={result.style}
                 initial={{ opacity: 0, y: 30 }}
