@@ -107,7 +107,7 @@ const RoomUploader = ({
       setCustomInstructions(initialCustomInstructions);
       setShowAdvanced(true);
     }
-  }, [initialImage, initialRoomType, initialStyle]);
+  }, [initialImage, initialRoomType, initialStyle, initialCustomInstructions]);
 
   const handleFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) {
