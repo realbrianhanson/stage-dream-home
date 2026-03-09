@@ -378,7 +378,7 @@ const Landing = () => {
 
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { name: "Starter", price: "Free", period: "", features: ["3 rooms / month", "Standard quality", "All 6 design styles", "Compare up to 3 styles", "720p export"], highlight: false },
+              { name: "Starter", price: "Free", period: "", features: ["3 rooms / month", "Standard quality", "All 6 design styles", "Compare up to 3 styles", "Watermarked exports"], highlight: false },
               { name: "Professional", price: "$29", period: "/mo", features: ["Unlimited rooms", "Ultra HD quality", "All 6+ styles", "Priority processing", "Download originals"], highlight: true },
               { name: "Brokerage", price: "$99", period: "/mo", features: ["Everything in Pro", "Team accounts", "API access", "Custom branding", "Dedicated support"], highlight: false },
             ].map((plan, i) => (
