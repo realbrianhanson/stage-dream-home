@@ -143,11 +143,11 @@ const Gallery = () => {
   };
 
   const grouped = useMemo(() => {
-    const filtered = searchQuery.trim()
+    const filtered = debouncedSearch.trim()
       ? stagings.filter((s) =>
           (s.property_address || "Unlabeled")
             .toLowerCase()
-            .includes(searchQuery.toLowerCase())
+            .includes(debouncedSearch.toLowerCase())
         )
       : stagings;
 
@@ -158,7 +158,7 @@ const Gallery = () => {
       groups[key].push(s);
     }
     return groups;
-  }, [stagings, searchQuery]);
+  }, [stagings, debouncedSearch]);
 
   const totalCount = stagings.length;
   const groupKeys = Object.keys(grouped);
