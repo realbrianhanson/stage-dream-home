@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Trash2, X, Upload, ArrowLeft, LogOut, Download, RefreshCw, Search, ChevronDown, ChevronRight } from "lucide-react";
@@ -30,26 +30,48 @@ const Gallery = () => {
   const [selectedStaging, setSelectedStaging] = useState<Staging | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 50;
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const fetchStagings = async () => {
+  // Debounce search input
+  useEffect(() => {
+    debounceRef.current = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [searchQuery]);
+
+  const fetchStagings = useCallback(async (pageNum = 0, append = false) => {
+    const from = pageNum * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
     const { data, error } = await supabase
       .from("stagings")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
     if (error) {
       console.error("Error fetching stagings:", error);
       toast.error("Failed to load your staging history");
     } else {
-      setStagings(data || []);
+      const rows = data || [];
+      setStagings((prev) => append ? [...prev, ...rows] : rows);
+      setHasMore(rows.length === PAGE_SIZE);
     }
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchStagings();
-  }, []);
+  }, [fetchStagings]);
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchStagings(nextPage, true);
+  };
 
   const handleDelete = async (id: string) => {
     // Find the staging to get storage paths before deleting
@@ -121,11 +143,11 @@ const Gallery = () => {
   };
 
   const grouped = useMemo(() => {
-    const filtered = searchQuery.trim()
+    const filtered = debouncedSearch.trim()
       ? stagings.filter((s) =>
           (s.property_address || "Unlabeled")
             .toLowerCase()
-            .includes(searchQuery.toLowerCase())
+            .includes(debouncedSearch.toLowerCase())
         )
       : stagings;
 
@@ -136,7 +158,7 @@ const Gallery = () => {
       groups[key].push(s);
     }
     return groups;
-  }, [stagings, searchQuery]);
+  }, [stagings, debouncedSearch]);
 
   const totalCount = stagings.length;
   const groupKeys = Object.keys(grouped);
@@ -353,9 +375,21 @@ const Gallery = () => {
                 })}
               </div>
 
-              {groupKeys.length === 0 && searchQuery && (
+              {/* Load more button */}
+              {hasMore && !debouncedSearch && (
+                <div className="text-center pt-8">
+                  <button
+                    onClick={loadMore}
+                    className="font-body text-sm text-muted-foreground hover:text-accent border border-white/[0.06] hover:border-accent/30 rounded-lg px-6 py-2.5 transition-all"
+                  >
+                    Load More
+                  </button>
+                </div>
+              )}
+
+              {groupKeys.length === 0 && debouncedSearch && (
                 <div className="text-center py-16">
-                  <p className="font-body text-muted-foreground">No properties matching "{searchQuery}"</p>
+                  <p className="font-body text-muted-foreground">No properties matching "{debouncedSearch}"</p>
                 </div>
               )}
             </>
