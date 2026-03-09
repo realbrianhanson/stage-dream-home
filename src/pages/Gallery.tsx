@@ -375,9 +375,21 @@ const Gallery = () => {
                 })}
               </div>
 
-              {groupKeys.length === 0 && searchQuery && (
+              {/* Load more button */}
+              {hasMore && !debouncedSearch && (
+                <div className="text-center pt-8">
+                  <button
+                    onClick={loadMore}
+                    className="font-body text-sm text-muted-foreground hover:text-accent border border-white/[0.06] hover:border-accent/30 rounded-lg px-6 py-2.5 transition-all"
+                  >
+                    Load More
+                  </button>
+                </div>
+              )}
+
+              {groupKeys.length === 0 && debouncedSearch && (
                 <div className="text-center py-16">
-                  <p className="font-body text-muted-foreground">No properties matching "{searchQuery}"</p>
+                  <p className="font-body text-muted-foreground">No properties matching "{debouncedSearch}"</p>
                 </div>
               )}
             </>
