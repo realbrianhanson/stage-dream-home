@@ -16,36 +16,34 @@ const PRESETS: DimensionPreset[] = [
   { label: "Social Square", width: 1024, height: 1024, description: "1024 × 1024" },
 ];
 
-function cropAndResize(
+function cropToCanvas(
   img: HTMLImageElement,
   targetW: number,
   targetH: number
-): Promise<Blob | null> {
-  return new Promise((resolve) => {
-    const targetRatio = targetW / targetH;
-    const srcRatio = img.naturalWidth / img.naturalHeight;
+): HTMLCanvasElement {
+  const targetRatio = targetW / targetH;
+  const srcRatio = img.naturalWidth / img.naturalHeight;
 
-    let cropW: number, cropH: number, cropX: number, cropY: number;
+  let cropW: number, cropH: number, cropX: number, cropY: number;
 
-    if (srcRatio > targetRatio) {
-      cropH = img.naturalHeight;
-      cropW = Math.round(cropH * targetRatio);
-      cropX = Math.round((img.naturalWidth - cropW) / 2);
-      cropY = 0;
-    } else {
-      cropW = img.naturalWidth;
-      cropH = Math.round(cropW / targetRatio);
-      cropX = 0;
-      cropY = Math.round((img.naturalHeight - cropH) / 2);
-    }
+  if (srcRatio > targetRatio) {
+    cropH = img.naturalHeight;
+    cropW = Math.round(cropH * targetRatio);
+    cropX = Math.round((img.naturalWidth - cropW) / 2);
+    cropY = 0;
+  } else {
+    cropW = img.naturalWidth;
+    cropH = Math.round(cropW / targetRatio);
+    cropX = 0;
+    cropY = Math.round((img.naturalHeight - cropH) / 2);
+  }
 
-    const canvas = document.createElement("canvas");
-    canvas.width = targetW;
-    canvas.height = targetH;
-    const ctx = canvas.getContext("2d")!;
-    ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, targetW, targetH);
-    canvas.toBlob((blob) => resolve(blob), "image/png");
-  });
+  const canvas = document.createElement("canvas");
+  canvas.width = targetW;
+  canvas.height = targetH;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, targetW, targetH);
+  return canvas;
 }
 
 function burnWatermark(canvas: HTMLCanvasElement) {
@@ -60,46 +58,27 @@ function burnWatermark(canvas: HTMLCanvasElement) {
   ctx.restore();
 }
 
-function imageToWatermarkedBlob(img: HTMLImageElement): Promise<Blob | null> {
-  return new Promise((resolve) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext("2d")!;
-    ctx.drawImage(img, 0, 0);
-    burnWatermark(canvas);
-    canvas.toBlob((blob) => resolve(blob), "image/png");
-  });
+function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob | null> {
+  return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), "image/png"));
 }
 
-function cropResizeAndWatermark(
+function processImage(
   img: HTMLImageElement,
-  targetW: number,
-  targetH: number
+  targetW: number | null,
+  targetH: number | null,
+  watermark: boolean
 ): Promise<Blob | null> {
-  return new Promise((resolve) => {
-    const targetRatio = targetW / targetH;
-    const srcRatio = img.naturalWidth / img.naturalHeight;
-    let cropW: number, cropH: number, cropX: number, cropY: number;
-    if (srcRatio > targetRatio) {
-      cropH = img.naturalHeight;
-      cropW = Math.round(cropH * targetRatio);
-      cropX = Math.round((img.naturalWidth - cropW) / 2);
-      cropY = 0;
-    } else {
-      cropW = img.naturalWidth;
-      cropH = Math.round(cropW / targetRatio);
-      cropX = 0;
-      cropY = Math.round((img.naturalHeight - cropH) / 2);
-    }
-    const canvas = document.createElement("canvas");
-    canvas.width = targetW;
-    canvas.height = targetH;
-    const ctx = canvas.getContext("2d")!;
-    ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, targetW, targetH);
-    burnWatermark(canvas);
-    canvas.toBlob((blob) => resolve(blob), "image/png");
-  });
+  let canvas: HTMLCanvasElement;
+  if (targetW && targetH) {
+    canvas = cropToCanvas(img, targetW, targetH);
+  } else {
+    canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext("2d")!.drawImage(img, 0, 0);
+  }
+  if (watermark) burnWatermark(canvas);
+  return canvasToBlob(canvas);
 }
 
 interface DownloadWithPresetsProps {
@@ -123,8 +102,10 @@ const DownloadWithPresets = ({
   useEffect(() => {
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.onload = () => setImgSize({ w: img.naturalWidth, h: img.naturalHeight });
+    const onLoad = () => setImgSize({ w: img.naturalWidth, h: img.naturalHeight });
+    img.addEventListener("load", onLoad);
     img.src = imageUrl;
+    return () => img.removeEventListener("load", onLoad);
   }, [imageUrl]);
 
   useEffect(() => {
@@ -148,6 +129,16 @@ const DownloadWithPresets = ({
 
     setProcessing(true);
     try {
+      // Skip processing for non-watermarked original
+      if (!preset.width && !preset.height && !isWatermarked) {
+        const link = document.createElement("a");
+        link.href = imageUrl;
+        link.download = `${filename}.png`;
+        link.click();
+        setProcessing(false);
+        return;
+      }
+
       const img = new Image();
       img.crossOrigin = "anonymous";
       await new Promise<void>((resolve, reject) => {
@@ -156,28 +147,7 @@ const DownloadWithPresets = ({
         img.src = imageUrl;
       });
 
-      let blob: Blob | null;
-
-      if (!preset.width || !preset.height) {
-        // Original size
-        if (isWatermarked) {
-          blob = await imageToWatermarkedBlob(img);
-        } else {
-          // Direct download for non-watermarked original
-          const link = document.createElement("a");
-          link.href = imageUrl;
-          link.download = `${filename}.png`;
-          link.click();
-          setProcessing(false);
-          return;
-        }
-      } else {
-        // Crop/resize
-        blob = isWatermarked
-          ? await cropResizeAndWatermark(img, preset.width, preset.height)
-          : await cropAndResize(img, preset.width, preset.height);
-      }
-
+      const blob = await processImage(img, preset.width, preset.height, isWatermarked);
       if (!blob) throw new Error("Failed to process image");
 
       const url = URL.createObjectURL(blob);

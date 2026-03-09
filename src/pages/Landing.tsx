@@ -471,9 +471,7 @@ const Landing = () => {
             © 2026 RealVision. AI-powered virtual staging for real estate professionals.
           </p>
           <div className="flex gap-6">
-            <a href="#" className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">Privacy</a>
-            <a href="#" className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">Terms</a>
-            <a href="#" className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">Contact</a>
+            <a href="mailto:support@realvision.ai" className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">Contact</a>
           </div>
         </div>
       </footer>
