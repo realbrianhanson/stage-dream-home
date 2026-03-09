@@ -30,26 +30,48 @@ const Gallery = () => {
   const [selectedStaging, setSelectedStaging] = useState<Staging | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 50;
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const fetchStagings = async () => {
+  // Debounce search input
+  useEffect(() => {
+    debounceRef.current = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [searchQuery]);
+
+  const fetchStagings = useCallback(async (pageNum = 0, append = false) => {
+    const from = pageNum * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
     const { data, error } = await supabase
       .from("stagings")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
     if (error) {
       console.error("Error fetching stagings:", error);
       toast.error("Failed to load your staging history");
     } else {
-      setStagings(data || []);
+      const rows = data || [];
+      setStagings((prev) => append ? [...prev, ...rows] : rows);
+      setHasMore(rows.length === PAGE_SIZE);
     }
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchStagings();
-  }, []);
+  }, [fetchStagings]);
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchStagings(nextPage, true);
+  };
 
   const handleDelete = async (id: string) => {
     // Find the staging to get storage paths before deleting
