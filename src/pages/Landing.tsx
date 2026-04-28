@@ -537,34 +537,68 @@ const Landing = () => {
       {/* Divider */}
       <div className="max-w-3xl mx-auto" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.15), transparent)' }} />
 
-      {/* Final CTA */}
-      <section className="py-32 px-6 relative overflow-hidden">
-        <div className="absolute inset-0">
-          <img src={heroImage} alt="" className="w-full h-full object-cover" loading="lazy" />
-          <div className="absolute inset-0 bg-gradient-to-b from-foreground/60 via-foreground/80 to-foreground/95" />
-        </div>
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, hsl(38 60% 55% / 0.06) 0%, transparent 50%)' }} />
+      {/* Final CTA — editorial card on parchment */}
+      <section className="py-32 px-6 bg-background relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, hsl(38 60% 55% / 0.05) 0%, transparent 60%)' }} />
         <motion.div
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true }}
+          viewport={{ once: true, margin: "-100px" }}
           variants={fadeUp}
-          className="relative z-10 text-center max-w-3xl mx-auto"
+          className="relative z-10 max-w-5xl mx-auto"
         >
-          <div className="mx-auto mb-8" style={{ width: 60, height: 1, background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.4), transparent)' }} />
-          <h2 className="font-display text-4xl md:text-6xl lg:text-7xl font-medium text-primary-foreground mb-6 leading-[1.05]">
-            Ready to <span className="italic text-accent">Transform</span> Your Listings?
-          </h2>
-          <p className="font-body text-lg text-primary-foreground/60 mb-10 max-w-xl mx-auto">
-            Join hundreds of top-performing agents who close deals faster with AI-powered virtual staging.
-          </p>
-          <button
-            onClick={() => navigate("/auth")}
-            className="gold-gradient-animated text-accent-foreground font-body font-semibold text-base px-12 py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity inline-flex items-center gap-2 group"
-          >
-            Start Staging Free
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </button>
+          <div className="relative rounded-3xl overflow-hidden border border-accent/20 bg-gradient-to-br from-card via-background to-card/60 shadow-dramatic gold-hairline p-10 md:p-16">
+            <div className="grid md:grid-cols-[1.3fr_1fr] gap-10 md:gap-16 items-center">
+              {/* Left: editorial copy */}
+              <div>
+                <SectionEyebrow number="06" label="Begin" />
+                <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-medium mb-6 leading-[1.02] text-left">
+                  Your next listing,<br />
+                  <span className="italic text-accent">already staged.</span>
+                </h2>
+                <p className="font-body text-foreground/70 text-base md:text-lg mb-8 leading-relaxed">
+                  Skip the warehouses, the movers, the four-figure invoices.
+                  Upload a photo tonight — wake up to a portfolio that sells.
+                </p>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <button
+                    onClick={() => navigate("/auth")}
+                    className="gold-gradient-animated text-accent-foreground font-body font-semibold text-sm px-10 py-4 rounded-lg tracking-[0.15em] uppercase hover:opacity-90 transition-opacity inline-flex items-center gap-2 group"
+                  >
+                    Stage 3 Rooms Free
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                  <span className="font-body text-xs text-muted-foreground tracking-wide">
+                    No credit card required
+                  </span>
+                </div>
+              </div>
+
+              {/* Right: cost comparison */}
+              <div className="relative md:border-l md:border-accent/15 md:pl-12">
+                <p className="font-body text-[10px] tracking-[0.4em] uppercase text-accent mb-6">
+                  The Math
+                </p>
+                <div className="space-y-5">
+                  <div className="flex items-baseline justify-between pb-4 border-b border-border/40">
+                    <span className="font-body text-sm text-muted-foreground">Traditional staging</span>
+                    <span className="font-display text-2xl font-light text-foreground/60 line-through decoration-accent/50">$2,400<span className="text-xs">/mo</span></span>
+                  </div>
+                  <div className="flex items-baseline justify-between pb-4 border-b border-border/40">
+                    <span className="font-body text-sm text-muted-foreground">Photographer + props</span>
+                    <span className="font-display text-2xl font-light text-foreground/60 line-through decoration-accent/50">$800<span className="text-xs">/shoot</span></span>
+                  </div>
+                  <div className="flex items-baseline justify-between pt-2">
+                    <span className="font-body text-sm font-semibold text-foreground">RealVision</span>
+                    <span className="font-display text-3xl font-medium text-accent">$29<span className="text-base text-muted-foreground">/mo</span></span>
+                  </div>
+                </div>
+                <p className="font-body text-[11px] tracking-wide text-muted-foreground mt-6 italic">
+                  Same-day. Unlimited revisions. No contracts.
+                </p>
+              </div>
+            </div>
+          </div>
         </motion.div>
       </section>
 
