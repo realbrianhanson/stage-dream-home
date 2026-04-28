@@ -185,7 +185,7 @@ const Landing = () => {
             variants={fadeUp}
             className="text-center mb-16"
           >
-            <p className="text-accent font-body text-xs tracking-[0.3em] uppercase mb-4">The Magic</p>
+            <SectionEyebrow number="01" label="The Magic" />
             <h2 className="font-display text-4xl md:text-6xl font-medium mb-6">
               Empty to <span className="italic text-accent">Extraordinary</span>
             </h2>
