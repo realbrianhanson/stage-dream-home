@@ -407,8 +407,50 @@ const RoomUploader = ({
                   />
                 </div>
 
+                {/* Mode toggle: Stage vs Remove */}
+                <div className="mb-8">
+                  <label className="font-body text-sm font-medium text-muted-foreground block mb-3">
+                    What do you want to do?
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setMode("stage")}
+                      className={`text-left p-4 rounded-xl border transition-all ${
+                        mode === "stage"
+                          ? "border-accent/40 bg-accent/[0.08]"
+                          : "border-border hover:border-accent/30"
+                      }`}
+                    >
+                      <p className={`font-display text-base font-medium mb-1 ${mode === "stage" ? "text-accent" : ""}`}>
+                        Add Furniture
+                      </p>
+                      <p className="font-body text-xs text-muted-foreground leading-snug">
+                        Stage an empty room with beautiful furniture & decor
+                      </p>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMode("remove");
+                        setCompareMode(false);
+                      }}
+                      className={`text-left p-4 rounded-xl border transition-all ${
+                        mode === "remove"
+                          ? "border-accent/40 bg-accent/[0.08]"
+                          : "border-border hover:border-accent/30"
+                      }`}
+                    >
+                      <p className={`font-display text-base font-medium mb-1 ${mode === "remove" ? "text-accent" : ""}`}>
+                        Remove Furniture
+                      </p>
+                      <p className="font-body text-xs text-muted-foreground leading-snug">
+                        De-stage a furnished room — show it empty
+                      </p>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Options */}
-                <div className="grid md:grid-cols-2 gap-8 mb-6">
+                <div className={`grid ${mode === "stage" ? "md:grid-cols-2" : "grid-cols-1"} gap-8 mb-6`}>
                   <div>
                     <label className="font-body text-sm font-medium text-muted-foreground block mb-3">
                       Room Type
@@ -429,60 +471,62 @@ const RoomUploader = ({
                       ))}
                     </div>
                   </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="font-body text-sm font-medium text-muted-foreground">
-                        Design Style
-                      </label>
-                      <button
-                        onClick={() => {
-                          setCompareMode(!compareMode);
-                          if (!compareMode) {
-                            setSelectedStyles([style]);
-                          }
-                        }}
-                        className="flex items-center gap-1.5 font-body text-xs text-muted-foreground hover:text-accent transition-colors"
-                      >
-                        {compareMode ? (
-                          <ToggleRight className="w-4 h-4 text-accent" />
-                        ) : (
-                          <ToggleLeft className="w-4 h-4" />
-                        )}
-                        Compare styles
-                      </button>
+                  {mode === "stage" && (
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="font-body text-sm font-medium text-muted-foreground">
+                          Design Style
+                        </label>
+                        <button
+                          onClick={() => {
+                            setCompareMode(!compareMode);
+                            if (!compareMode) {
+                              setSelectedStyles([style]);
+                            }
+                          }}
+                          className="flex items-center gap-1.5 font-body text-xs text-muted-foreground hover:text-accent transition-colors"
+                        >
+                          {compareMode ? (
+                            <ToggleRight className="w-4 h-4 text-accent" />
+                          ) : (
+                            <ToggleLeft className="w-4 h-4" />
+                          )}
+                          Compare styles
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {STYLES.map((s) => {
+                          const isSelected = compareMode
+                            ? selectedStyles.includes(s)
+                            : style === s;
+                          return (
+                            <button
+                              key={s}
+                              onClick={() => {
+                                if (compareMode) {
+                                  toggleStyleSelection(s);
+                                } else {
+                                  setStyle(s);
+                                }
+                              }}
+                              className={`font-body text-sm px-4 py-2 rounded-lg border transition-all ${
+                                isSelected
+                                  ? "border-accent/30 bg-accent/[0.08] text-accent"
+                                  : "border-border text-muted-foreground hover:border-accent/40"
+                              }`}
+                            >
+                              {s}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {compareMode && (
+                        <p className="font-body text-[11px] text-muted-foreground/60 mt-2">
+                          Select 2–3 styles · Each counts as one staging
+                        </p>
+                      )}
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {STYLES.map((s) => {
-                        const isSelected = compareMode
-                          ? selectedStyles.includes(s)
-                          : style === s;
-                        return (
-                          <button
-                            key={s}
-                            onClick={() => {
-                              if (compareMode) {
-                                toggleStyleSelection(s);
-                              } else {
-                                setStyle(s);
-                              }
-                            }}
-                            className={`font-body text-sm px-4 py-2 rounded-lg border transition-all ${
-                              isSelected
-                                ? "border-accent/30 bg-accent/[0.08] text-accent"
-                                : "border-border text-muted-foreground hover:border-accent/40"
-                            }`}
-                          >
-                            {s}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {compareMode && (
-                      <p className="font-body text-[11px] text-muted-foreground/60 mt-2">
-                        Select 2–3 styles · Each counts as one staging
-                      </p>
-                    )}
-                  </div>
+                  )}
                 </div>
 
                 {/* Output Aspect Ratio */}
