@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion, useScroll, useTransform, useMotionValue } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Clock, Palette, TrendingUp, Star, Sparkles } from "lucide-react";
 import Logo from "@/components/Logo";
