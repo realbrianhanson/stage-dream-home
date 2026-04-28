@@ -7,7 +7,7 @@ import DownloadWithPresets from "@/components/DownloadWithPresets";
 interface BeforeAfterSliderProps {
   before: string;
   after: string;
-  onReset: () => void;
+  onReset?: () => void;
   isWatermarked?: boolean;
 }
 
@@ -179,14 +179,16 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfte
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
             {copied ? "Copied!" : "Copy to Clipboard"}
           </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onReset}
-            className="border border-border font-body font-semibold text-sm px-8 py-3 rounded-lg text-muted-foreground hover:border-accent/30 hover:text-accent transition-colors"
-          >
-            Stage Another Room
-          </motion.button>
+          {onReset && (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onReset}
+              className="border border-border font-body font-semibold text-sm px-8 py-3 rounded-lg text-muted-foreground hover:border-accent/30 hover:text-accent transition-colors"
+            >
+              Stage Another Room
+            </motion.button>
+          )}
         </div>
 
         {/* Upgrade nudge for free users */}
