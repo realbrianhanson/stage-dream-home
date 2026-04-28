@@ -11,6 +11,8 @@ import Auth from "./pages/Auth";
 import Gallery from "./pages/Gallery";
 import Pricing from "./pages/Pricing";
 import SharedStaging from "./pages/SharedStaging";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +44,8 @@ const App = () => (
               <Route path="/gallery" element={<ProtectedRoute><Gallery /></ProtectedRoute>} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/share/:token" element={<SharedStaging />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
