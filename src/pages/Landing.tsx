@@ -22,10 +22,6 @@ const fadeUp = {
 
 const Landing = () => {
   const navigate = useNavigate();
-  const { scrollYProgress } = useScroll();
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
-  const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 1.1]);
-
   const [scrolled, setScrolled] = useState(false);
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
   const glowX = useMotionValue(50);
