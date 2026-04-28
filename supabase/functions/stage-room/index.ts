@@ -48,7 +48,7 @@ serve(async (req) => {
 
     const userPlan = usageData?.plan || "free";
 
-    const { image, roomType, style, customInstructions, aspectRatio } = await req.json();
+    const { image, roomType, style, customInstructions, aspectRatio, mode } = await req.json();
 
     if (!image) {
       return new Response(
@@ -70,19 +70,33 @@ serve(async (req) => {
       ? customInstructions.slice(0, 300).trim()
       : "";
 
-    let prompt = `You are a professional interior designer and virtual stager. Take this photo of an empty/vacant ${roomType.toLowerCase()} and virtually stage it with beautiful ${style.toLowerCase()} style furniture and decor. 
+    const isRemoval = mode === "remove";
+    const safeRoomType = (roomType || "room").toString().toLowerCase();
+    const safeStyle = (style || "Modern").toString().toLowerCase();
+
+    let prompt: string;
+
+    if (isRemoval) {
+      prompt = `You are a professional virtual de-staging specialist. Take this photo of a furnished ${safeRoomType} and digitally remove ALL furniture, decor, rugs, artwork, plants, lamps, curtains, and personal items.
+
+The result must show a completely empty, vacant ${safeRoomType} with only the bare architecture remaining: walls, floors, ceiling, windows, doors, and built-in fixtures (kitchen counters, bathroom fixtures, fireplaces, built-in shelving). Patch and reconstruct any areas where furniture was hiding the floor or walls so they look natural, clean, and continuous.
+
+CRITICAL: Keep the room's architecture, walls, windows, flooring material, ceiling, and lighting EXACTLY the same. Do not add anything new. Do not change wall colors. Do not stage. The output must be photorealistic, evenly lit, and indistinguishable from a real photograph of an empty room.`;
+    } else {
+      prompt = `You are a professional interior designer and virtual stager. Take this photo of an empty/vacant ${safeRoomType} and virtually stage it with beautiful ${safeStyle} style furniture and decor.
 
 Add appropriate furniture like sofas, tables, chairs, rugs, lamps, artwork, plants, and decorative accessories. Make the room look warm, inviting, and ready for a real estate listing. Keep the room's architecture, walls, windows, and flooring exactly the same. Only add furniture and decor. Make it look photorealistic and professionally staged.`;
+    }
 
     if (sanitizedInstructions) {
-      prompt += `\n\nAdditional staging requirements from the client: ${sanitizedInstructions}`;
+      prompt += `\n\nAdditional requirements from the client: ${sanitizedInstructions}`;
     }
 
     const validRatios = ["16:9", "4:3", "3:4", "1:1"];
     const sanitizedAspectRatio = typeof aspectRatio === "string" && validRatios.includes(aspectRatio) ? aspectRatio : null;
 
     if (sanitizedAspectRatio) {
-      prompt += `\n\nIMPORTANT: Generate the staged image with a ${sanitizedAspectRatio} aspect ratio.`;
+      prompt += `\n\nIMPORTANT: Generate the image with a ${sanitizedAspectRatio} aspect ratio.`;
     }
 
     const response = await fetch(
