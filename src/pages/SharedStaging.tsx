@@ -44,8 +44,27 @@ const SharedStagingPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background grain-overlay">
+        {/* Top bar skeleton */}
+        <div className="border-b border-border/40 px-6 py-4">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <Skeleton className="h-7 w-40" />
+            <Skeleton className="h-9 w-28 rounded-lg" />
+          </div>
+        </div>
+        {/* Hero skeleton */}
+        <div className="max-w-5xl mx-auto px-6 py-12 space-y-8">
+          <div className="text-center space-y-3">
+            <Skeleton className="h-3 w-24 mx-auto rounded-full" />
+            <Skeleton className="h-10 md:h-14 w-2/3 mx-auto" />
+            <Skeleton className="h-4 w-1/2 mx-auto" />
+          </div>
+          <Skeleton className="aspect-[16/10] w-full rounded-2xl" />
+          <div className="flex justify-center gap-3">
+            <Skeleton className="h-11 w-44 rounded-lg" />
+            <Skeleton className="h-11 w-32 rounded-lg" />
+          </div>
+        </div>
       </div>
     );
   }
