@@ -82,6 +82,7 @@ const RoomUploader = ({
   freeLimit,
 }: RoomUploaderProps) => {
   const [image, setImage] = useState<string | null>(initialImage || null);
+  const [mode, setMode] = useState<"stage" | "remove">("stage");
   const [roomType, setRoomType] = useState(initialRoomType || "Living Room");
   const [style, setStyle] = useState(initialStyle || "Modern");
   const [selectedStyles, setSelectedStyles] = useState<string[]>([initialStyle || "Modern"]);
