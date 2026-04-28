@@ -412,61 +412,119 @@ const Landing = () => {
             className="text-center mb-16"
           >
             <SectionEyebrow number="05" label="Pricing" />
-            <h2 className="font-display text-4xl md:text-6xl font-medium mb-6">
+            <h2 className="font-display text-4xl md:text-6xl font-medium mb-8">
               Simple, <span className="italic text-accent">Transparent</span>
             </h2>
+
+            {/* Billing toggle */}
+            <div className="inline-flex items-center gap-1 p-1 rounded-full border border-border bg-card/60 backdrop-blur-sm">
+              <button
+                onClick={() => setBilling("monthly")}
+                className={`relative font-body text-xs tracking-[0.15em] uppercase px-5 py-2 rounded-full transition-colors ${
+                  billing === "monthly" ? "bg-foreground text-primary-foreground" : "text-foreground/60 hover:text-foreground"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBilling("annual")}
+                className={`relative font-body text-xs tracking-[0.15em] uppercase px-5 py-2 rounded-full transition-colors flex items-center gap-2 ${
+                  billing === "annual" ? "bg-foreground text-primary-foreground" : "text-foreground/60 hover:text-foreground"
+                }`}
+              >
+                Annual
+                <span className="text-[9px] tracking-[0.1em] gold-gradient text-accent-foreground px-2 py-0.5 rounded-full font-semibold">
+                  Save 20%
+                </span>
+              </button>
+            </div>
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8 items-stretch">
             {[
-              { name: "Starter", price: "Free", period: "", features: ["3 rooms / month", "Standard quality", "All 6 design styles", "Compare up to 3 styles", "Watermarked exports"], highlight: false },
-              { name: "Professional", price: "$29", period: "/mo", features: ["Unlimited rooms", "Ultra HD quality", "All 6+ styles", "Priority processing", "Download originals (no watermark)"], highlight: true },
-              { name: "Studio", price: "$79", period: "/mo", features: ["Everything in Pro", "Higher monthly volume", "Priority email support", "Early access to new styles"], highlight: false },
-            ].map((plan, i) => (
-              <motion.div
-                key={plan.name}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-50px" }}
-                variants={fadeUp}
-                custom={i}
-                className={`p-10 rounded-2xl relative flex flex-col ${
-                  plan.highlight
-                    ? "bg-foreground text-primary-foreground border border-accent/40 shadow-glow-gold ring-1 ring-accent/20"
-                    : "border border-border bg-gradient-to-b from-card/60 to-background/30 backdrop-blur-sm"
-                }`}
-              >
-                {plan.highlight && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 gold-gradient text-accent-foreground font-body text-[10px] tracking-[0.25em] uppercase font-semibold px-4 py-1 rounded-full">
-                    Most Popular
+              { name: "Starter", monthly: "Free", annual: "Free", period: "", features: ["3 rooms / month", "Standard quality", "All 6 design styles", "Compare up to 3 styles", "Watermarked exports"], highlight: false },
+              { name: "Professional", monthly: "$29", annual: "$23", period: "/mo", features: ["Unlimited rooms", "Ultra HD quality", "All 6+ styles", "Priority processing", "Download originals (no watermark)"], highlight: true },
+              { name: "Studio", monthly: "$79", annual: "$63", period: "/mo", features: ["Everything in Pro", "Higher monthly volume", "Priority email support", "Early access to new styles"], highlight: false },
+            ].map((plan, i) => {
+              const displayPrice = billing === "annual" ? plan.annual : plan.monthly;
+              const cardInner = (
+                <>
+                  {plan.highlight && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 gold-gradient text-accent-foreground font-body text-[10px] tracking-[0.25em] uppercase font-semibold px-4 py-1 rounded-full z-10">
+                      Most Popular
+                    </div>
+                  )}
+                  <p className={`font-display text-lg font-medium mb-2 relative ${plan.highlight ? "text-primary-foreground" : ""}`}>{plan.name}</p>
+                  <div className="flex items-baseline gap-1 mb-1 relative">
+                    <span className={`font-display text-5xl font-light tracking-tight ${plan.highlight ? "text-accent" : "text-foreground"}`}>{displayPrice}</span>
+                    <span className={`font-body text-sm ${plan.highlight ? "text-primary-foreground/50" : "text-muted-foreground"}`}>{plan.period}</span>
                   </div>
-                )}
-                <p className={`font-display text-lg font-medium mb-2 ${plan.highlight ? "text-primary-foreground" : ""}`}>{plan.name}</p>
-                <div className="flex items-baseline gap-1 mb-8">
-                  <span className={`font-display text-5xl font-light tracking-tight ${plan.highlight ? "text-accent" : "text-foreground"}`}>{plan.price}</span>
-                  <span className={`font-body text-sm ${plan.highlight ? "text-primary-foreground/50" : "text-muted-foreground"}`}>{plan.period}</span>
-                </div>
-                <div className={`h-px w-12 mb-6 ${plan.highlight ? "bg-accent/40" : "bg-accent/30"}`} />
-                <ul className="space-y-3.5 mb-10 flex-grow">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-3 font-body text-sm">
-                      <span className={`mt-[7px] flex-shrink-0 w-2 h-px ${plan.highlight ? "bg-accent" : "bg-accent"}`} />
-                      <span className={plan.highlight ? "text-primary-foreground/80" : "text-foreground/75"}>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  onClick={() => navigate("/pricing")}
-                  className={`w-full font-body font-semibold text-xs tracking-[0.2em] uppercase py-4 rounded-lg transition-all ${
-                    plan.highlight
-                      ? "gold-gradient-animated text-accent-foreground hover:opacity-90"
-                      : "border border-border hover:border-accent/50 hover:text-accent text-foreground"
-                  }`}
+                  <p className={`font-body text-[10px] tracking-[0.2em] uppercase mb-7 h-4 ${plan.highlight ? "text-primary-foreground/40" : "text-muted-foreground/70"}`}>
+                    {billing === "annual" && plan.monthly !== "Free" ? "Billed annually" : ""}
+                  </p>
+                  <div className={`h-px w-12 mb-6 bg-accent/40 relative`} />
+                  <ul className="space-y-3.5 mb-10 flex-grow relative">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-3 font-body text-sm">
+                        <span className="mt-[7px] flex-shrink-0 w-2 h-px bg-accent" />
+                        <span className={plan.highlight ? "text-primary-foreground/80" : "text-foreground/75"}>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    onClick={() => navigate("/pricing")}
+                    className={`relative w-full font-body font-semibold text-xs tracking-[0.2em] uppercase py-4 rounded-lg transition-all ${
+                      plan.highlight
+                        ? "gold-gradient-animated text-accent-foreground hover:opacity-90"
+                        : "border border-border hover:border-accent/50 hover:text-accent text-foreground"
+                    }`}
+                  >
+                    See Details
+                  </button>
+                </>
+              );
+
+              if (plan.highlight) {
+                return (
+                  <motion.div
+                    key={plan.name}
+                    ref={highlightCardRef}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, margin: "-50px" }}
+                    variants={fadeUp}
+                    custom={i}
+                    onMouseMove={handleCardMouseMove}
+                    className="p-10 rounded-2xl relative flex flex-col bg-foreground text-primary-foreground border border-accent/40 shadow-glow-gold ring-1 ring-accent/20 overflow-hidden group"
+                  >
+                    <motion.div
+                      className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      style={{
+                        background: useTransform(
+                          [glowX, glowY],
+                          ([x, y]) => `radial-gradient(400px circle at ${x}% ${y}%, hsl(38 60% 55% / 0.18), transparent 60%)`
+                        ),
+                      }}
+                    />
+                    {cardInner}
+                  </motion.div>
+                );
+              }
+
+              return (
+                <motion.div
+                  key={plan.name}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, margin: "-50px" }}
+                  variants={fadeUp}
+                  custom={i}
+                  className="p-10 rounded-2xl relative flex flex-col border border-border bg-gradient-to-b from-card/60 to-background/30 backdrop-blur-sm"
                 >
-                  See Details
-                </button>
-              </motion.div>
-            ))}
+                  {cardInner}
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
