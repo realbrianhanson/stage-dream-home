@@ -351,6 +351,16 @@ const Gallery = () => {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
+                                      setShareStaging(staging);
+                                    }}
+                                    className={`w-8 h-8 rounded-full text-primary-foreground flex items-center justify-center ${staging.share_token ? "bg-accent/80 hover:bg-accent" : "bg-foreground/60 hover:bg-accent/80"}`}
+                                    title={staging.share_token ? "Manage share link" : "Share publicly"}
+                                  >
+                                    <Share2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
                                       handleReStage(staging);
                                     }}
                                     className="w-8 h-8 rounded-full bg-foreground/60 hover:bg-accent/80 text-primary-foreground flex items-center justify-center"
