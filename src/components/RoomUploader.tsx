@@ -155,7 +155,8 @@ const RoomUploader = ({
   const handleStage = async () => {
     if (!image) return;
 
-    const stylesToStage = compareMode ? selectedStyles : [style];
+    const isRemove = mode === "remove";
+    const stylesToStage = isRemove ? ["Removed"] : (compareMode ? selectedStyles : [style]);
     const count = stylesToStage.length;
 
     if (!canStage) {
