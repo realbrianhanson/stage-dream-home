@@ -93,7 +93,7 @@ const Landing = () => {
             className="font-display font-light text-primary-foreground leading-[0.95] mb-8"
             style={{ fontSize: 'clamp(3rem, 8vw, 6.5rem)', letterSpacing: '-0.03em' }}
           >
-            {["Sell", "Properties"].map((word, idx) => (
+            {["Every", "Room,"].map((word, idx) => (
               <motion.span
                 key={word}
                 variants={fadeUp}
@@ -108,7 +108,7 @@ const Landing = () => {
               custom={3}
               className="inline-block italic font-medium text-accent"
             >
-              Faster
+              Reimagined.
             </motion.span>
           </motion.h1>
 
@@ -117,10 +117,10 @@ const Landing = () => {
             animate="visible"
             variants={fadeUp}
             custom={2}
-            className="font-body text-lg md:text-xl text-primary-foreground/70 max-w-2xl mx-auto mb-12 leading-relaxed"
+            className="font-body text-lg md:text-xl text-primary-foreground/75 max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            Transform vacant rooms into stunning, fully-furnished spaces in seconds.
-            Our AI creates photorealistic staging that sells.
+            AI-staged interiors so convincing, buyers fall in love before they walk through the door.
+            Photorealistic results in under thirty seconds — for a fraction of the cost of physical staging.
           </motion.p>
 
           <motion.div
@@ -134,15 +134,27 @@ const Landing = () => {
               onClick={() => navigate("/auth")}
               className="gold-gradient-animated text-accent-foreground font-body font-semibold text-base px-10 py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity flex items-center gap-2 group"
             >
-              Start Staging Free
+              Stage 3 Rooms Free
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
             <a
               href="#showcase"
-              className="font-body text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors border border-primary-foreground/20 px-8 py-4 rounded-lg hover:border-primary-foreground/40"
+              className="font-body text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors border border-primary-foreground/30 px-8 py-4 rounded-lg hover:border-accent/60 hover:bg-primary-foreground/5"
             >
-              See Examples
+              See the Work
             </a>
+          </motion.div>
+
+          {/* Microcopy */}
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={fadeUp}
+            custom={4}
+            className="mt-5 flex items-center justify-center gap-2 text-primary-foreground/60"
+          >
+            <Check className="w-3.5 h-3.5 text-accent" />
+            <span className="font-body text-xs tracking-wide">No credit card · 3 free stagings · Results in 30s</span>
           </motion.div>
 
           {/* Trust bar */}
@@ -150,10 +162,10 @@ const Landing = () => {
             initial="hidden"
             animate="visible"
             variants={fadeUp}
-            custom={4}
-            className="mt-20 border-t border-b border-primary-foreground/5 py-6 flex flex-wrap items-center justify-center gap-8 text-primary-foreground/40"
+            custom={5}
+            className="mt-16 border-t border-b border-primary-foreground/15 py-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-primary-foreground/75"
           >
-            {["500+ Agents", "10,000+ Rooms Staged", "4.9★ Rating", "< 30s Processing"].map((stat) => (
+            {["500+ Agents", "10,000+ Rooms Staged", "4.9★ Rating", "Under 30s"].map((stat) => (
               <span key={stat} className="font-body text-sm tracking-wide">{stat}</span>
             ))}
           </motion.div>
