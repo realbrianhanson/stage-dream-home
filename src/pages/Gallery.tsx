@@ -456,6 +456,21 @@ const Gallery = () => {
         )}
       </AnimatePresence>
 
+      {/* Share dialog */}
+      <AnimatePresence>
+        {shareStaging && (
+          <ShareDialog
+            stagingId={shareStaging.id}
+            initialToken={shareStaging.share_token}
+            onClose={() => setShareStaging(null)}
+            onTokenChange={(token) => {
+              setStagings((prev) => prev.map((s) => s.id === shareStaging.id ? { ...s, share_token: token } : s));
+              setShareStaging((prev) => prev ? { ...prev, share_token: token } : prev);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Before/After modal */}
       <AnimatePresence>
         {selectedStaging && (
