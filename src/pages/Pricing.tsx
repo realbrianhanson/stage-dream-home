@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, CheckCircle2, X, Minus, ChevronDown } from "lucide-react";
+import { ArrowRight, CheckCircle2, Minus, ChevronDown } from "lucide-react";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -357,13 +357,23 @@ const Pricing = () => {
                     className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-card/80 transition-colors"
                   >
                     <span className="font-body font-medium text-foreground">{faq.q}</span>
-                    <ChevronDown className={`w-4 h-4 text-muted-foreground flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+                    <ChevronDown className={`w-4 h-4 text-muted-foreground flex-shrink-0 transition-transform duration-300 ${open ? "rotate-180 text-accent" : ""}`} />
                   </button>
-                  {open && (
-                    <div className="px-6 pb-5 font-body text-sm text-muted-foreground leading-relaxed">
-                      {faq.a}
-                    </div>
-                  )}
+                  <AnimatePresence initial={false}>
+                    {open && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: [0.25, 0.4, 0.25, 1] }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-6 pb-5 font-body text-sm text-muted-foreground leading-relaxed">
+                          {faq.a}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               );
             })}
