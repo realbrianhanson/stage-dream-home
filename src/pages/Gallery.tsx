@@ -330,6 +330,12 @@ const Gallery = () => {
                                     loading="lazy"
                                   />
                                   <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-transparent" />
+                                  {staging.share_token && (
+                                    <div className="absolute top-3 left-3 flex items-center gap-1 bg-accent/90 text-accent-foreground rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase">
+                                      <Share2 className="w-2.5 h-2.5" />
+                                      Shared
+                                    </div>
+                                  )}
                                   <div className="absolute bottom-4 left-4 right-4">
                                     <div className="flex items-center gap-2 mb-1">
                                       <span className="inline-block w-1 h-1 rounded-full bg-accent" />
