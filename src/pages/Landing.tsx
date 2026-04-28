@@ -185,6 +185,37 @@ const Landing = () => {
             variants={fadeUp}
             className="text-center mb-16"
           >
+      {/* Trusted By */}
+      <section className="py-16 px-6 bg-background border-b border-border/40">
+        <div className="max-w-6xl mx-auto">
+          <p className="text-center font-body text-[10px] tracking-[0.4em] uppercase text-muted-foreground mb-8">
+            Trusted by agents at
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 opacity-60">
+            {["COMPASS", "SOTHEBY'S", "COLDWELL BANKER", "DOUGLAS ELLIMAN", "CORCORAN", "KELLER WILLIAMS"].map((brand) => (
+              <span
+                key={brand}
+                className="font-display text-xl md:text-2xl font-light tracking-[0.15em] text-foreground/50 hover:text-foreground/80 transition-colors"
+              >
+                {brand}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Before/After Section */}
+      <section className="py-32 px-6 bg-background relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-foreground/5 to-transparent h-40" />
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center top, hsl(38 60% 55% / 0.04) 0%, transparent 60%)' }} />
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeUp}
+            className="text-center mb-16"
+          >
             <SectionEyebrow number="01" label="The Magic" />
             <h2 className="font-display text-4xl md:text-6xl font-medium mb-6">
               Empty to <span className="italic text-accent">Extraordinary</span>
