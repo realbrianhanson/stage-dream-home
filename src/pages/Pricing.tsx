@@ -50,19 +50,16 @@ const plans = [
     highlight: true,
   },
   {
-    name: "Brokerage",
-    monthly: 99,
-    annual: 82,
-    blurb: "For teams and high-volume brokerages.",
-    cta: "Contact Sales",
+    name: "Studio",
+    monthly: 79,
+    annual: 65,
+    blurb: "For high-volume listing agents and photographers.",
+    cta: "Get Studio",
     features: [
       "Everything in Professional",
-      "Up to 10 team accounts",
-      "API access",
-      "Custom branding on exports",
-      "Bulk uploads",
-      "Dedicated account manager",
-      "SLA & priority support",
+      "Higher monthly volume",
+      "Priority email support",
+      "Early access to new design styles",
     ],
     highlight: false,
   },
@@ -76,10 +73,9 @@ const compareRows: { label: string; values: (string | boolean)[] }[] = [
   { label: "Watermark-free downloads", values: [false, true, true] },
   { label: "Priority processing", values: [false, true, true] },
   { label: "Stagings library", values: [true, true, true] },
-  { label: "Team accounts", values: [false, false, "Up to 10"] },
-  { label: "API access", values: [false, false, true] },
-  { label: "Custom branding", values: [false, false, true] },
-  { label: "Dedicated manager", values: [false, false, true] },
+  { label: "Public share links", values: [true, true, true] },
+  { label: "Priority support", values: [false, false, true] },
+  { label: "Early access to new styles", values: [false, false, true] },
 ];
 
 const faqs = [
@@ -105,7 +101,7 @@ const faqs = [
   },
   {
     q: "Do you have an API or white-label option?",
-    a: "Brokerage plans include API access. For white-label and enterprise contracts, get in touch with our sales team.",
+    a: "Not yet. We're focused on the core staging experience first. If you're interested in API access or white-labeling, drop us a line and we'll keep you posted.",
   },
 ];
 
@@ -115,11 +111,7 @@ const Pricing = () => {
   const [billing, setBilling] = useState<Billing>("monthly");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const handleCta = (planName: string) => {
-    if (planName === "Brokerage") {
-      window.location.href = "mailto:sales@realvision.ai?subject=Brokerage%20Plan%20Inquiry";
-      return;
-    }
+  const handleCta = (_planName: string) => {
     navigate(user ? "/app" : "/auth");
   };
 
