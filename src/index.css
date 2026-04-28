@@ -120,6 +120,11 @@
   50% { box-shadow: 0 0 40px hsl(38 60% 55% / 0.18); }
 }
 
+@keyframes skeletonShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 @layer components {
   .hero-gradient {
     background: var(--gradient-hero);
