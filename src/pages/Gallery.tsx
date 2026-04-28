@@ -441,9 +441,23 @@ const Gallery = () => {
               )}
 
               {groupKeys.length === 0 && debouncedSearch && (
-                <div className="text-center py-16">
-                  <p className="font-body text-muted-foreground">No properties matching "{debouncedSearch}"</p>
-                </div>
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center py-20"
+                >
+                  <Search className="w-12 h-12 mx-auto mb-5 text-muted-foreground/30" />
+                  <h3 className="font-display text-xl font-medium mb-2">No matches found</h3>
+                  <p className="font-body text-sm text-muted-foreground mb-6">
+                    No properties matching <span className="text-foreground italic">"{debouncedSearch}"</span>
+                  </p>
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="font-body text-xs tracking-[0.2em] uppercase text-accent hover:text-accent/80 border-b border-accent/30 hover:border-accent pb-0.5"
+                  >
+                    Clear search
+                  </button>
+                </motion.div>
               )}
             </>
           )}
