@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Loader2 } from "lucide-react";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import DownloadWithPresets from "@/components/DownloadWithPresets";
+import { ProgressiveImage } from "@/components/ui/progressive-image";
 import type { StagingResult } from "@/components/RoomUploader";
 
 interface ComparisonViewProps {
