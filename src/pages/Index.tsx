@@ -203,6 +203,10 @@ const Index = () => {
           <p className="font-body text-sm text-muted-foreground">
             © 2026 RealVision. AI-powered virtual staging for real estate.
           </p>
+          <div className="flex items-center gap-5">
+            <a href="/privacy" className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">Privacy</a>
+            <a href="/terms" className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">Terms</a>
+          </div>
         </div>
       </footer>
     </div>
