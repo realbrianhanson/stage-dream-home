@@ -491,7 +491,6 @@ const Landing = () => {
                 return (
                   <motion.div
                     key={plan.name}
-                    ref={highlightCardRef}
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true, margin: "-50px" }}
