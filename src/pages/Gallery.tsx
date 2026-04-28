@@ -10,6 +10,7 @@ import Logo from "@/components/Logo";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import UsageIndicator from "@/components/UsageIndicator";
 import ShareDialog from "@/components/ShareDialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Staging {
   id: string;
