@@ -211,7 +211,7 @@ const RoomUploader = ({
         } else {
           onResult(image, data.stagedImageUrl, data.isWatermarked);
         }
-        toast.success("Room staged successfully!");
+        toast.success(isRemove ? "Furniture removed successfully!" : "Room staged successfully!");
       } else {
         // Multi-style — progressive streaming
         onMultiStart(image, [...stylesToStage]);
