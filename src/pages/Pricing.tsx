@@ -101,7 +101,7 @@ const faqs = [
   },
   {
     q: "Do you have an API or white-label option?",
-    a: "Brokerage plans include API access. For white-label and enterprise contracts, get in touch with our sales team.",
+    a: "Not yet. We're focused on the core staging experience first. If you're interested in API access or white-labeling, drop us a line and we'll keep you posted.",
   },
 ];
 
@@ -111,11 +111,7 @@ const Pricing = () => {
   const [billing, setBilling] = useState<Billing>("monthly");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const handleCta = (planName: string) => {
-    if (planName === "Brokerage") {
-      window.location.href = "mailto:sales@realvision.ai?subject=Brokerage%20Plan%20Inquiry";
-      return;
-    }
+  const handleCta = (_planName: string) => {
     navigate(user ? "/app" : "/auth");
   };
 
