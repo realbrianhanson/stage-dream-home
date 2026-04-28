@@ -181,10 +181,10 @@ const RoomUploader = ({
           return;
         }
 
-        setProgressText("Staging your room with AI...");
+        setProgressText(isRemove ? "Removing furniture from your room..." : "Staging your room with AI...");
         const instrTrimmed = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
         const { data, error } = await supabase.functions.invoke("stage-room", {
-          body: { image, roomType, style: stylesToStage[0], customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined },
+          body: { image, roomType, style: stylesToStage[0], customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined, mode: isRemove ? "remove" : "stage" },
         });
         if (error) throw error;
         if (!data?.stagedImageUrl) throw new Error("No staged image returned");
