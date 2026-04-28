@@ -353,7 +353,7 @@ const Gallery = () => {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.03 }}
-                                className="group relative rounded-2xl overflow-hidden border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm hover:border-accent/15 hover:shadow-dramatic transition-all duration-500 cursor-pointer"
+                                className="group relative rounded-2xl overflow-hidden border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm hover:border-accent/25 hover:shadow-dramatic hover:-translate-y-0.5 transition-all duration-500 cursor-pointer"
                                 onClick={() => setSelectedStaging(staging)}
                               >
                                 <div className="aspect-[4/3] relative overflow-hidden">
@@ -361,28 +361,37 @@ const Gallery = () => {
                                     src={staging.staged_image_url}
                                     alt={`${staging.room_type} - ${staging.style}`}
                                     wrapperClassName="absolute inset-0"
-                                    className="group-hover:scale-[1.03] transition-transform duration-700"
+                                    className="group-hover:scale-[1.05] transition-transform duration-[1200ms] ease-[cubic-bezier(0.25,0.4,0.25,1)]"
                                   />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-transparent" />
+                                  {/* Subtle bottom gradient — deepens on hover */}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/75 via-foreground/10 to-transparent transition-opacity duration-500 group-hover:from-foreground/85" />
+                                  {/* Gold ambient glow on hover */}
+                                  <div
+                                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
+                                    style={{ background: "radial-gradient(ellipse at 50% 100%, hsl(38 60% 55% / 0.18), transparent 65%)" }}
+                                  />
                                   {staging.share_token && (
-                                    <div className="absolute top-3 left-3 flex items-center gap-1 bg-accent/90 text-accent-foreground rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase">
+                                    <div className="absolute top-3 left-3 flex items-center gap-1 bg-accent/90 text-accent-foreground rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase shadow-glow-gold">
                                       <Share2 className="w-2.5 h-2.5" />
                                       Shared
                                     </div>
                                   )}
-                                  <div className="absolute bottom-4 left-4 right-4">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="inline-block w-1 h-1 rounded-full bg-accent" />
-                                      <p className="font-body text-xs tracking-[0.2em] uppercase text-accent">
+                                  <div className="absolute bottom-4 left-4 right-4 transition-transform duration-500 group-hover:-translate-y-0.5">
+                                    <div className="flex items-center gap-2 mb-1.5">
+                                      <span className="inline-block w-1 h-1 rounded-full bg-accent" style={{ boxShadow: "0 0 8px hsl(38 60% 55% / 0.6)" }} />
+                                      <p className="font-body text-[10px] tracking-[0.25em] uppercase text-accent">
                                         {staging.style}
                                       </p>
                                     </div>
-                                    <p className="font-display text-lg text-primary-foreground font-medium">
+                                    <p className="font-display text-xl text-primary-foreground font-medium leading-tight">
                                       {staging.room_type}
                                     </p>
-                                    <p className="font-body text-xs text-primary-foreground/50 mt-0.5">
-                                      {formatDate(staging.created_at)}
-                                    </p>
+                                    <div className="flex items-center gap-2 mt-1.5 max-h-0 group-hover:max-h-8 opacity-60 group-hover:opacity-100 overflow-hidden transition-all duration-500">
+                                      <div className="h-px w-6 bg-accent/50" />
+                                      <p className="font-body text-[11px] text-primary-foreground/70 tracking-wide">
+                                        {formatDate(staging.created_at)}
+                                      </p>
+                                    </div>
                                   </div>
                                 </div>
 
