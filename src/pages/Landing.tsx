@@ -390,7 +390,7 @@ const Landing = () => {
             </h2>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8 items-stretch">
             {[
               { name: "Starter", price: "Free", period: "", features: ["3 rooms / month", "Standard quality", "All 6 design styles", "Compare up to 3 styles", "Watermarked exports"], highlight: false },
               { name: "Professional", price: "$29", period: "/mo", features: ["Unlimited rooms", "Ultra HD quality", "All 6+ styles", "Priority processing", "Download originals (no watermark)"], highlight: true },
@@ -403,36 +403,37 @@ const Landing = () => {
                 viewport={{ once: true, margin: "-50px" }}
                 variants={fadeUp}
                 custom={i}
-                className={`rounded-2xl border relative ${
+                className={`p-10 rounded-2xl relative flex flex-col ${
                   plan.highlight
-                    ? "p-10 border-accent/30 bg-foreground text-primary-foreground shadow-glow-gold animate-pulse-glow"
-                    : "p-8 border-border bg-card/40 backdrop-blur-sm"
+                    ? "bg-foreground text-primary-foreground border border-accent/40 shadow-glow-gold ring-1 ring-accent/20"
+                    : "border border-border bg-gradient-to-b from-card/60 to-background/30 backdrop-blur-sm"
                 }`}
               >
                 {plan.highlight && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 gold-gradient text-accent-foreground font-body text-xs font-semibold px-4 py-1 rounded-full">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 gold-gradient text-accent-foreground font-body text-[10px] tracking-[0.25em] uppercase font-semibold px-4 py-1 rounded-full">
                     Most Popular
                   </div>
                 )}
-                <p className="font-display text-lg font-medium mb-2">{plan.name}</p>
+                <p className={`font-display text-lg font-medium mb-2 ${plan.highlight ? "text-primary-foreground" : ""}`}>{plan.name}</p>
                 <div className="flex items-baseline gap-1 mb-8">
-                  <span className={`font-display text-4xl font-semibold ${plan.highlight ? "text-accent" : ""}`}>{plan.price}</span>
-                  <span className={`font-body text-sm ${plan.highlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>{plan.period}</span>
+                  <span className={`font-display text-5xl font-light tracking-tight ${plan.highlight ? "text-accent" : "text-foreground"}`}>{plan.price}</span>
+                  <span className={`font-body text-sm ${plan.highlight ? "text-primary-foreground/50" : "text-muted-foreground"}`}>{plan.period}</span>
                 </div>
-                <ul className="space-y-3 mb-8">
+                <div className={`h-px w-12 mb-6 ${plan.highlight ? "bg-accent/40" : "bg-accent/30"}`} />
+                <ul className="space-y-3.5 mb-10 flex-grow">
                   {plan.features.map((f) => (
-                    <li key={f} className="flex items-center gap-3 font-body text-sm">
-                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-accent" />
-                      <span className={plan.highlight ? "text-primary-foreground/85" : "text-foreground/80"}>{f}</span>
+                    <li key={f} className="flex items-start gap-3 font-body text-sm">
+                      <span className={`mt-[7px] flex-shrink-0 w-2 h-px ${plan.highlight ? "bg-accent" : "bg-accent"}`} />
+                      <span className={plan.highlight ? "text-primary-foreground/80" : "text-foreground/75"}>{f}</span>
                     </li>
                   ))}
                 </ul>
                 <button
                   onClick={() => navigate("/pricing")}
-                  className={`w-full font-body font-semibold text-sm py-3.5 rounded-lg transition-all ${
+                  className={`w-full font-body font-semibold text-xs tracking-[0.2em] uppercase py-4 rounded-lg transition-all ${
                     plan.highlight
                       ? "gold-gradient-animated text-accent-foreground hover:opacity-90"
-                      : "border border-border hover:border-accent/40 hover:text-accent text-foreground"
+                      : "border border-border hover:border-accent/50 hover:text-accent text-foreground"
                   }`}
                 >
                   See Details
