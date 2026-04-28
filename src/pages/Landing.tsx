@@ -172,19 +172,6 @@ const Landing = () => {
           </motion.div>
         </motion.div>
       </section>
-
-      {/* Before/After Section */}
-      <section className="py-32 px-6 bg-background relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-foreground/5 to-transparent h-40" />
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center top, hsl(38 60% 55% / 0.04) 0%, transparent 60%)' }} />
-        <div className="max-w-6xl mx-auto">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={fadeUp}
-            className="text-center mb-16"
-          >
       {/* Trusted By */}
       <section className="py-16 px-6 bg-background border-b border-border/40">
         <div className="max-w-6xl mx-auto">
