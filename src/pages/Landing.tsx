@@ -340,51 +340,50 @@ const Landing = () => {
       {/* Divider */}
       <div className="max-w-3xl mx-auto" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.15), transparent)' }} />
 
-      {/* Testimonials */}
-      <section className="py-32 px-6">
-        <div className="max-w-6xl mx-auto">
+      {/* Editorial Testimonial */}
+      <section className="py-40 px-6 bg-card/40 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, hsl(38 60% 55% / 0.05) 0%, transparent 60%)' }} />
+        <div className="max-w-4xl mx-auto relative">
           <motion.div
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
             variants={fadeUp}
-            className="text-center mb-16"
+            className="text-center"
           >
-            <SectionEyebrow number="04" label="Testimonials" />
-            <h2 className="font-display text-4xl md:text-6xl font-medium">
-              Trusted by <span className="italic text-accent">Top Agents</span>
-            </h2>
-          </motion.div>
+            <SectionEyebrow number="04" label="Testimonial" />
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { name: "Sarah Mitchell", role: "Luxury Real Estate, NYC", quote: "RealVision cut my listing time in half. The quality is indistinguishable from professional photography." },
-              { name: "James Rivera", role: "Commercial Broker, LA", quote: "I've tried every virtual staging tool. Nothing comes close to the realism RealVision delivers." },
-              { name: "Emily Chen", role: "Property Developer, SF", quote: "We stage 50+ units per month now. The ROI is extraordinary — every property sells faster." },
-            ].map((t, i) => (
-              <motion.div
-                key={t.name}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-50px" }}
-                variants={fadeUp}
-                custom={i}
-                className="p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm hover:border-accent/15 transition-all duration-500"
-              >
-                <div className="flex gap-1 mb-6">
-                  {[...Array(5)].map((_, j) => (
-                    <Star key={j} className={`w-3.5 h-3.5 fill-accent text-accent${j === 0 ? ' drop-shadow-[0_0_4px_hsl(38_60%_55%/0.5)]' : ''}`} />
-                  ))}
-                </div>
-                <span className="font-display text-3xl text-accent/20 leading-none block mb-2">"</span>
-                <p className="font-body text-foreground/80 leading-relaxed mb-8 text-sm">{t.quote}</p>
-                <div>
-                  <p className="font-display font-medium text-sm">{t.name}</p>
-                  <p className="font-body text-xs text-muted-foreground">{t.role}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+            <span
+              className="font-display text-accent/25 leading-none block mb-2"
+              style={{ fontSize: 'clamp(6rem, 14vw, 10rem)' }}
+              aria-hidden
+            >
+              "
+            </span>
+
+            <blockquote
+              className="font-display italic font-light leading-[1.15] text-foreground/90 mb-12 -mt-8"
+              style={{ fontSize: 'clamp(1.75rem, 4vw, 3.25rem)', letterSpacing: '-0.015em' }}
+            >
+              RealVision cut my listing time in half. The quality is genuinely indistinguishable from professional photography — and my clients can't tell the difference.
+            </blockquote>
+
+            <div className="flex items-center justify-center gap-1 mb-6">
+              {[...Array(5)].map((_, j) => (
+                <Star key={j} className="w-3.5 h-3.5 fill-accent text-accent" />
+              ))}
+            </div>
+
+            <div
+              className="mx-auto mb-5"
+              style={{ width: 40, height: 1, background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.5), transparent)' }}
+            />
+
+            <p className="font-display text-lg font-medium tracking-wide">Sarah Mitchell</p>
+            <p className="font-body text-xs tracking-[0.2em] uppercase text-muted-foreground mt-1">
+              Luxury Real Estate · New York
+            </p>
+          </motion.div>
         </div>
       </section>
 
