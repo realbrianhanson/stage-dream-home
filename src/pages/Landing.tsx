@@ -65,7 +65,11 @@ const Landing = () => {
 
       {/* Hero */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        <motion.div className="absolute inset-0" style={{ opacity: heroOpacity, scale: heroScale }}>
+        <div className="absolute inset-0">
+          <img src={heroImage} alt="Luxury staged living room" className="w-full h-full object-cover" loading="eager" />
+          <div className="absolute inset-0 bg-foreground/60" />
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-transparent to-foreground/30" />
+        </div>
           <img src={heroImage} alt="Luxury staged living room" className="w-full h-full object-cover" loading="eager" />
           <div className="absolute inset-0 bg-foreground/60" />
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-transparent to-foreground/30" />
