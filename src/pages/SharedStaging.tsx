@@ -5,6 +5,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import Logo from "@/components/Logo";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SharedStaging {
   id: string;
