@@ -648,6 +648,8 @@ const RoomUploader = ({
                             <Loader2 className="w-5 h-5 animate-spin" />
                             {progressText || "Staging your room with AI..."}
                           </span>
+                        ) : mode === "remove" ? (
+                          "Remove Furniture"
                         ) : compareMode && selectedStyles.length > 1 ? (
                           `Stage in ${selectedStyles.length} Styles`
                         ) : (
