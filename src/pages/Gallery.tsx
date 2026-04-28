@@ -11,6 +11,7 @@ import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import UsageIndicator from "@/components/UsageIndicator";
 import ShareDialog from "@/components/ShareDialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ProgressiveImage } from "@/components/ui/progressive-image";
 
 interface Staging {
   id: string;
@@ -356,11 +357,11 @@ const Gallery = () => {
                                 onClick={() => setSelectedStaging(staging)}
                               >
                                 <div className="aspect-[4/3] relative overflow-hidden">
-                                  <img
+                                  <ProgressiveImage
                                     src={staging.staged_image_url}
                                     alt={`${staging.room_type} - ${staging.style}`}
-                                    className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700"
-                                    loading="lazy"
+                                    wrapperClassName="absolute inset-0"
+                                    className="group-hover:scale-[1.03] transition-transform duration-700"
                                   />
                                   <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-transparent" />
                                   {staging.share_token && (

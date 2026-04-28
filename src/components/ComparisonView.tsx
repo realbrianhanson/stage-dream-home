@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Loader2 } from "lucide-react";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import DownloadWithPresets from "@/components/DownloadWithPresets";
+import { ProgressiveImage } from "@/components/ui/progressive-image";
 import type { StagingResult } from "@/components/RoomUploader";
 
 interface ComparisonViewProps {
@@ -79,10 +80,11 @@ const ComparisonView = ({ original, results, pendingStyles = [], onReset, isWate
           className="max-w-xs mx-auto mb-10"
         >
           <div className="relative rounded-xl overflow-hidden border border-white/[0.06]">
-            <img
+            <ProgressiveImage
               src={original}
               alt="Original room"
-              className="w-full h-40 object-cover"
+              wrapperClassName="h-40"
+              eager
             />
             <div className="absolute bottom-2 left-2 bg-foreground/60 text-primary-foreground rounded-md px-2.5 py-1 text-xs font-body">
               Before
@@ -104,10 +106,11 @@ const ComparisonView = ({ original, results, pendingStyles = [], onReset, isWate
                 onClick={() => setSelectedResult(result)}
               >
                 <div className="relative aspect-[4/3] overflow-hidden">
-                  <img
+                  <ProgressiveImage
                     src={result.stagedImageUrl}
                     alt={`Staged — ${result.style}`}
-                    className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700"
+                    wrapperClassName="absolute inset-0"
+                    className="group-hover:scale-[1.03] transition-transform duration-700"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" />
                   <div className="absolute bottom-4 left-4">
