@@ -3,6 +3,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Clock, Palette, TrendingUp, Star, CheckCircle2, Sparkles } from "lucide-react";
 import Logo from "@/components/Logo";
+import SectionEyebrow from "@/components/SectionEyebrow";
 import heroImage from "@/assets/landing-hero.jpg";
 import beforeVacant from "@/assets/before-vacant.jpg";
 import afterStaged from "@/assets/after-staged.jpg";
