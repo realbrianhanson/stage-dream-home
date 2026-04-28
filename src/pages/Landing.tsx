@@ -80,13 +80,26 @@ const Landing = () => {
           <motion.h1
             initial="hidden"
             animate="visible"
-            variants={fadeUp}
-            custom={1}
-            className="font-display font-medium text-primary-foreground leading-[0.95] mb-8"
-            style={{ fontSize: 'clamp(3rem, 8vw, 6.5rem)' }}
+            className="font-display font-light text-primary-foreground leading-[0.95] mb-8"
+            style={{ fontSize: 'clamp(3rem, 8vw, 6.5rem)', letterSpacing: '-0.03em' }}
           >
-            Sell Properties{" "}
-            <span className="italic font-light text-accent">Faster</span>
+            {["Sell", "Properties"].map((word, idx) => (
+              <motion.span
+                key={word}
+                variants={fadeUp}
+                custom={idx + 1}
+                className="inline-block mr-[0.25em]"
+              >
+                {word}
+              </motion.span>
+            ))}
+            <motion.span
+              variants={fadeUp}
+              custom={3}
+              className="inline-block italic font-medium text-accent"
+            >
+              Faster
+            </motion.span>
           </motion.h1>
 
           <motion.p
