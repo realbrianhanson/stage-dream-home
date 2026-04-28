@@ -18,8 +18,9 @@ const queryClient = new QueryClient();
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   if (loading) return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen bg-background grain-overlay flex flex-col items-center justify-center gap-5">
+      <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" style={{ boxShadow: '0 0 12px hsl(38 60% 55% / 0.6)' }} />
+      <p className="font-body text-[10px] tracking-[0.4em] uppercase text-muted-foreground">Loading</p>
     </div>
   );
   if (!user) return <Navigate to="/auth" replace />;
