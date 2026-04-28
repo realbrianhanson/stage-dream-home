@@ -70,10 +70,6 @@ const Landing = () => {
           <div className="absolute inset-0 bg-foreground/60" />
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-transparent to-foreground/30" />
         </div>
-          <img src={heroImage} alt="Luxury staged living room" className="w-full h-full object-cover" loading="eager" />
-          <div className="absolute inset-0 bg-foreground/60" />
-          <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-transparent to-foreground/30" />
-        </motion.div>
 
         {/* Radial gold glow accents */}
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 30% 30%, hsl(38 60% 55% / 0.06) 0%, transparent 50%)' }} />
