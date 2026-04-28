@@ -262,37 +262,61 @@ const Pricing = () => {
             viewport={{ once: true }}
             variants={fadeUp}
             custom={1}
-            className="rounded-2xl border border-border bg-card/40 overflow-hidden"
+            className="rounded-2xl border border-border/60 bg-card/30 backdrop-blur-sm overflow-hidden shadow-soft"
           >
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left font-body text-xs font-medium uppercase tracking-wider text-muted-foreground px-6 py-5">Feature</th>
+                  <tr className="border-b border-border/60 bg-foreground/[0.02]">
+                    <th className="text-left font-body text-[10px] font-medium uppercase tracking-[0.25em] text-muted-foreground px-6 py-6">Feature</th>
                     {plans.map((p) => (
-                      <th key={p.name} className={`text-center font-display text-base font-medium px-6 py-5 ${p.highlight ? "text-accent" : ""}`}>
-                        {p.name}
+                      <th
+                        key={p.name}
+                        className={`text-center px-6 py-6 ${p.highlight ? "relative" : ""}`}
+                      >
+                        {p.highlight && (
+                          <div className="absolute top-0 left-1/2 -translate-x-1/2 h-px w-16" style={{ background: "linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.6), transparent)" }} />
+                        )}
+                        <div className="flex flex-col items-center gap-1">
+                          <span className={`font-display text-lg font-medium ${p.highlight ? "text-accent" : "text-foreground"}`}>
+                            {p.name}
+                          </span>
+                          {p.highlight && (
+                            <span className="font-body text-[9px] tracking-[0.3em] uppercase text-accent/70">
+                              Most Popular
+                            </span>
+                          )}
+                        </div>
                       </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {compareRows.map((row, i) => (
-                    <tr key={row.label} className={i !== compareRows.length - 1 ? "border-b border-border/50" : ""}>
-                      <td className="font-body text-sm text-foreground/80 px-6 py-4">{row.label}</td>
-                      {row.values.map((v, j) => (
-                        <td key={j} className="text-center px-6 py-4">
-                          {typeof v === "boolean" ? (
-                            v ? (
-                              <CheckCircle2 className="w-4 h-4 text-accent inline" />
+                    <tr
+                      key={row.label}
+                      className={`${i !== compareRows.length - 1 ? "border-b border-border/40" : ""} hover:bg-foreground/[0.015] transition-colors`}
+                    >
+                      <td className="font-body text-sm text-foreground/85 px-6 py-4">{row.label}</td>
+                      {row.values.map((v, j) => {
+                        const isHighlighted = plans[j]?.highlight;
+                        return (
+                          <td
+                            key={j}
+                            className={`text-center px-6 py-4 ${isHighlighted ? "bg-accent/[0.025]" : ""}`}
+                          >
+                            {typeof v === "boolean" ? (
+                              v ? (
+                                <CheckCircle2 className={`w-4 h-4 inline ${isHighlighted ? "text-accent" : "text-accent/70"}`} />
+                              ) : (
+                                <Minus className="w-4 h-4 text-muted-foreground/30 inline" />
+                              )
                             ) : (
-                              <Minus className="w-4 h-4 text-muted-foreground/40 inline" />
-                            )
-                          ) : (
-                            <span className="font-body text-sm text-foreground/80">{v}</span>
-                          )}
-                        </td>
-                      ))}
+                              <span className={`font-body text-sm ${isHighlighted ? "text-foreground font-medium" : "text-foreground/75"}`}>{v}</span>
+                            )}
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                 </tbody>
