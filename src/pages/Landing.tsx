@@ -379,8 +379,8 @@ const Landing = () => {
           <div className="grid md:grid-cols-3 gap-8">
             {[
               { name: "Starter", price: "Free", period: "", features: ["3 rooms / month", "Standard quality", "All 6 design styles", "Compare up to 3 styles", "Watermarked exports"], highlight: false },
-              { name: "Professional", price: "$29", period: "/mo", features: ["Unlimited rooms", "Ultra HD quality", "All 6+ styles", "Priority processing", "Download originals"], highlight: true },
-              { name: "Brokerage", price: "$99", period: "/mo", features: ["Everything in Pro", "Team accounts", "API access", "Custom branding", "Dedicated support"], highlight: false },
+              { name: "Professional", price: "$29", period: "/mo", features: ["Unlimited rooms", "Ultra HD quality", "All 6+ styles", "Priority processing", "Download originals (no watermark)"], highlight: true },
+              { name: "Studio", price: "$79", period: "/mo", features: ["Everything in Pro", "Higher monthly volume", "Priority email support", "Early access to new styles"], highlight: false },
             ].map((plan, i) => (
               <motion.div
                 key={plan.name}
@@ -391,8 +391,8 @@ const Landing = () => {
                 custom={i}
                 className={`rounded-2xl border relative ${
                   plan.highlight
-                    ? "p-10 border-accent/25 bg-accent/[0.04] text-primary-foreground shadow-glow-gold animate-pulse-glow"
-                    : "p-8 border-white/[0.06] bg-white/[0.02] backdrop-blur-sm"
+                    ? "p-10 border-accent/30 bg-foreground text-primary-foreground shadow-glow-gold animate-pulse-glow"
+                    : "p-8 border-border bg-card/40 backdrop-blur-sm"
                 }`}
               >
                 {plan.highlight && (
@@ -409,19 +409,19 @@ const Landing = () => {
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-center gap-3 font-body text-sm">
                       <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-accent" />
-                      <span className={plan.highlight ? "text-primary-foreground/80" : "text-muted-foreground"}>{f}</span>
+                      <span className={plan.highlight ? "text-primary-foreground/85" : "text-foreground/80"}>{f}</span>
                     </li>
                   ))}
                 </ul>
                 <button
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/pricing")}
                   className={`w-full font-body font-semibold text-sm py-3.5 rounded-lg transition-all ${
                     plan.highlight
                       ? "gold-gradient-animated text-accent-foreground hover:opacity-90"
-                      : "border border-border hover:border-accent/30 hover:text-accent text-foreground"
+                      : "border border-border hover:border-accent/40 hover:text-accent text-foreground"
                   }`}
                 >
-                  Get Started
+                  See Details
                 </button>
               </motion.div>
             ))}
