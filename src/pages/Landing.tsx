@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Clock, Palette, TrendingUp, Star, CheckCircle2, Sparkles } from "lucide-react";
+import { ArrowRight, Clock, Palette, TrendingUp, Star, Sparkles } from "lucide-react";
 import Logo from "@/components/Logo";
+import SectionEyebrow from "@/components/SectionEyebrow";
 import heroImage from "@/assets/landing-hero.jpg";
 import beforeVacant from "@/assets/before-vacant.jpg";
 import afterStaged from "@/assets/after-staged.jpg";
@@ -80,13 +81,26 @@ const Landing = () => {
           <motion.h1
             initial="hidden"
             animate="visible"
-            variants={fadeUp}
-            custom={1}
-            className="font-display font-medium text-primary-foreground leading-[0.95] mb-8"
-            style={{ fontSize: 'clamp(3rem, 8vw, 6.5rem)' }}
+            className="font-display font-light text-primary-foreground leading-[0.95] mb-8"
+            style={{ fontSize: 'clamp(3rem, 8vw, 6.5rem)', letterSpacing: '-0.03em' }}
           >
-            Sell Properties{" "}
-            <span className="italic font-light text-accent">Faster</span>
+            {["Sell", "Properties"].map((word, idx) => (
+              <motion.span
+                key={word}
+                variants={fadeUp}
+                custom={idx + 1}
+                className="inline-block mr-[0.25em]"
+              >
+                {word}
+              </motion.span>
+            ))}
+            <motion.span
+              variants={fadeUp}
+              custom={3}
+              className="inline-block italic font-medium text-accent"
+            >
+              Faster
+            </motion.span>
           </motion.h1>
 
           <motion.p
@@ -158,6 +172,24 @@ const Landing = () => {
           </motion.div>
         </motion.div>
       </section>
+      {/* Trusted By */}
+      <section className="py-16 px-6 bg-background border-b border-border/40">
+        <div className="max-w-6xl mx-auto">
+          <p className="text-center font-body text-[10px] tracking-[0.4em] uppercase text-muted-foreground mb-8">
+            Trusted by agents at
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 opacity-60">
+            {["COMPASS", "SOTHEBY'S", "COLDWELL BANKER", "DOUGLAS ELLIMAN", "CORCORAN", "KELLER WILLIAMS"].map((brand) => (
+              <span
+                key={brand}
+                className="font-display text-xl md:text-2xl font-light tracking-[0.15em] text-foreground/50 hover:text-foreground/80 transition-colors"
+              >
+                {brand}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Before/After Section */}
       <section className="py-32 px-6 bg-background relative">
@@ -171,7 +203,7 @@ const Landing = () => {
             variants={fadeUp}
             className="text-center mb-16"
           >
-            <p className="text-accent font-body text-xs tracking-[0.3em] uppercase mb-4">The Magic</p>
+            <SectionEyebrow number="01" label="The Magic" />
             <h2 className="font-display text-4xl md:text-6xl font-medium mb-6">
               Empty to <span className="italic text-accent">Extraordinary</span>
             </h2>
@@ -218,7 +250,7 @@ const Landing = () => {
             variants={fadeUp}
             className="text-center mb-20"
           >
-            <p className="text-accent font-body text-xs tracking-[0.3em] uppercase mb-4">Why RealVision</p>
+            <SectionEyebrow number="02" label="Why RealVision" />
             <h2 className="font-display text-4xl md:text-6xl font-medium">
               The Future of <span className="italic text-accent">Staging</span>
             </h2>
@@ -264,7 +296,7 @@ const Landing = () => {
             variants={fadeUp}
             className="text-center mb-16"
           >
-            <p className="text-accent font-body text-xs tracking-[0.3em] uppercase mb-4">Portfolio</p>
+            <SectionEyebrow number="03" label="Portfolio" />
             <h2 className="font-display text-4xl md:text-6xl font-medium mb-6">
               Stunning <span className="italic text-accent">Results</span>
             </h2>
@@ -318,7 +350,7 @@ const Landing = () => {
             variants={fadeUp}
             className="text-center mb-16"
           >
-            <p className="text-accent font-body text-xs tracking-[0.3em] uppercase mb-4">Testimonials</p>
+            <SectionEyebrow number="04" label="Testimonials" />
             <h2 className="font-display text-4xl md:text-6xl font-medium">
               Trusted by <span className="italic text-accent">Top Agents</span>
             </h2>
@@ -370,13 +402,13 @@ const Landing = () => {
             variants={fadeUp}
             className="text-center mb-16"
           >
-            <p className="text-accent font-body text-xs tracking-[0.3em] uppercase mb-4">Pricing</p>
+            <SectionEyebrow number="05" label="Pricing" />
             <h2 className="font-display text-4xl md:text-6xl font-medium mb-6">
               Simple, <span className="italic text-accent">Transparent</span>
             </h2>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8 items-stretch">
             {[
               { name: "Starter", price: "Free", period: "", features: ["3 rooms / month", "Standard quality", "All 6 design styles", "Compare up to 3 styles", "Watermarked exports"], highlight: false },
               { name: "Professional", price: "$29", period: "/mo", features: ["Unlimited rooms", "Ultra HD quality", "All 6+ styles", "Priority processing", "Download originals (no watermark)"], highlight: true },
@@ -389,36 +421,37 @@ const Landing = () => {
                 viewport={{ once: true, margin: "-50px" }}
                 variants={fadeUp}
                 custom={i}
-                className={`rounded-2xl border relative ${
+                className={`p-10 rounded-2xl relative flex flex-col ${
                   plan.highlight
-                    ? "p-10 border-accent/30 bg-foreground text-primary-foreground shadow-glow-gold animate-pulse-glow"
-                    : "p-8 border-border bg-card/40 backdrop-blur-sm"
+                    ? "bg-foreground text-primary-foreground border border-accent/40 shadow-glow-gold ring-1 ring-accent/20"
+                    : "border border-border bg-gradient-to-b from-card/60 to-background/30 backdrop-blur-sm"
                 }`}
               >
                 {plan.highlight && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 gold-gradient text-accent-foreground font-body text-xs font-semibold px-4 py-1 rounded-full">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 gold-gradient text-accent-foreground font-body text-[10px] tracking-[0.25em] uppercase font-semibold px-4 py-1 rounded-full">
                     Most Popular
                   </div>
                 )}
-                <p className="font-display text-lg font-medium mb-2">{plan.name}</p>
+                <p className={`font-display text-lg font-medium mb-2 ${plan.highlight ? "text-primary-foreground" : ""}`}>{plan.name}</p>
                 <div className="flex items-baseline gap-1 mb-8">
-                  <span className={`font-display text-4xl font-semibold ${plan.highlight ? "text-accent" : ""}`}>{plan.price}</span>
-                  <span className={`font-body text-sm ${plan.highlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>{plan.period}</span>
+                  <span className={`font-display text-5xl font-light tracking-tight ${plan.highlight ? "text-accent" : "text-foreground"}`}>{plan.price}</span>
+                  <span className={`font-body text-sm ${plan.highlight ? "text-primary-foreground/50" : "text-muted-foreground"}`}>{plan.period}</span>
                 </div>
-                <ul className="space-y-3 mb-8">
+                <div className={`h-px w-12 mb-6 ${plan.highlight ? "bg-accent/40" : "bg-accent/30"}`} />
+                <ul className="space-y-3.5 mb-10 flex-grow">
                   {plan.features.map((f) => (
-                    <li key={f} className="flex items-center gap-3 font-body text-sm">
-                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-accent" />
-                      <span className={plan.highlight ? "text-primary-foreground/85" : "text-foreground/80"}>{f}</span>
+                    <li key={f} className="flex items-start gap-3 font-body text-sm">
+                      <span className={`mt-[7px] flex-shrink-0 w-2 h-px ${plan.highlight ? "bg-accent" : "bg-accent"}`} />
+                      <span className={plan.highlight ? "text-primary-foreground/80" : "text-foreground/75"}>{f}</span>
                     </li>
                   ))}
                 </ul>
                 <button
                   onClick={() => navigate("/pricing")}
-                  className={`w-full font-body font-semibold text-sm py-3.5 rounded-lg transition-all ${
+                  className={`w-full font-body font-semibold text-xs tracking-[0.2em] uppercase py-4 rounded-lg transition-all ${
                     plan.highlight
                       ? "gold-gradient-animated text-accent-foreground hover:opacity-90"
-                      : "border border-border hover:border-accent/40 hover:text-accent text-foreground"
+                      : "border border-border hover:border-accent/50 hover:text-accent text-foreground"
                   }`}
                 >
                   See Details
