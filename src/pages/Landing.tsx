@@ -31,6 +31,10 @@ const Landing = () => {
   const glowX = useMotionValue(50);
   const glowY = useMotionValue(50);
   const highlightCardRef = useRef<HTMLDivElement>(null);
+  const glowBackground = useTransform(
+    [glowX, glowY],
+    ([x, y]) => `radial-gradient(400px circle at ${x}% ${y}%, hsl(38 60% 55% / 0.18), transparent 60%)`
+  );
 
   const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
