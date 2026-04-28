@@ -102,6 +102,16 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  html, body {
+    overflow-x: hidden;
+  }
+
+  button, a {
+    -webkit-tap-highlight-color: transparent;
   }
 
   h1, h2, h3, h4, h5, h6 {
