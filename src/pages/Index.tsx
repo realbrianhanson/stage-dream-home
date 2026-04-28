@@ -104,29 +104,32 @@ const Index = () => {
           />
         )}
       </AnimatePresence>
-      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 backdrop-blur-md bg-foreground/40 border-b border-border/10">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <nav className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 py-3 sm:py-4 backdrop-blur-md bg-foreground/40 border-b border-border/10">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
           <Logo light />
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {usage && (
-              <UsageIndicator
-                plan={usage.plan}
-                used={usage.stagings_this_month}
-                limit={freeLimit}
-              />
+              <div className="hidden sm:block">
+                <UsageIndicator
+                  plan={usage.plan}
+                  used={usage.stagings_this_month}
+                  limit={freeLimit}
+                />
+              </div>
             )}
             <button
               onClick={scrollToUpload}
-              className="font-body text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+              className="hidden md:inline font-body text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors"
             >
               Get Started →
             </button>
             <button
               onClick={() => navigate("/gallery")}
-              className="font-body text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors flex items-center gap-1.5"
+              className="font-body text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors flex items-center gap-1.5 min-h-[44px] px-1"
+              aria-label="My Stagings"
             >
-              <ImageIcon className="w-3.5 h-3.5" />
-              My Stagings
+              <ImageIcon className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+              <span className="hidden sm:inline">My Stagings</span>
               {stagingCount > 0 && (
                 <span className="ml-1 text-[10px] font-semibold bg-accent/20 text-accent border border-accent/30 rounded-full px-1.5 py-0.5 leading-none">
                   {stagingCount}
@@ -135,8 +138,9 @@ const Index = () => {
             </button>
             <button
               onClick={() => setShowOnboarding(true)}
-              className="font-body text-primary-foreground/50 hover:text-primary-foreground transition-colors"
+              className="font-body text-primary-foreground/50 hover:text-primary-foreground transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
               title="Help & Tour"
+              aria-label="Help & Tour"
             >
               <HelpCircle className="w-4 h-4" />
             </button>
@@ -145,10 +149,11 @@ const Index = () => {
                 await signOut();
                 navigate("/");
               }}
-              className="font-body text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors flex items-center gap-1.5"
+              className="font-body text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors flex items-center gap-1.5 min-h-[44px] px-1"
+              aria-label="Sign Out"
             >
-              <LogOut className="w-3.5 h-3.5" />
-              Sign Out
+              <LogOut className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+              <span className="hidden sm:inline">Sign Out</span>
             </button>
           </div>
         </div>
