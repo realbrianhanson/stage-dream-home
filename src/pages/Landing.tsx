@@ -27,6 +27,16 @@ const Landing = () => {
   const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 1.1]);
 
   const [scrolled, setScrolled] = useState(false);
+  const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
+  const glowX = useMotionValue(50);
+  const glowY = useMotionValue(50);
+  const highlightCardRef = useRef<HTMLDivElement>(null);
+
+  const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    glowX.set(((e.clientX - rect.left) / rect.width) * 100);
+    glowY.set(((e.clientY - rect.top) / rect.height) * 100);
+  };
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 60);
