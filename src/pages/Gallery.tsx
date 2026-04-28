@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Trash2, X, Upload, ArrowLeft, LogOut, Download, RefreshCw, Search, ChevronDown, ChevronRight } from "lucide-react";
+import { Trash2, X, Upload, ArrowLeft, LogOut, Download, RefreshCw, Search, ChevronDown, ChevronRight, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUsage } from "@/hooks/useUsage";
@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import Logo from "@/components/Logo";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import UsageIndicator from "@/components/UsageIndicator";
+import ShareDialog from "@/components/ShareDialog";
 
 interface Staging {
   id: string;
@@ -19,6 +20,7 @@ interface Staging {
   property_address: string | null;
   custom_instructions: string | null;
   created_at: string;
+  share_token: string | null;
 }
 
 const Gallery = () => {
@@ -29,6 +31,7 @@ const Gallery = () => {
   const [loading, setLoading] = useState(true);
   const [selectedStaging, setSelectedStaging] = useState<Staging | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [shareStaging, setShareStaging] = useState<Staging | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -327,6 +330,12 @@ const Gallery = () => {
                                     loading="lazy"
                                   />
                                   <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-transparent" />
+                                  {staging.share_token && (
+                                    <div className="absolute top-3 left-3 flex items-center gap-1 bg-accent/90 text-accent-foreground rounded-full px-2 py-0.5 font-body text-[10px] font-semibold tracking-wider uppercase">
+                                      <Share2 className="w-2.5 h-2.5" />
+                                      Shared
+                                    </div>
+                                  )}
                                   <div className="absolute bottom-4 left-4 right-4">
                                     <div className="flex items-center gap-2 mb-1">
                                       <span className="inline-block w-1 h-1 rounded-full bg-accent" />
@@ -345,6 +354,16 @@ const Gallery = () => {
 
                                 {/* Action buttons */}
                                 <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setShareStaging(staging);
+                                    }}
+                                    className={`w-8 h-8 rounded-full text-primary-foreground flex items-center justify-center ${staging.share_token ? "bg-accent/80 hover:bg-accent" : "bg-foreground/60 hover:bg-accent/80"}`}
+                                    title={staging.share_token ? "Manage share link" : "Share publicly"}
+                                  >
+                                    <Share2 className="w-3.5 h-3.5" />
+                                  </button>
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -434,6 +453,21 @@ const Gallery = () => {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Share dialog */}
+      <AnimatePresence>
+        {shareStaging && (
+          <ShareDialog
+            stagingId={shareStaging.id}
+            initialToken={shareStaging.share_token}
+            onClose={() => setShareStaging(null)}
+            onTokenChange={(token) => {
+              setStagings((prev) => prev.map((s) => s.id === shareStaging.id ? { ...s, share_token: token } : s));
+              setShareStaging((prev) => prev ? { ...prev, share_token: token } : prev);
+            }}
+          />
         )}
       </AnimatePresence>
 

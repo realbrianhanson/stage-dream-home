@@ -23,6 +23,7 @@ export type Database = {
           original_image_url: string
           property_address: string | null
           room_type: string
+          share_token: string | null
           staged_image_url: string
           style: string
           user_id: string
@@ -35,6 +36,7 @@ export type Database = {
           original_image_url: string
           property_address?: string | null
           room_type: string
+          share_token?: string | null
           staged_image_url: string
           style: string
           user_id: string
@@ -47,6 +49,7 @@ export type Database = {
           original_image_url?: string
           property_address?: string | null
           room_type?: string
+          share_token?: string | null
           staged_image_url?: string
           style?: string
           user_id?: string
