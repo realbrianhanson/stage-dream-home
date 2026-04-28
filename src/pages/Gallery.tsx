@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Trash2, X, Upload, ArrowLeft, LogOut, Download, RefreshCw, Search, ChevronDown, ChevronRight } from "lucide-react";
+import { Trash2, X, Upload, ArrowLeft, LogOut, Download, RefreshCw, Search, ChevronDown, ChevronRight, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUsage } from "@/hooks/useUsage";
@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import Logo from "@/components/Logo";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import UsageIndicator from "@/components/UsageIndicator";
+import ShareDialog from "@/components/ShareDialog";
 
 interface Staging {
   id: string;
@@ -19,6 +20,7 @@ interface Staging {
   property_address: string | null;
   custom_instructions: string | null;
   created_at: string;
+  share_token: string | null;
 }
 
 const Gallery = () => {
@@ -29,6 +31,7 @@ const Gallery = () => {
   const [loading, setLoading] = useState(true);
   const [selectedStaging, setSelectedStaging] = useState<Staging | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [shareStaging, setShareStaging] = useState<Staging | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
