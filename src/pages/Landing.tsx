@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { motion, useScroll, useTransform, useMotionValue } from "framer-motion";
+import { motion, useTransform, useMotionValue } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Clock, Palette, TrendingUp, Star, Sparkles } from "lucide-react";
+import { ArrowRight, Clock, Palette, TrendingUp, Star, Sparkles, Check } from "lucide-react";
 import Logo from "@/components/Logo";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import heroImage from "@/assets/landing-hero.jpg";
@@ -22,10 +22,6 @@ const fadeUp = {
 
 const Landing = () => {
   const navigate = useNavigate();
-  const { scrollYProgress } = useScroll();
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
-  const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 1.1]);
-
   const [scrolled, setScrolled] = useState(false);
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
   const glowX = useMotionValue(50);
@@ -69,11 +65,11 @@ const Landing = () => {
 
       {/* Hero */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        <motion.div className="absolute inset-0" style={{ opacity: heroOpacity, scale: heroScale }}>
+        <div className="absolute inset-0">
           <img src={heroImage} alt="Luxury staged living room" className="w-full h-full object-cover" loading="eager" />
           <div className="absolute inset-0 bg-foreground/60" />
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-transparent to-foreground/30" />
-        </motion.div>
+        </div>
 
         {/* Radial gold glow accents */}
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 30% 30%, hsl(38 60% 55% / 0.06) 0%, transparent 50%)' }} />
@@ -97,7 +93,7 @@ const Landing = () => {
             className="font-display font-light text-primary-foreground leading-[0.95] mb-8"
             style={{ fontSize: 'clamp(3rem, 8vw, 6.5rem)', letterSpacing: '-0.03em' }}
           >
-            {["Sell", "Properties"].map((word, idx) => (
+            {["Every", "Room,"].map((word, idx) => (
               <motion.span
                 key={word}
                 variants={fadeUp}
@@ -112,7 +108,7 @@ const Landing = () => {
               custom={3}
               className="inline-block italic font-medium text-accent"
             >
-              Faster
+              Reimagined.
             </motion.span>
           </motion.h1>
 
@@ -121,10 +117,10 @@ const Landing = () => {
             animate="visible"
             variants={fadeUp}
             custom={2}
-            className="font-body text-lg md:text-xl text-primary-foreground/70 max-w-2xl mx-auto mb-12 leading-relaxed"
+            className="font-body text-lg md:text-xl text-primary-foreground/75 max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            Transform vacant rooms into stunning, fully-furnished spaces in seconds.
-            Our AI creates photorealistic staging that sells.
+            AI-staged interiors so convincing, buyers fall in love before they walk through the door.
+            Photorealistic results in under thirty seconds — for a fraction of the cost of physical staging.
           </motion.p>
 
           <motion.div
@@ -138,15 +134,27 @@ const Landing = () => {
               onClick={() => navigate("/auth")}
               className="gold-gradient-animated text-accent-foreground font-body font-semibold text-base px-10 py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity flex items-center gap-2 group"
             >
-              Start Staging Free
+              Stage 3 Rooms Free
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
             <a
               href="#showcase"
-              className="font-body text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors border border-primary-foreground/20 px-8 py-4 rounded-lg hover:border-primary-foreground/40"
+              className="font-body text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors border border-primary-foreground/30 px-8 py-4 rounded-lg hover:border-accent/60 hover:bg-primary-foreground/5"
             >
-              See Examples
+              See the Work
             </a>
+          </motion.div>
+
+          {/* Microcopy */}
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={fadeUp}
+            custom={4}
+            className="mt-5 flex items-center justify-center gap-2 text-primary-foreground/60"
+          >
+            <Check className="w-3.5 h-3.5 text-accent" />
+            <span className="font-body text-xs tracking-wide">No credit card · 3 free stagings · Results in 30s</span>
           </motion.div>
 
           {/* Trust bar */}
@@ -154,10 +162,10 @@ const Landing = () => {
             initial="hidden"
             animate="visible"
             variants={fadeUp}
-            custom={4}
-            className="mt-20 border-t border-b border-primary-foreground/5 py-6 flex flex-wrap items-center justify-center gap-8 text-primary-foreground/40"
+            custom={5}
+            className="mt-16 border-t border-b border-primary-foreground/15 py-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-primary-foreground/75"
           >
-            {["500+ Agents", "10,000+ Rooms Staged", "4.9★ Rating", "< 30s Processing"].map((stat) => (
+            {["500+ Agents", "10,000+ Rooms Staged", "4.9★ Rating", "Under 30s"].map((stat) => (
               <span key={stat} className="font-body text-sm tracking-wide">{stat}</span>
             ))}
           </motion.div>
@@ -529,34 +537,68 @@ const Landing = () => {
       {/* Divider */}
       <div className="max-w-3xl mx-auto" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.15), transparent)' }} />
 
-      {/* Final CTA */}
-      <section className="py-32 px-6 relative overflow-hidden">
-        <div className="absolute inset-0">
-          <img src={heroImage} alt="" className="w-full h-full object-cover" loading="lazy" />
-          <div className="absolute inset-0 bg-gradient-to-b from-foreground/60 via-foreground/80 to-foreground/95" />
-        </div>
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, hsl(38 60% 55% / 0.06) 0%, transparent 50%)' }} />
+      {/* Final CTA — editorial card on parchment */}
+      <section className="py-32 px-6 bg-background relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, hsl(38 60% 55% / 0.05) 0%, transparent 60%)' }} />
         <motion.div
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true }}
+          viewport={{ once: true, margin: "-100px" }}
           variants={fadeUp}
-          className="relative z-10 text-center max-w-3xl mx-auto"
+          className="relative z-10 max-w-5xl mx-auto"
         >
-          <div className="mx-auto mb-8" style={{ width: 60, height: 1, background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.4), transparent)' }} />
-          <h2 className="font-display text-4xl md:text-6xl lg:text-7xl font-medium text-primary-foreground mb-6 leading-[1.05]">
-            Ready to <span className="italic text-accent">Transform</span> Your Listings?
-          </h2>
-          <p className="font-body text-lg text-primary-foreground/60 mb-10 max-w-xl mx-auto">
-            Join hundreds of top-performing agents who close deals faster with AI-powered virtual staging.
-          </p>
-          <button
-            onClick={() => navigate("/auth")}
-            className="gold-gradient-animated text-accent-foreground font-body font-semibold text-base px-12 py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity inline-flex items-center gap-2 group"
-          >
-            Start Staging Free
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </button>
+          <div className="relative rounded-3xl overflow-hidden border border-accent/20 bg-gradient-to-br from-card via-background to-card/60 shadow-dramatic gold-hairline p-10 md:p-16">
+            <div className="grid md:grid-cols-[1.3fr_1fr] gap-10 md:gap-16 items-center">
+              {/* Left: editorial copy */}
+              <div>
+                <SectionEyebrow number="06" label="Begin" />
+                <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-medium mb-6 leading-[1.02] text-left">
+                  Your next listing,<br />
+                  <span className="italic text-accent">already staged.</span>
+                </h2>
+                <p className="font-body text-foreground/70 text-base md:text-lg mb-8 leading-relaxed">
+                  Skip the warehouses, the movers, the four-figure invoices.
+                  Upload a photo tonight — wake up to a portfolio that sells.
+                </p>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <button
+                    onClick={() => navigate("/auth")}
+                    className="gold-gradient-animated text-accent-foreground font-body font-semibold text-sm px-10 py-4 rounded-lg tracking-[0.15em] uppercase hover:opacity-90 transition-opacity inline-flex items-center gap-2 group"
+                  >
+                    Stage 3 Rooms Free
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                  <span className="font-body text-xs text-muted-foreground tracking-wide">
+                    No credit card required
+                  </span>
+                </div>
+              </div>
+
+              {/* Right: cost comparison */}
+              <div className="relative md:border-l md:border-accent/15 md:pl-12">
+                <p className="font-body text-[10px] tracking-[0.4em] uppercase text-accent mb-6">
+                  The Math
+                </p>
+                <div className="space-y-5">
+                  <div className="flex items-baseline justify-between pb-4 border-b border-border/40">
+                    <span className="font-body text-sm text-muted-foreground">Traditional staging</span>
+                    <span className="font-display text-2xl font-light text-foreground/60 line-through decoration-accent/50">$2,400<span className="text-xs">/mo</span></span>
+                  </div>
+                  <div className="flex items-baseline justify-between pb-4 border-b border-border/40">
+                    <span className="font-body text-sm text-muted-foreground">Photographer + props</span>
+                    <span className="font-display text-2xl font-light text-foreground/60 line-through decoration-accent/50">$800<span className="text-xs">/shoot</span></span>
+                  </div>
+                  <div className="flex items-baseline justify-between pt-2">
+                    <span className="font-body text-sm font-semibold text-foreground">RealVision</span>
+                    <span className="font-display text-3xl font-medium text-accent">$29<span className="text-base text-muted-foreground">/mo</span></span>
+                  </div>
+                </div>
+                <p className="font-body text-[11px] tracking-wide text-muted-foreground mt-6 italic">
+                  Same-day. Unlimited revisions. No contracts.
+                </p>
+              </div>
+            </div>
+          </div>
         </motion.div>
       </section>
 
