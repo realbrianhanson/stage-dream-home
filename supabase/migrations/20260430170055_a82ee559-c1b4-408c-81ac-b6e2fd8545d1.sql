@@ -1,0 +1,1 @@
+UPDATE public.usage SET plan = 'pro', stagings_this_month = 0, month_reset_at = now() WHERE user_id = '6a1db5c8-c62a-4ddb-abe7-b2f5d9c671c6';
