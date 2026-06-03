@@ -48,6 +48,25 @@ serve(async (req) => {
 
     const userPlan = usageData?.plan || "free";
 
+    // Server-side quota enforcement (atomic check + increment)
+    const { data: allowed, error: quotaError } = await supabaseClient.rpc(
+      "check_and_increment_staging",
+      { p_user_id: userId }
+    );
+    if (quotaError) {
+      console.error("Quota RPC error:", quotaError);
+      return new Response(
+        JSON.stringify({ error: "Could not verify staging quota. Please try again." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    if (allowed !== true) {
+      return new Response(
+        JSON.stringify({ error: "You've reached your free staging limit this month. Upgrade for unlimited stagings." }),
+        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { image, roomType, style, customInstructions, aspectRatio, mode } = await req.json();
 
     if (!image) {

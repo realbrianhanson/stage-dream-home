@@ -95,6 +95,18 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: boolean
       }
+      get_shared_staging: {
+        Args: { p_token: string }
+        Returns: {
+          created_at: string
+          id: string
+          original_image_url: string
+          property_address: string
+          room_type: string
+          staged_image_url: string
+          style: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

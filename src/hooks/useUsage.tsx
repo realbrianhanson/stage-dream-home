@@ -20,20 +20,11 @@ export const useUsage = () => {
   const fetchOrCreate = useCallback(async () => {
     if (!user) return;
 
-    let { data, error } = await supabase
+    const { data } = await supabase
       .from("usage")
       .select("plan, stagings_this_month, month_reset_at, onboarding_complete")
       .eq("user_id", user.id)
       .maybeSingle();
-
-    if (!data && !error) {
-      const { data: inserted } = await supabase
-        .from("usage")
-        .insert({ user_id: user.id })
-        .select("plan, stagings_this_month, month_reset_at, onboarding_complete")
-        .single();
-      data = inserted;
-    }
 
     if (data) {
       // Client-side reset check for display purposes only
