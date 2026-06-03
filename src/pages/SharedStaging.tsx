@@ -27,15 +27,12 @@ const SharedStagingPage = () => {
   useEffect(() => {
     if (!token) return;
     const load = async () => {
-      const { data, error } = await supabase
-        .from("stagings")
-        .select("id, original_image_url, staged_image_url, room_type, style, property_address, created_at")
-        .eq("share_token", token)
-        .maybeSingle();
-      if (error || !data) {
+      const { data, error } = await supabase.rpc("get_shared_staging", { p_token: token });
+      const row = Array.isArray(data) ? data[0] : null;
+      if (error || !row) {
         setNotFound(true);
       } else {
-        setStaging(data);
+        setStaging(row as SharedStaging);
       }
       setLoading(false);
     };
