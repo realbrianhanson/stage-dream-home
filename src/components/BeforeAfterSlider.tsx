@@ -369,8 +369,8 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
         </motion.div>
 
         {/* Actions */}
-        <div className="flex justify-center gap-4 mt-8">
-          <DownloadWithPresets imageUrl={after} filename="staged-room" variant="gold" isWatermarked={isWatermarked} mlsDisclosure={mlsDisclosure} />
+        <div className="flex justify-center gap-4 mt-8 flex-wrap">
+          <DownloadWithPresets imageUrl={currentAfter} filename="staged-room" variant="gold" isWatermarked={currentWatermarked} mlsDisclosure={mlsDisclosure} />
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -393,7 +393,7 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
         </div>
 
         {/* Upgrade nudge for free users */}
-        {isWatermarked && (
+        {currentWatermarked && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -410,6 +410,126 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
               </button>{" "}
               for clean, watermark-free exports.
             </p>
+          </motion.div>
+        )}
+
+        {/* Refine section */}
+        {refineContext && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mt-12 pt-8 border-t border-white/[0.06] max-w-2xl mx-auto"
+          >
+            <p className="text-accent font-body text-xs tracking-[0.3em] uppercase text-center mb-3">
+              Refine
+            </p>
+            <p className="text-center font-body text-sm text-muted-foreground mb-6">
+              Not quite right? Tweak this result or regenerate with the same settings.
+            </p>
+
+            <div className="flex flex-wrap justify-center gap-2 mb-4">
+              {REFINE_CHIPS.map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  disabled={refining}
+                  onClick={() => addChip(chip)}
+                  className="border border-white/[0.06] hover:border-accent/25 px-3 py-1.5 rounded-full text-xs font-body text-muted-foreground hover:text-accent transition-all disabled:opacity-40"
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+
+            <div className="mb-4">
+              <input
+                type="text"
+                value={freeText}
+                maxLength={120}
+                disabled={refining}
+                onChange={(e) => setFreeText(e.target.value.slice(0, 120))}
+                placeholder="Or describe your own change (e.g. swap the sofa for leather)"
+                className="w-full font-body text-sm bg-white/[0.02] border border-white/[0.08] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all placeholder:text-muted-foreground/50 disabled:opacity-50"
+              />
+              <div className="text-right text-[10px] text-muted-foreground/50 font-body mt-1">
+                {freeText.length}/120
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <motion.button
+                whileHover={{ scale: refining ? 1 : 1.01 }}
+                whileTap={{ scale: refining ? 1 : 0.99 }}
+                onClick={handleRefine}
+                disabled={refining || !freeText.trim()}
+                className="gold-gradient-animated text-accent-foreground font-body font-semibold text-sm py-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 flex items-center justify-center gap-2"
+              >
+                {refining ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4" />
+                )}
+                Refine This Result
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: refining ? 1 : 1.01 }}
+                whileTap={{ scale: refining ? 1 : 0.99 }}
+                onClick={handleRegenerate}
+                disabled={refining}
+                className="border border-border font-body font-semibold text-sm py-3 rounded-lg text-muted-foreground hover:border-accent/30 hover:text-accent transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Regenerate
+              </motion.button>
+            </div>
+
+            <p className="text-center font-body text-[11px] text-muted-foreground/60 mt-3">
+              Uses 1 staging
+              {isFree && ` · ${remainingStagings} remaining on Free`}
+            </p>
+
+            {!canStage && (
+              <div className="text-center mt-4 py-3 border border-white/[0.06] rounded-lg bg-white/[0.02]">
+                <p className="font-body text-xs text-muted-foreground">
+                  You've used all {freeLimit} free stagings this month.{" "}
+                  <button
+                    onClick={() => navigate("/pricing")}
+                    className="text-accent hover:underline"
+                  >
+                    Upgrade
+                  </button>{" "}
+                  for unlimited refines.
+                </p>
+              </div>
+            )}
+
+            {versions.length > 1 && (
+              <div className="mt-8">
+                <p className="font-body text-[10px] tracking-[0.3em] uppercase text-muted-foreground/70 mb-3 text-center">
+                  Versions
+                </p>
+                <div className="flex gap-3 overflow-x-auto pb-2 justify-center flex-wrap">
+                  {versions.map((v, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setActiveIdx(i)}
+                      title={v.label}
+                      className={`relative shrink-0 w-20 h-20 rounded-lg overflow-hidden border transition-all ${
+                        i === activeIdx
+                          ? "border-accent shadow-glow-gold"
+                          : "border-white/[0.06] opacity-60 hover:opacity-100"
+                      }`}
+                    >
+                      <img src={v.url} alt={v.label} className="w-full h-full object-cover" />
+                      <span className="absolute bottom-0 left-0 right-0 bg-foreground/70 text-primary-foreground text-[9px] font-body py-0.5 truncate px-1 text-center">
+                        v{i + 1}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </div>
