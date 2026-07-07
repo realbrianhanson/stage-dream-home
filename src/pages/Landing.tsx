@@ -149,7 +149,7 @@ const Landing = () => {
             custom={5}
             className="mt-16 border-t border-b border-primary-foreground/15 py-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-primary-foreground/75"
           >
-            {["Under 30s", "6 Design Styles", "Free to Try"].map((stat) => (
+            {["Under 30s", "12 Design Styles", "Free to Try"].map((stat) => (
               <span key={stat} className="font-body text-sm tracking-wide">{stat}</span>
             ))}
           </motion.div>
