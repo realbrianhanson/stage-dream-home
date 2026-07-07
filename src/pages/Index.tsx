@@ -65,8 +65,8 @@ const Index = () => {
     document.getElementById("upload-section")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleResult = (original: string, staged: string, isWatermarked?: boolean) => {
-    setResult({ type: "single", original, staged, isWatermarked });
+  const handleResult = (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean) => {
+    setResult({ type: "single", original, staged, isWatermarked, mlsDisclosure });
     setStagingCount((prev) => prev + 1);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
