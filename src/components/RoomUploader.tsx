@@ -554,7 +554,7 @@ const RoomUploader = ({
                       </div>
                       {compareMode && (
                         <p className="font-body text-[11px] text-muted-foreground/60 mt-2">
-                          Select 2–3 styles · Each counts as one staging
+                          Select 2–{maxCompareStyles} styles · Each counts as one staging
                         </p>
                       )}
                     </div>
