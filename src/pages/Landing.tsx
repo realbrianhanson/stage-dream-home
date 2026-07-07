@@ -535,20 +535,7 @@ const Landing = () => {
         </motion.div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/[0.04] py-12 px-6 bg-foreground/[0.03]">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <Logo />
-          <p className="font-body text-sm text-muted-foreground">
-            © 2026 RealVision. AI-powered virtual staging for real estate professionals.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-            <a href="/privacy" className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">Privacy</a>
-            <a href="/terms" className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">Terms</a>
-            <a href="mailto:support@realvision.ai" className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">Contact</a>
-          </div>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   );
 };
