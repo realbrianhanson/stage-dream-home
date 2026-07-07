@@ -359,31 +359,35 @@ Add appropriate furniture like sofas, tables, chairs, rugs, lamps, artwork, plan
       );
     }
 
-    // Enforce watermark server-side for free plan so clients never receive a clean file.
-    if (userPlan === "free") {
-      try {
-        stagedImageUrl = await applyWatermark(stagedImageUrl);
-      } catch (wmErr) {
-        console.error("Watermarking failed:", wmErr);
-        // Better to fail than deliver a clean file to a free user.
+    // Single decode/encode pass: upscale for paid, then MLS label (bottom-left)
+    // and free-plan watermark (bottom-right) as requested.
+    const isFree = userPlan === "free";
+    try {
+      stagedImageUrl = await postprocessImage(stagedImageUrl, {
+        watermark: isFree,
+        mlsLabel: wantsMlsLabel,
+        upscale: !isFree,
+      });
+    } catch (ppErr) {
+      console.error("Postprocess failed:", ppErr);
+      if (isFree) {
+        // Free plan must never receive a clean file — fail closed.
         await releaseSlot();
         return new Response(
           JSON.stringify({ error: "Failed to finalize your image. Please try again." }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-    } else {
-      // Paid plans: attempt high-res upscale. On failure, deliver the un-upscaled image
-      // rather than erroring the whole staging.
-      try {
-        stagedImageUrl = await upscaleForPaid(stagedImageUrl);
-      } catch (upErr) {
-        console.error("Upscale skipped, returning original:", upErr);
-      }
+      // Paid: return the un-postprocessed image rather than erroring the whole staging.
     }
 
     return new Response(
-      JSON.stringify({ stagedImageUrl, plan: userPlan, isWatermarked: userPlan === "free" }),
+      JSON.stringify({
+        stagedImageUrl,
+        plan: userPlan,
+        isWatermarked: isFree,
+        mlsDisclosure: wantsMlsLabel,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
