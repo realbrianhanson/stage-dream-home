@@ -361,13 +361,25 @@ const Gallery = () => {
                             {groupStagings.length}
                           </span>
                         </button>
-                        <button
-                          onClick={() => handleBulkDownload(groupStagings)}
-                          className="font-body text-xs text-muted-foreground hover:text-accent border border-white/[0.06] hover:border-accent/30 rounded-lg px-3 py-1.5 flex items-center gap-1.5 transition-all"
-                        >
-                          <Download className="w-3 h-3" />
-                          Download All
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {groupName !== "Unlabeled" && (
+                            <button
+                              onClick={() => setShareListingProperty(groupName)}
+                              className="font-body text-xs text-muted-foreground hover:text-accent border border-white/[0.06] hover:border-accent/30 rounded-lg px-3 py-1.5 flex items-center gap-1.5 transition-all"
+                              title="Share a branded listing microsite"
+                            >
+                              <Home className="w-3 h-3" />
+                              Share Listing
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleBulkDownload(groupStagings)}
+                            className="font-body text-xs text-muted-foreground hover:text-accent border border-white/[0.06] hover:border-accent/30 rounded-lg px-3 py-1.5 flex items-center gap-1.5 transition-all"
+                          >
+                            <Download className="w-3 h-3" />
+                            Download All
+                          </button>
+                        </div>
                       </div>
 
                       {/* Divider */}
