@@ -5,13 +5,11 @@ import { ArrowRight, Clock, Palette, TrendingUp, Sparkles, Check, Upload, Wand2,
 import SectionEyebrow from "@/components/SectionEyebrow";
 import MarketingNav from "@/components/MarketingNav";
 import MarketingFooter from "@/components/MarketingFooter";
-import BeforeAfterSlider from "@/components/BeforeAfterSlider";
+import InteractiveDemo from "@/components/InteractiveDemo";
 import { PRICING_PLANS, ANNUAL_DISCOUNT_LABEL, priceLabel } from "@/config/pricing";
 import { startCheckout } from "@/lib/billing";
 import { useAuth } from "@/hooks/useAuth";
 import heroImage from "@/assets/landing-hero.jpg";
-import beforeVacant from "@/assets/before-vacant.jpg";
-import afterStaged from "@/assets/after-staged.jpg";
 import showcaseBedroom from "@/assets/showcase-bedroom.jpg";
 import showcaseKitchen from "@/assets/showcase-kitchen.jpg";
 import showcaseLiving from "@/assets/showcase-living.jpg";
@@ -214,7 +212,7 @@ const Landing = () => {
             variants={fadeUp}
             custom={1}
           >
-            <BeforeAfterSlider before={beforeVacant} after={afterStaged} />
+            <InteractiveDemo />
           </motion.div>
         </div>
       </section>
