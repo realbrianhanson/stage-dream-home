@@ -354,6 +354,8 @@ const Landing = () => {
                 <img
                   src={item.img}
                   alt={item.label}
+                  width={800}
+                  height={1000}
                   className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700"
                   loading="lazy"
                 />
