@@ -213,21 +213,58 @@ const Landing = () => {
             viewport={{ once: true, margin: "-100px" }}
             variants={fadeUp}
             custom={1}
-            className="grid md:grid-cols-2 gap-6"
           >
-            <div className="relative rounded-2xl overflow-hidden shadow-elevated border border-border/30 group hover:shadow-dramatic transition-shadow duration-500">
-              <img src={beforeVacant} alt="Vacant unfurnished room" className="w-full h-full object-cover" loading="lazy" />
-              <div className="absolute top-4 left-4 bg-foreground/70 text-primary-foreground rounded-lg px-4 py-2 text-sm font-body font-semibold tracking-wide">
-                Before
-              </div>
-            </div>
-            <div className="relative rounded-2xl overflow-hidden shadow-elevated border border-border/30 group hover:shadow-dramatic transition-shadow duration-500">
-              <img src={afterStaged} alt="Same room virtually staged with furniture" className="w-full h-full object-cover" loading="lazy" />
-              <div className="absolute top-4 left-4 gold-gradient-animated text-accent-foreground rounded-lg px-4 py-2 text-sm font-body font-semibold tracking-wide">
-                After
-              </div>
-            </div>
+            <BeforeAfterSlider before={beforeVacant} after={afterStaged} />
           </motion.div>
+        </div>
+      </section>
+
+      {/* Divider */}
+      <div className="max-w-3xl mx-auto" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.15), transparent)' }} />
+
+      {/* How It Works */}
+      <section className="py-32 px-6 bg-background relative">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none" style={{ background: 'radial-gradient(ellipse, hsl(38 60% 55% / 0.04) 0%, transparent 70%)' }} />
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeUp}
+            className="text-center mb-20"
+          >
+            <SectionEyebrow number="02" label="How It Works" />
+            <h2 className="font-display text-4xl md:text-6xl font-medium">
+              Three steps, <span className="italic text-accent">one gorgeous listing</span>
+            </h2>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              { icon: Upload, step: "01", title: "Upload your photo", desc: "Drop in a clear photo of any vacant or lightly furnished room. JPG or PNG, any resolution." },
+              { icon: Wand2, step: "02", title: "Choose your style", desc: "Pick from Modern, Scandinavian, Luxury and more — or compare several side by side." },
+              { icon: Download, step: "03", title: "Download and list", desc: "In under thirty seconds, download high-resolution staged photos ready for your listing." },
+            ].map((s, i) => (
+              <motion.div
+                key={s.title}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-50px" }}
+                variants={fadeUp}
+                custom={i}
+                className="group p-8 rounded-2xl border border-white/[0.06] hover:border-accent/25 transition-all duration-500 bg-white/[0.02] backdrop-blur-sm hover:bg-white/[0.04] hover:shadow-dramatic hover:-translate-y-1 relative"
+              >
+                <span className="absolute top-6 right-8 font-display text-5xl font-light text-accent/15 select-none">{s.step}</span>
+                <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/15 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
+                  <s.icon className="w-5 h-5 text-accent" />
+                </div>
+                <h3 className="font-display text-xl font-medium mb-3">{s.title}</h3>
+                <p className="font-body text-muted-foreground text-sm leading-relaxed">{s.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
         </div>
       </section>
 
