@@ -80,6 +80,47 @@ async function applyWatermark(sourceUrl: string): Promise<string> {
   return `data:image/png;base64,${bytesToBase64(out)}`;
 }
 
+// --- Paid-plan upscale (2x, cap long edge at 3000px; fall back to 1.5x on failure) ---
+const MAX_LONG_EDGE = 3000;
+
+async function upscaleForPaid(sourceUrl: string): Promise<string> {
+  const res = await fetch(sourceUrl);
+  if (!res.ok) throw new Error("Failed to fetch generated image for upscaling");
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  const img = await decode(bytes);
+  if (!(img instanceof Image)) throw new Error("Unsupported image format");
+
+  const longEdge = Math.max(img.width, img.height);
+
+  const targetsFor = (factor: number) => {
+    const capped = Math.min(longEdge * factor, MAX_LONG_EDGE);
+    const scale = capped / longEdge;
+    return {
+      w: Math.max(1, Math.round(img.width * scale)),
+      h: Math.max(1, Math.round(img.height * scale)),
+    };
+  };
+
+  // Try 2x first, fall back to 1.5x on memory/time pressure.
+  for (const factor of [2, 1.5]) {
+    try {
+      const { w, h } = targetsFor(factor);
+      if (w === img.width && h === img.height) {
+        // Already at/above cap — no-op resample.
+        const out = await img.encode();
+        return `data:image/png;base64,${bytesToBase64(out)}`;
+      }
+      // ImageScript's default RESIZE_AUTO uses its highest-quality resampler.
+      const up = img.clone().resize(w, h);
+      const out = await up.encode();
+      return `data:image/png;base64,${bytesToBase64(out)}`;
+    } catch (err) {
+      console.warn(`Upscale ${factor}x failed, trying smaller:`, err);
+    }
+  }
+  throw new Error("All upscale attempts failed");
+}
+
 serve(async (req) => {
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
