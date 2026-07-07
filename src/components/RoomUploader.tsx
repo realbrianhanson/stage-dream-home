@@ -65,6 +65,7 @@ const RoomUploader = ({
   initialRoomType,
   initialStyle,
   initialCustomInstructions,
+  initialPalette,
   canStage,
   remainingStagings,
   onStagingComplete,
