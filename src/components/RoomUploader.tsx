@@ -102,8 +102,27 @@ const RoomUploader = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressText, setProgressText] = useState("");
   const [dragOver, setDragOver] = useState(false);
+  const [batchFiles, setBatchFiles] = useState<File[] | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cancelledRef = useRef(false);
+
+  const handleFiles = useCallback(
+    (files: File[]) => {
+      const imgs = files.filter((f) => f.type.startsWith("image/"));
+      if (imgs.length === 0) {
+        toast.error("Please upload image files");
+        return;
+      }
+      if (imgs.length >= 2) {
+        setBatchFiles(imgs);
+      } else {
+        handleFile(imgs[0]);
+      }
+    },
+    // handleFile is defined above and stable via useCallback
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
   useEffect(() => {
     if (initialImage) setImage(initialImage);
