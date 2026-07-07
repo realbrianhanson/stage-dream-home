@@ -270,7 +270,7 @@ const RoomUploader = ({
           try {
             const instrTrimmed = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
             const { data, error } = await supabase.functions.invoke("stage-room", {
-              body: { image, roomType, style: currentStyle, customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined },
+              body: { image, roomType, style: currentStyle, customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined, mls_disclosure: mlsDisclosure },
             });
             if (error) {
               // 402 (quota) or other — stop the loop for quota exhaustion
