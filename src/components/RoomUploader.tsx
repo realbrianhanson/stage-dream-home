@@ -202,19 +202,13 @@ const RoomUploader = ({
       } = await supabase.auth.getUser();
 
       if (count === 1) {
-        // Atomic check-and-increment before staging
-        const allowed = await onStagingComplete();
-        if (!allowed) {
-          toast.error("You've reached your free staging limit this month.");
-          setIsProcessing(false);
-          return;
-        }
-
         setProgressText(isRemove ? "Removing furniture from your room..." : "Staging your room with AI...");
         const instrTrimmed = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
         const { data, error } = await supabase.functions.invoke("stage-room", {
           body: { image, roomType, style: stylesToStage[0], customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined, mode: isRemove ? "remove" : "stage" },
         });
+        // Always refresh usage after an attempt so the indicator matches DB.
+        await onStagingComplete();
         if (error) throw error;
         if (!data?.stagedImageUrl) throw new Error("No staged image returned");
 
@@ -254,16 +248,11 @@ const RoomUploader = ({
           sharedOriginalUrl = await uploadStagingImage(user.id, firstStagingId, image, "original");
         }
 
+        let quotaHit = false;
+
         for (let i = 0; i < stylesToStage.length; i++) {
           if (cancelledRef.current) {
             toast.info(`Cancelled — ${completedResults.length} of ${count} styles completed`);
-            break;
-          }
-
-          // Atomic check-and-increment before each style
-          const allowed = await onStagingComplete();
-          if (!allowed) {
-            toast.info(`Limit reached after ${completedResults.length} style${completedResults.length !== 1 ? "s" : ""}. Upgrade for more.`);
             break;
           }
 
@@ -276,7 +265,16 @@ const RoomUploader = ({
             const { data, error } = await supabase.functions.invoke("stage-room", {
               body: { image, roomType, style: currentStyle, customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined },
             });
-            if (error) throw error;
+            if (error) {
+              // 402 (quota) or other — stop the loop for quota exhaustion
+              const msg = (error as any)?.context?.status === 402 ? "quota" : "";
+              if (msg === "quota") {
+                quotaHit = true;
+                toast.info(`Limit reached after ${completedResults.length} style${completedResults.length !== 1 ? "s" : ""}. Upgrade for more.`);
+                break;
+              }
+              throw error;
+            }
             if (!data?.stagedImageUrl) throw new Error(`No staged image returned for ${currentStyle}`);
 
             let finalResult: StagingResult = { style: currentStyle, stagedImageUrl: data.stagedImageUrl, isWatermarked: data.isWatermarked };
@@ -313,11 +311,16 @@ const RoomUploader = ({
           }
         }
 
-        toast.success(
-          cancelledRef.current
-            ? `${completedResults.length} style${completedResults.length !== 1 ? "s" : ""} staged`
-            : `Room staged in ${count} styles!`
-        );
+        // Refresh usage once at end so indicator matches DB.
+        await onStagingComplete();
+
+        if (!quotaHit) {
+          toast.success(
+            cancelledRef.current
+              ? `${completedResults.length} style${completedResults.length !== 1 ? "s" : ""} staged`
+              : `Room staged in ${completedResults.length} styles!`
+          );
+        }
       }
     } catch (err: any) {
       console.error("Staging error:", err);
