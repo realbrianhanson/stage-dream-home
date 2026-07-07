@@ -61,15 +61,33 @@ function canvasToBlob(canvas: HTMLCanvasElement, format: Format): Promise<Blob |
   return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), mime, quality));
 }
 
+function resizeToLongEdge(img: HTMLImageElement, longEdge: number): HTMLCanvasElement {
+  const src = Math.max(img.naturalWidth, img.naturalHeight);
+  const scale = longEdge / src;
+  const w = Math.max(1, Math.round(img.naturalWidth * scale));
+  const h = Math.max(1, Math.round(img.naturalHeight * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d")!;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(img, 0, 0, w, h);
+  return canvas;
+}
+
 function processImage(
   img: HTMLImageElement,
-  targetW: number | null,
-  targetH: number | null,
+  preset: DimensionPreset,
   format: Format
 ): Promise<Blob | null> {
   let canvas: HTMLCanvasElement;
-  if (targetW && targetH) {
-    canvas = cropToCanvas(img, targetW, targetH);
+  if (preset.longEdge) {
+    canvas = resizeToLongEdge(img, preset.longEdge);
+  } else if (preset.width && preset.height) {
+    canvas = cropToCanvas(img, preset.width, preset.height);
   } else {
     canvas = document.createElement("canvas");
     canvas.width = img.naturalWidth;
