@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Trash2, X, Upload, ArrowLeft, LogOut, Download, RefreshCw, Search, ChevronDown, ChevronRight, Share2 } from "lucide-react";
+import { Trash2, X, Upload, ArrowLeft, LogOut, Download, RefreshCw, Search, ChevronDown, ChevronRight, Share2, User, Home } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUsage } from "@/hooks/useUsage";
