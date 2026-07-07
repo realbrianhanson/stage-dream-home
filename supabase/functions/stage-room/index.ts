@@ -237,7 +237,7 @@ serve(async (req) => {
       }
     };
 
-    const { image, roomType, style, customInstructions, aspectRatio, mode, mls_disclosure } = await req.json();
+    const { image, roomType, style, customInstructions, aspectRatio, mode, mls_disclosure, refineInstruction } = await req.json();
     const wantsMlsLabel = mls_disclosure === true && mode !== "remove";
 
     if (!image) {
@@ -262,13 +262,36 @@ serve(async (req) => {
       ? customInstructions.slice(0, 300).trim()
       : "";
 
+    const sanitizedRefine = typeof refineInstruction === "string"
+      ? refineInstruction.slice(0, 240).trim()
+      : "";
+
     const isRemoval = mode === "remove";
+    const isRefine = mode === "refine";
     const safeRoomType = (roomType || "room").toString().toLowerCase();
     const safeStyle = (style || "Modern").toString().toLowerCase();
 
     let prompt: string;
 
-    if (isRemoval) {
+    if (isRefine) {
+      if (!sanitizedRefine) {
+        await releaseSlot();
+        return new Response(
+          JSON.stringify({ error: "Please describe what to change." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      prompt = `You are refining a virtually staged real estate photo. Take this image and apply ONLY the following change requested by the client: "${sanitizedRefine}".
+
+CRITICAL RULES — the output MUST match the input image in every way EXCEPT the requested change:
+- Keep the EXACT same room, architecture, walls, windows, doors, flooring, ceiling and built-in fixtures.
+- Keep the EXACT same camera angle, framing, perspective, focal length and lighting direction.
+- Keep the overall staging composition, style and materials the same. Do NOT re-stage from scratch.
+- Do NOT modify furniture or decor that the instruction does not explicitly touch.
+- Only modify what the instruction specifies.
+
+The result must be photorealistic and indistinguishable from a real photograph of a ${safeRoomType}, matching the ${safeStyle} style of the input.`;
+    } else if (isRemoval) {
       prompt = `You are a professional virtual de-staging specialist. Take this photo of a furnished ${safeRoomType} and digitally remove ALL furniture, decor, rugs, artwork, plants, lamps, curtains, and personal items.
 
 The result must show a completely empty, vacant ${safeRoomType} with only the bare architecture remaining: walls, floors, ceiling, windows, doors, and built-in fixtures (kitchen counters, bathroom fixtures, fireplaces, built-in shelving). Patch and reconstruct any areas where furniture was hiding the floor or walls so they look natural, clean, and continuous.
@@ -280,14 +303,14 @@ CRITICAL: Keep the room's architecture, walls, windows, flooring material, ceili
 Add appropriate furniture like sofas, tables, chairs, rugs, lamps, artwork, plants, and decorative accessories. Make the room look warm, inviting, and ready for a real estate listing. Keep the room's architecture, walls, windows, and flooring exactly the same. Only add furniture and decor. Make it look photorealistic and professionally staged.`;
     }
 
-    if (sanitizedInstructions) {
+    if (sanitizedInstructions && !isRefine) {
       prompt += `\n\nAdditional requirements from the client: ${sanitizedInstructions}`;
     }
 
     const validRatios = ["16:9", "4:3", "3:4", "1:1"];
     const sanitizedAspectRatio = typeof aspectRatio === "string" && validRatios.includes(aspectRatio) ? aspectRatio : null;
 
-    if (sanitizedAspectRatio) {
+    if (sanitizedAspectRatio && !isRefine) {
       prompt += `\n\nIMPORTANT: Generate the image with a ${sanitizedAspectRatio} aspect ratio.`;
     }
 

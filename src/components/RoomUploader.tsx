@@ -56,7 +56,7 @@ export interface StagingResult {
 }
 
 interface RoomUploaderProps {
-  onResult: (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean) => void;
+  onResult: (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean, meta?: { roomType: string; style: string; propertyName: string; customInstructions: string }) => void;
   onMultiResult: (original: string, results: StagingResult[], isWatermarked?: boolean) => void;
   onMultiStart: (original: string, pendingStyles: string[]) => void;
   onMultiProgress: (result: StagingResult, remainingStyles: string[]) => void;
@@ -258,9 +258,11 @@ const RoomUploader = ({
             aspect_ratio: aspectRatio || null,
             mls_disclosure: !isRemove && mlsDisclosure,
           } as any);
-          onResult(originalUrl, stagedUrl, data.isWatermarked, !isRemove && mlsDisclosure);
+          const meta = { roomType, style: stylesToStage[0], propertyName: propertyName.trim(), customInstructions: instrTrimmed };
+          onResult(originalUrl, stagedUrl, data.isWatermarked, !isRemove && mlsDisclosure, meta);
         } else {
-          onResult(image, data.stagedImageUrl, data.isWatermarked, !isRemove && mlsDisclosure);
+          const meta = { roomType, style: stylesToStage[0], propertyName: propertyName.trim(), customInstructions: instrTrimmed };
+          onResult(image, data.stagedImageUrl, data.isWatermarked, !isRemove && mlsDisclosure, meta);
         }
         toast.success(isRemove ? "Furniture removed successfully!" : "Room staged successfully!");
       } else {
