@@ -120,7 +120,34 @@ const RoomUploader = ({
       return;
     }
     const reader = new FileReader();
-    reader.onload = (e) => setImage(e.target?.result as string);
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      // Downscale long edge to 2048px, encode JPEG 0.85, so uploads are fast.
+      const img = new Image();
+      img.onload = () => {
+        const MAX_EDGE = 2048;
+        const longEdge = Math.max(img.naturalWidth, img.naturalHeight);
+        if (longEdge <= MAX_EDGE) {
+          setImage(dataUrl);
+          return;
+        }
+        const scale = MAX_EDGE / longEdge;
+        const w = Math.round(img.naturalWidth * scale);
+        const h = Math.round(img.naturalHeight * scale);
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          setImage(dataUrl);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+        setImage(canvas.toDataURL("image/jpeg", 0.85));
+      };
+      img.onerror = () => setImage(dataUrl);
+      img.src = dataUrl;
+    };
     reader.readAsDataURL(file);
   }, []);
 
@@ -134,13 +161,15 @@ const RoomUploader = ({
     [handleFile]
   );
 
+  const maxCompareStyles = usage && usage.plan !== "free" ? 6 : 3;
+
   const toggleStyleSelection = (s: string) => {
     setSelectedStyles((prev) => {
       if (prev.includes(s)) {
         return prev.length > 1 ? prev.filter((x) => x !== s) : prev;
       }
-      if (prev.length >= 3) {
-        toast.error("Maximum 3 styles for comparison");
+      if (prev.length >= maxCompareStyles) {
+        toast.error(`Maximum ${maxCompareStyles} styles for comparison`);
         return prev;
       }
       return [...prev, s];
