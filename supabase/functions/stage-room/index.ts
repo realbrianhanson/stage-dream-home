@@ -342,6 +342,14 @@ Add appropriate furniture like sofas, tables, chairs, rugs, lamps, artwork, plan
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+    } else {
+      // Paid plans: attempt high-res upscale. On failure, deliver the un-upscaled image
+      // rather than erroring the whole staging.
+      try {
+        stagedImageUrl = await upscaleForPaid(stagedImageUrl);
+      } catch (upErr) {
+        console.error("Upscale skipped, returning original:", upErr);
+      }
     }
 
     return new Response(
