@@ -237,7 +237,8 @@ serve(async (req) => {
       }
     };
 
-    const { image, roomType, style, customInstructions, aspectRatio, mode } = await req.json();
+    const { image, roomType, style, customInstructions, aspectRatio, mode, mls_disclosure } = await req.json();
+    const wantsMlsLabel = mls_disclosure === true && mode !== "remove";
 
     if (!image) {
       await releaseSlot();
