@@ -15,6 +15,8 @@ interface BeforeAfterSliderProps {
 }
 
 const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfterSliderProps) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [sliderPos, setSliderPos] = useState(50);
   const [containerWidth, setContainerWidth] = useState(0);
   const [copied, setCopied] = useState(false);
