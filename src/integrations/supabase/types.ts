@@ -64,6 +64,8 @@ export type Database = {
           onboarding_complete: boolean
           plan: string
           stagings_this_month: number
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           user_id: string
         }
         Insert: {
@@ -73,6 +75,8 @@ export type Database = {
           onboarding_complete?: boolean
           plan?: string
           stagings_this_month?: number
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           user_id: string
         }
         Update: {
@@ -82,6 +86,8 @@ export type Database = {
           onboarding_complete?: boolean
           plan?: string
           stagings_this_month?: number
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           user_id?: string
         }
         Relationships: []
