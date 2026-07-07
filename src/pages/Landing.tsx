@@ -355,55 +355,6 @@ const Landing = () => {
       {/* Divider */}
       <div className="max-w-3xl mx-auto" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.15), transparent)' }} />
 
-      {/* Editorial Testimonial */}
-      <section className="py-40 px-6 bg-card/40 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, hsl(38 60% 55% / 0.05) 0%, transparent 60%)' }} />
-        <div className="max-w-4xl mx-auto relative">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={fadeUp}
-            className="text-center"
-          >
-            <SectionEyebrow number="04" label="Testimonial" />
-
-            <span
-              className="font-display text-accent/25 leading-none block mb-2"
-              style={{ fontSize: 'clamp(6rem, 14vw, 10rem)' }}
-              aria-hidden
-            >
-              "
-            </span>
-
-            <blockquote
-              className="font-display italic font-light leading-[1.15] text-foreground/90 mb-12 -mt-8"
-              style={{ fontSize: 'clamp(1.75rem, 4vw, 3.25rem)', letterSpacing: '-0.015em' }}
-            >
-              RealVision cut my listing time in half. The quality is genuinely indistinguishable from professional photography — and my clients can't tell the difference.
-            </blockquote>
-
-            <div className="flex items-center justify-center gap-1 mb-6">
-              {[...Array(5)].map((_, j) => (
-                <Star key={j} className="w-3.5 h-3.5 fill-accent text-accent" />
-              ))}
-            </div>
-
-            <div
-              className="mx-auto mb-5"
-              style={{ width: 40, height: 1, background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.5), transparent)' }}
-            />
-
-            <p className="font-display text-lg font-medium tracking-wide">Sarah Mitchell</p>
-            <p className="font-body text-xs tracking-[0.2em] uppercase text-muted-foreground mt-1">
-              Luxury Real Estate · New York
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Divider */}
-      <div className="max-w-3xl mx-auto" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.15), transparent)' }} />
 
       {/* Pricing */}
       <section id="pricing" className="py-32 px-6 bg-card/50 relative">
