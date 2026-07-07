@@ -489,6 +489,35 @@ const RoomUploader = ({
                   </div>
                 </div>
 
+                {/* MLS disclosure toggle (stage mode only) */}
+                {mode === "stage" && (
+                  <div className="mb-8 flex items-start justify-between gap-4 p-4 rounded-xl border border-border">
+                    <div className="min-w-0">
+                      <p className="font-body text-sm font-medium">MLS disclosure label</p>
+                      <p className="font-body text-xs text-muted-foreground leading-snug mt-0.5">
+                        Adds a subtle "Virtually Staged" label required by many MLS boards.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={mlsDisclosure}
+                      aria-label="Toggle MLS disclosure label"
+                      onClick={() => setMlsDisclosure((v) => !v)}
+                      className={`relative shrink-0 w-10 h-6 rounded-full transition-colors ${
+                        mlsDisclosure ? "bg-accent" : "bg-border"
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-background shadow-sm transition-transform ${
+                          mlsDisclosure ? "translate-x-4" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                )}
+
+
                 {/* Options */}
                 <div className={`grid ${mode === "stage" ? "md:grid-cols-2" : "grid-cols-1"} gap-8 mb-6`}>
                   <div>
