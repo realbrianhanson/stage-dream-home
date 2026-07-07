@@ -234,6 +234,7 @@ const BatchStaging = ({
           style,
           property_address: propertyName.trim() || null,
           mls_disclosure: mlsDisclosure,
+          staging_palette: sharedPalette || null,
         } as any);
       }
 
