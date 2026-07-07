@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, CheckCircle2, Minus, ChevronDown } from "lucide-react";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
+import { PRICING_PLANS, ANNUAL_DISCOUNT_LABEL, priceLabel, yearlyTotal, type BillingPeriod, type PlanId } from "@/config/pricing";
+import { startCheckout } from "@/lib/billing";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -14,56 +16,7 @@ const fadeUp = {
   }),
 };
 
-type Billing = "monthly" | "annual";
-
-const plans = [
-  {
-    name: "Starter",
-    monthly: 0,
-    annual: 0,
-    blurb: "Try the magic. Stage your first listings free.",
-    cta: "Start Free",
-    features: [
-      "3 stagings per month",
-      "Standard quality output",
-      "All 6 design styles",
-      "Compare up to 3 styles",
-      "Watermarked downloads",
-    ],
-    highlight: false,
-  },
-  {
-    name: "Professional",
-    monthly: 29,
-    annual: 24,
-    blurb: "For agents and photographers staging weekly.",
-    cta: "Get Professional",
-    features: [
-      "Unlimited stagings",
-      "Ultra HD quality",
-      "All 6+ design styles",
-      "Priority processing queue",
-      "Download originals (no watermark)",
-      "Personal stagings library",
-      "Email support",
-    ],
-    highlight: true,
-  },
-  {
-    name: "Studio",
-    monthly: 79,
-    annual: 65,
-    blurb: "For high-volume listing agents and photographers.",
-    cta: "Get Studio",
-    features: [
-      "Everything in Professional",
-      "Higher monthly volume",
-      "Priority email support",
-      "Early access to new design styles",
-    ],
-    highlight: false,
-  },
-];
+type Billing = BillingPeriod;
 
 const compareRows: { label: string; values: (string | boolean)[] }[] = [
   { label: "Monthly stagings", values: ["3", "Unlimited", "Unlimited"] },
