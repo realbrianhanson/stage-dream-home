@@ -84,6 +84,8 @@ const RoomUploader = ({
   usage,
   freeLimit,
 }: RoomUploaderProps) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [image, setImage] = useState<string | null>(initialImage || null);
   const [mode, setMode] = useState<"stage" | "remove">("stage");
   const [roomType, setRoomType] = useState(initialRoomType || "Living Room");
