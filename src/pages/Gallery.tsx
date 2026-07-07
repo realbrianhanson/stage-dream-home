@@ -36,6 +36,8 @@ const Gallery = () => {
   const [selectedStaging, setSelectedStaging] = useState<Staging | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [shareStaging, setShareStaging] = useState<Staging | null>(null);
+  const [shareListingProperty, setShareListingProperty] = useState<string | null>(null);
+  const [showAgentCard, setShowAgentCard] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
