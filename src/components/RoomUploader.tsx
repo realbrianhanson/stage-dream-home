@@ -22,7 +22,7 @@ const INSTRUCTION_CHIPS = [
 
 const MAX_INSTRUCTIONS = 300;
 
-import { ROOM_TYPES, STYLES } from "@/config/catalogs";
+import { ROOM_TYPES, STYLES, getPalettesForStyle } from "@/config/catalogs";
 
 const ASPECT_RATIOS = [
   { value: "", label: "Match Photo" },
