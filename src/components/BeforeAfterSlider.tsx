@@ -52,6 +52,27 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
   const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
 
+  // Session version history: v1 is the initial `after`; each refine/regenerate appends.
+  const [versions, setVersions] = useState<Version[]>([
+    { url: after, label: refineContext?.style || "v1", isWatermarked },
+  ]);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [refining, setRefining] = useState(false);
+  const [freeText, setFreeText] = useState("");
+
+  // If the parent swaps in a completely different `after` (e.g. new staging opened),
+  // reset the version history for that new session.
+  useEffect(() => {
+    setVersions([{ url: after, label: refineContext?.style || "v1", isWatermarked }]);
+    setActiveIdx(0);
+    setFreeText("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [after]);
+
+  const currentVersion = versions[activeIdx] ?? { url: after, isWatermarked };
+  const currentAfter = currentVersion.url;
+  const currentWatermarked = currentVersion.isWatermarked;
+
   useEffect(() => {
     if (!containerRef.current) return;
     const observer = new ResizeObserver((entries) => {
@@ -63,17 +84,17 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
     return () => observer.disconnect();
   }, []);
 
-  // Load the after image to determine natural aspect ratio.
+  // Load the currently displayed image to determine natural aspect ratio.
   useEffect(() => {
-    if (!after) return;
+    if (!currentAfter) return;
     const img = new window.Image();
     img.onload = () => {
       if (img.naturalWidth && img.naturalHeight) {
         setAspectRatio(img.naturalWidth / img.naturalHeight);
       }
     };
-    img.src = after;
-  }, [after]);
+    img.src = currentAfter;
+  }, [currentAfter]);
 
   const updateSlider = useCallback((clientX: number) => {
     if (!containerRef.current) return;
