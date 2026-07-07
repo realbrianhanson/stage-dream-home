@@ -205,8 +205,16 @@ const Pricing = () => {
             custom={1}
             className="rounded-2xl border border-border/60 bg-card/30 backdrop-blur-sm overflow-hidden shadow-soft"
           >
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div
+              className="overflow-x-auto"
+              style={{
+                WebkitMaskImage:
+                  "linear-gradient(to right, transparent 0, black 24px, black calc(100% - 24px), transparent 100%)",
+                maskImage:
+                  "linear-gradient(to right, transparent 0, black 24px, black calc(100% - 24px), transparent 100%)",
+              }}
+            >
+              <table className="w-full min-w-[640px]">
                 <thead>
                   <tr className="border-b border-border/60 bg-foreground/[0.02]">
                     <th className="text-left font-body text-[10px] font-medium uppercase tracking-[0.25em] text-muted-foreground px-6 py-6">Feature</th>
