@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef } from "react";
-import { Download, ChevronDown } from "lucide-react";
+import { Download, ChevronDown, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { useUsage } from "@/hooks/useUsage";
 
 interface DimensionPreset {
   label: string;
   width: number | null;
   height: number | null;
   description: string;
+  longEdge?: number;
+  paidOnly?: boolean;
 }
 
 const PRESETS: DimensionPreset[] = [
@@ -14,6 +17,7 @@ const PRESETS: DimensionPreset[] = [
   { label: "MLS Standard", width: 1024, height: 768, description: "1024 × 768" },
   { label: "Web Optimized", width: 800, height: 600, description: "800 × 600" },
   { label: "Social Square", width: 1024, height: 1024, description: "1024 × 1024" },
+  { label: "MLS Print (3000px)", width: null, height: null, longEdge: 3000, description: "High-res, long edge 3000px", paidOnly: true },
 ];
 
 type Format = "jpg" | "png";
@@ -57,15 +61,33 @@ function canvasToBlob(canvas: HTMLCanvasElement, format: Format): Promise<Blob |
   return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), mime, quality));
 }
 
+function resizeToLongEdge(img: HTMLImageElement, longEdge: number): HTMLCanvasElement {
+  const src = Math.max(img.naturalWidth, img.naturalHeight);
+  const scale = longEdge / src;
+  const w = Math.max(1, Math.round(img.naturalWidth * scale));
+  const h = Math.max(1, Math.round(img.naturalHeight * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d")!;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(img, 0, 0, w, h);
+  return canvas;
+}
+
 function processImage(
   img: HTMLImageElement,
-  targetW: number | null,
-  targetH: number | null,
+  preset: DimensionPreset,
   format: Format
 ): Promise<Blob | null> {
   let canvas: HTMLCanvasElement;
-  if (targetW && targetH) {
-    canvas = cropToCanvas(img, targetW, targetH);
+  if (preset.longEdge) {
+    canvas = resizeToLongEdge(img, preset.longEdge);
+  } else if (preset.width && preset.height) {
+    canvas = cropToCanvas(img, preset.width, preset.height);
   } else {
     canvas = document.createElement("canvas");
     canvas.width = img.naturalWidth;
@@ -108,6 +130,8 @@ const DownloadWithPresets = ({
   const [imgSize, setImgSize] = useState<{ w: number; h: number } | null>(null);
   const [processing, setProcessing] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { usage } = useUsage();
+  const isPaid = !!usage && usage.plan !== "free";
 
   useEffect(() => {
     const img = new window.Image();
@@ -129,6 +153,7 @@ const DownloadWithPresets = ({
   }, [open]);
 
   const isPresetDisabled = (preset: DimensionPreset) => {
+    if (preset.paidOnly && !isPaid) return true;
     if (!preset.width || !preset.height || !imgSize) return false;
     return imgSize.w < preset.width || imgSize.h < preset.height;
   };
@@ -146,10 +171,14 @@ const DownloadWithPresets = ({
         img.src = imageUrl;
       });
 
-      const blob = await processImage(img, preset.width, preset.height, format);
+      const blob = await processImage(img, preset, format);
       if (!blob) throw new Error("Failed to process image");
 
-      const dims = preset.width ? `-${preset.width}x${preset.height}` : "";
+      const dims = preset.longEdge
+        ? `-${preset.longEdge}`
+        : preset.width
+        ? `-${preset.width}x${preset.height}`
+        : "";
       await triggerBlobDownload(blob, `${filename}${dims}.${format}`);
     } catch (err) {
       console.error("Download failed:", err);
@@ -216,6 +245,7 @@ const DownloadWithPresets = ({
 
           {PRESETS.map((preset) => {
             const disabled = isPresetDisabled(preset);
+            const lockedForPlan = preset.paidOnly && !isPaid;
             return (
               <button
                 key={preset.label}
@@ -226,12 +256,28 @@ const DownloadWithPresets = ({
                     ? "text-muted-foreground/30 cursor-not-allowed"
                     : "text-foreground hover:bg-accent/[0.06] hover:text-accent"
                 }`}
-                title={disabled ? "Source image too small for this size" : undefined}
+                title={
+                  lockedForPlan
+                    ? "Available on paid plans"
+                    : disabled
+                    ? "Source image too small for this size"
+                    : undefined
+                }
               >
-                <span className="block font-medium text-xs">{preset.label}</span>
+                <span className="flex items-center gap-1.5 font-medium text-xs">
+                  {preset.label}
+                  {lockedForPlan && (
+                    <>
+                      <Lock className="w-3 h-3 text-muted-foreground/40" />
+                      <span className="text-[10px] uppercase tracking-wider text-accent/70 font-semibold">
+                        Pro
+                      </span>
+                    </>
+                  )}
+                </span>
                 <span className={`block text-[11px] ${disabled ? "text-muted-foreground/20" : "text-muted-foreground/60"}`}>
                   {preset.description}
-                  {disabled && " — source too small"}
+                  {!lockedForPlan && disabled && " — source too small"}
                 </span>
               </button>
             );
