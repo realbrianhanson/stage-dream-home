@@ -22,23 +22,7 @@ const INSTRUCTION_CHIPS = [
 
 const MAX_INSTRUCTIONS = 300;
 
-const ROOM_TYPES = [
-  "Living Room",
-  "Bedroom",
-  "Kitchen",
-  "Dining Room",
-  "Bathroom",
-  "Home Office",
-];
-
-const STYLES = [
-  "Modern",
-  "Traditional",
-  "Minimalist",
-  "Scandinavian",
-  "Mid-Century",
-  "Luxury",
-];
+import { ROOM_TYPES, STYLES } from "@/config/catalogs";
 
 const ASPECT_RATIOS = [
   { value: "", label: "Match Photo" },

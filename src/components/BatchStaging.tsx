@@ -17,23 +17,7 @@ import { uploadStagingImage } from "@/lib/uploadStagingImage";
 import { useAuth } from "@/hooks/useAuth";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 
-const ROOM_TYPES = [
-  "Living Room",
-  "Bedroom",
-  "Kitchen",
-  "Dining Room",
-  "Bathroom",
-  "Home Office",
-];
-
-const STYLES = [
-  "Modern",
-  "Traditional",
-  "Minimalist",
-  "Scandinavian",
-  "Mid-Century",
-  "Luxury",
-];
+import { ROOM_TYPES, STYLES } from "@/config/catalogs";
 
 export const MAX_BATCH = 15;
 const BATCH_DELAY_MS = 2000;

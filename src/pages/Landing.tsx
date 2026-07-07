@@ -149,7 +149,7 @@ const Landing = () => {
             custom={5}
             className="mt-16 border-t border-b border-primary-foreground/15 py-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-primary-foreground/75"
           >
-            {["Under 30s", "6 Design Styles", "Free to Try"].map((stat) => (
+            {["Under 30s", "12 Design Styles", "Free to Try"].map((stat) => (
               <span key={stat} className="font-body text-sm tracking-wide">{stat}</span>
             ))}
           </motion.div>
@@ -291,7 +291,7 @@ const Landing = () => {
             {[
               { icon: Sparkles, title: "AI Intelligence", desc: "Our model understands room geometry, lighting, and design to create photorealistic results." },
               { icon: Clock, title: "30-Second Turnaround", desc: "No more waiting days for traditional staging. Get results in under a minute." },
-              { icon: Palette, title: "6+ Design Styles", desc: "Modern, traditional, minimalist, Scandinavian, mid-century, and luxury aesthetics." },
+              { icon: Palette, title: "12 Design Styles", desc: "Modern, Scandinavian, Japandi, Coastal, Farmhouse, Industrial, and more — from minimalist to luxury." },
               { icon: TrendingUp, title: "Listings That Move", desc: "Staged homes consistently sell faster and for more than vacant ones." },
             ].map((feature, i) => (
               <motion.div
