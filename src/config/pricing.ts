@@ -38,6 +38,7 @@ export const PRICING_PLANS: PricingPlan[] = [
       "Standard quality output",
       "All 6 design styles",
       "Compare up to 3 styles",
+      "MLS disclosure label",
       "Watermarked downloads",
     ],
     highlight: false,
