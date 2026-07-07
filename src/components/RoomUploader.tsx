@@ -230,8 +230,9 @@ const RoomUploader = ({
       if (count === 1) {
         setProgressText(isRemove ? "Removing furniture from your room..." : "Staging your room with AI...");
         const instrTrimmed = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
+        const paletteForRun = !isRemove && palette ? palette : "";
         const { data, error } = await supabase.functions.invoke("stage-room", {
-          body: { image, roomType, style: stylesToStage[0], customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined, mode: isRemove ? "remove" : "stage", mls_disclosure: !isRemove && mlsDisclosure },
+          body: { image, roomType, style: stylesToStage[0], customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined, mode: isRemove ? "remove" : "stage", mls_disclosure: !isRemove && mlsDisclosure, palette: paletteForRun || undefined },
         });
         // Always refresh usage after an attempt so the indicator matches DB.
         await onStagingComplete();
@@ -256,11 +257,12 @@ const RoomUploader = ({
             custom_instructions: instrTrimmed || null,
             aspect_ratio: aspectRatio || null,
             mls_disclosure: !isRemove && mlsDisclosure,
+            staging_palette: paletteForRun || null,
           } as any);
-          const meta = { roomType, style: stylesToStage[0], propertyName: propertyName.trim(), customInstructions: instrTrimmed };
+          const meta = { roomType, style: stylesToStage[0], propertyName: propertyName.trim(), customInstructions: instrTrimmed, palette: paletteForRun };
           onResult(originalUrl, stagedUrl, data.isWatermarked, !isRemove && mlsDisclosure, meta);
         } else {
-          const meta = { roomType, style: stylesToStage[0], propertyName: propertyName.trim(), customInstructions: instrTrimmed };
+          const meta = { roomType, style: stylesToStage[0], propertyName: propertyName.trim(), customInstructions: instrTrimmed, palette: paletteForRun };
           onResult(image, data.stagedImageUrl, data.isWatermarked, !isRemove && mlsDisclosure, meta);
         }
         toast.success(isRemove ? "Furniture removed successfully!" : "Room staged successfully!");
