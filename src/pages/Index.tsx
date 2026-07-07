@@ -41,6 +41,7 @@ const Index = () => {
     reStageRoomType?: string;
     reStageStyle?: string;
     reStageCustomInstructions?: string;
+    reStagePalette?: string;
   } | null;
 
   useEffect(() => {
