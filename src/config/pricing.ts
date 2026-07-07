@@ -79,6 +79,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     features: [
       "Everything in Professional",
       "500 stagings per month",
+      "MLS disclosure label",
       "Priority email support",
       "Early access to new design styles",
     ],
