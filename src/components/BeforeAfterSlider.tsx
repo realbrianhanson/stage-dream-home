@@ -242,10 +242,7 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfte
             <p className="font-body text-sm text-muted-foreground">
               Free images include a small watermark.{" "}
               <button
-                onClick={() => {
-                  if (!user) { navigate("/auth?next=/pricing"); return; }
-                  startCheckout("pro", "monthly");
-                }}
+                onClick={() => navigate("/pricing")}
                 className="text-accent hover:underline transition-colors"
               >
                 Upgrade to Pro
