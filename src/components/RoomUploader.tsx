@@ -235,6 +235,7 @@ const RoomUploader = ({
             property_address: propertyName.trim() || null,
             custom_instructions: instrTrimmed || null,
             aspect_ratio: aspectRatio || null,
+            mls_disclosure: !isRemove && mlsDisclosure,
           } as any);
           onResult(originalUrl, stagedUrl, data.isWatermarked);
         } else {
