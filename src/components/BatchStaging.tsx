@@ -130,9 +130,16 @@ const BatchStaging = ({
   const [style, setStyle] = useState("Modern");
   const [propertyName, setPropertyName] = useState("");
   const [mlsDisclosure, setMlsDisclosure] = useState(false);
+  const [consistency, setConsistency] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [compareItem, setCompareItem] = useState<BatchItem | null>(null);
   const cancelledRef = useRef(false);
+  const batchSeedRef = useRef<string>(crypto.randomUUID());
+
+  // Palette is derived from style + a stable batch seed (or property name once
+  // the agent types one) so all rooms in this batch coordinate.
+  const paletteSeed = propertyName.trim() || batchSeedRef.current;
+  const sharedPalette = consistency ? pickPaletteForBatch(style, paletteSeed) : "";
 
   useEffect(() => {
     let cancelled = false;
