@@ -10,8 +10,6 @@ import { PRICING_PLANS, ANNUAL_DISCOUNT_LABEL, priceLabel } from "@/config/prici
 import { startCheckout } from "@/lib/billing";
 import { useAuth } from "@/hooks/useAuth";
 import heroImage from "@/assets/landing-hero.jpg";
-import beforeVacant from "@/assets/before-vacant.jpg";
-import afterStaged from "@/assets/after-staged.jpg";
 import showcaseBedroom from "@/assets/showcase-bedroom.jpg";
 import showcaseKitchen from "@/assets/showcase-kitchen.jpg";
 import showcaseLiving from "@/assets/showcase-living.jpg";
