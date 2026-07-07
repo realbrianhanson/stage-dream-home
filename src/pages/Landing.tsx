@@ -197,22 +197,12 @@ const Landing = () => {
           </motion.div>
         </motion.div>
       </section>
-      {/* Trusted By */}
+      {/* Positioning line */}
       <section className="py-16 px-6 bg-background border-b border-border/40">
-        <div className="max-w-6xl mx-auto">
-          <p className="text-center font-body text-[10px] tracking-[0.4em] uppercase text-muted-foreground mb-8">
-            Trusted by agents at
+        <div className="max-w-4xl mx-auto text-center">
+          <p className="font-display text-xl md:text-2xl font-light italic text-foreground/70 tracking-wide">
+            Built for listing agents, photographers, and home stagers.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 opacity-60">
-            {["COMPASS", "SOTHEBY'S", "COLDWELL BANKER", "DOUGLAS ELLIMAN", "CORCORAN", "KELLER WILLIAMS"].map((brand) => (
-              <span
-                key={brand}
-                className="font-display text-xl md:text-2xl font-light tracking-[0.15em] text-foreground/50 hover:text-foreground/80 transition-colors"
-              >
-                {brand}
-              </span>
-            ))}
-          </div>
         </div>
       </section>
 
