@@ -20,11 +20,10 @@ type Billing = BillingPeriod;
 
 const compareRows: { label: string; values: (string | boolean)[] }[] = [
   { label: "Monthly stagings", values: ["3", "Unlimited (fair use)", "500"] },
-  { label: "Output quality", values: ["Standard", "Ultra HD", "Ultra HD"] },
+  { label: "Output quality", values: ["Standard", "High-resolution", "High-resolution"] },
   { label: "Design styles", values: ["6", "6+", "6+"] },
   { label: "Multi-style compare", values: ["Up to 3", "Up to 6", "Up to 6"] },
   { label: "Watermark-free downloads", values: [false, true, true] },
-  { label: "Priority processing", values: [false, true, true] },
   { label: "Stagings library", values: [true, true, true] },
   { label: "Public share links", values: [true, true, true] },
   { label: "Priority support", values: [false, false, true] },
