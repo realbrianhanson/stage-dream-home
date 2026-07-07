@@ -19,6 +19,7 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfte
   const navigate = useNavigate();
   const [sliderPos, setSliderPos] = useState(50);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -34,6 +35,18 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfte
     return () => observer.disconnect();
   }, []);
 
+  // Load the after image to determine natural aspect ratio.
+  useEffect(() => {
+    if (!after) return;
+    const img = new window.Image();
+    img.onload = () => {
+      if (img.naturalWidth && img.naturalHeight) {
+        setAspectRatio(img.naturalWidth / img.naturalHeight);
+      }
+    };
+    img.src = after;
+  }, [after]);
+
   const updateSlider = useCallback((clientX: number) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
@@ -46,7 +59,14 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfte
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isDragging.current) updateSlider(e.clientX);
   };
+  const handleHandleTouchStart = (e: React.TouchEvent) => {
+    isDragging.current = true;
+    // Prevent page scroll while dragging the handle.
+    e.preventDefault();
+  };
   const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging.current) return;
+    e.preventDefault();
     updateSlider(e.touches[0].clientX);
   };
   const handleCopyToClipboard = async () => {
