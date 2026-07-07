@@ -4,7 +4,7 @@ import { Upload, Image as ImageIcon, X, Loader2, Lock, ToggleLeft, ToggleRight, 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { uploadStagingImage } from "@/lib/uploadStagingImage";
-import { startCheckout } from "@/lib/billing";
+
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 
