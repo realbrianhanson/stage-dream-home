@@ -285,7 +285,7 @@ const RoomUploader = ({
             }
             if (!data?.stagedImageUrl) throw new Error(`No staged image returned for ${currentStyle}`);
 
-            let finalResult: StagingResult = { style: currentStyle, stagedImageUrl: data.stagedImageUrl, isWatermarked: data.isWatermarked };
+            let finalResult: StagingResult = { style: currentStyle, stagedImageUrl: data.stagedImageUrl, isWatermarked: data.isWatermarked, mlsDisclosure: mlsDisclosure };
 
             // Upload staged image and save to db (reuse shared original)
             if (user && sharedOriginalUrl) {
