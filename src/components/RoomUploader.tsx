@@ -238,9 +238,9 @@ const RoomUploader = ({
             aspect_ratio: aspectRatio || null,
             mls_disclosure: !isRemove && mlsDisclosure,
           } as any);
-          onResult(originalUrl, stagedUrl, data.isWatermarked);
+          onResult(originalUrl, stagedUrl, data.isWatermarked, !isRemove && mlsDisclosure);
         } else {
-          onResult(image, data.stagedImageUrl, data.isWatermarked);
+          onResult(image, data.stagedImageUrl, data.isWatermarked, !isRemove && mlsDisclosure);
         }
         toast.success(isRemove ? "Furniture removed successfully!" : "Room staged successfully!");
       } else {
