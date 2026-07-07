@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, useTransform, useMotionValue } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Clock, Palette, TrendingUp, Star, Sparkles, Check } from "lucide-react";
+import { ArrowRight, Clock, Palette, TrendingUp, Sparkles, Check } from "lucide-react";
 import Logo from "@/components/Logo";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import { PRICING_PLANS, ANNUAL_DISCOUNT_LABEL, priceLabel } from "@/config/pricing";
@@ -169,7 +169,7 @@ const Landing = () => {
             custom={5}
             className="mt-16 border-t border-b border-primary-foreground/15 py-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-primary-foreground/75"
           >
-            {["500+ Agents", "10,000+ Rooms Staged", "4.9★ Rating", "Under 30s"].map((stat) => (
+            {["Under 30s", "6 Design Styles", "Free to Try"].map((stat) => (
               <span key={stat} className="font-body text-sm tracking-wide">{stat}</span>
             ))}
           </motion.div>
@@ -197,22 +197,12 @@ const Landing = () => {
           </motion.div>
         </motion.div>
       </section>
-      {/* Trusted By */}
+      {/* Positioning line */}
       <section className="py-16 px-6 bg-background border-b border-border/40">
-        <div className="max-w-6xl mx-auto">
-          <p className="text-center font-body text-[10px] tracking-[0.4em] uppercase text-muted-foreground mb-8">
-            Trusted by agents at
+        <div className="max-w-4xl mx-auto text-center">
+          <p className="font-display text-xl md:text-2xl font-light italic text-foreground/70 tracking-wide">
+            Built for listing agents, photographers, and home stagers.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 opacity-60">
-            {["COMPASS", "SOTHEBY'S", "COLDWELL BANKER", "DOUGLAS ELLIMAN", "CORCORAN", "KELLER WILLIAMS"].map((brand) => (
-              <span
-                key={brand}
-                className="font-display text-xl md:text-2xl font-light tracking-[0.15em] text-foreground/50 hover:text-foreground/80 transition-colors"
-              >
-                {brand}
-              </span>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -286,7 +276,7 @@ const Landing = () => {
               { icon: Sparkles, title: "AI Intelligence", desc: "Our model understands room geometry, lighting, and design to create photorealistic results." },
               { icon: Clock, title: "30-Second Turnaround", desc: "No more waiting days for traditional staging. Get results in under a minute." },
               { icon: Palette, title: "6+ Design Styles", desc: "Modern, traditional, minimalist, Scandinavian, mid-century, and luxury aesthetics." },
-              { icon: TrendingUp, title: "Sell 73% Faster", desc: "Staged homes sell significantly faster and for higher prices than vacant ones." },
+              { icon: TrendingUp, title: "Listings That Move", desc: "Staged homes consistently sell faster and for more than vacant ones." },
             ].map((feature, i) => (
               <motion.div
                 key={feature.title}
@@ -365,55 +355,6 @@ const Landing = () => {
       {/* Divider */}
       <div className="max-w-3xl mx-auto" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.15), transparent)' }} />
 
-      {/* Editorial Testimonial */}
-      <section className="py-40 px-6 bg-card/40 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, hsl(38 60% 55% / 0.05) 0%, transparent 60%)' }} />
-        <div className="max-w-4xl mx-auto relative">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={fadeUp}
-            className="text-center"
-          >
-            <SectionEyebrow number="04" label="Testimonial" />
-
-            <span
-              className="font-display text-accent/25 leading-none block mb-2"
-              style={{ fontSize: 'clamp(6rem, 14vw, 10rem)' }}
-              aria-hidden
-            >
-              "
-            </span>
-
-            <blockquote
-              className="font-display italic font-light leading-[1.15] text-foreground/90 mb-12 -mt-8"
-              style={{ fontSize: 'clamp(1.75rem, 4vw, 3.25rem)', letterSpacing: '-0.015em' }}
-            >
-              RealVision cut my listing time in half. The quality is genuinely indistinguishable from professional photography — and my clients can't tell the difference.
-            </blockquote>
-
-            <div className="flex items-center justify-center gap-1 mb-6">
-              {[...Array(5)].map((_, j) => (
-                <Star key={j} className="w-3.5 h-3.5 fill-accent text-accent" />
-              ))}
-            </div>
-
-            <div
-              className="mx-auto mb-5"
-              style={{ width: 40, height: 1, background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.5), transparent)' }}
-            />
-
-            <p className="font-display text-lg font-medium tracking-wide">Sarah Mitchell</p>
-            <p className="font-body text-xs tracking-[0.2em] uppercase text-muted-foreground mt-1">
-              Luxury Real Estate · New York
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Divider */}
-      <div className="max-w-3xl mx-auto" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.15), transparent)' }} />
 
       {/* Pricing */}
       <section id="pricing" className="py-32 px-6 bg-card/50 relative">

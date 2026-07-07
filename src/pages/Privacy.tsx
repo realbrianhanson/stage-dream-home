@@ -43,9 +43,9 @@ const Privacy = () => {
 
       <Section title="Storage & Security">
         <p>
-          Images and stagings are stored in our secure cloud backend with row-level security,
-          ensuring that only you can access your content. Public share links are generated only
-          when you explicitly create one.
+          Images and stagings are stored in our secure cloud backend with row-level security.
+          Your gallery is only visible to your account, and images live at long unguessable URLs;
+          public share links are created only when you explicitly generate one.
         </p>
       </Section>
 
