@@ -115,8 +115,19 @@ const Index = () => {
                   plan={usage.plan}
                   used={usage.stagings_this_month}
                   limit={freeLimit}
+                  monthResetAt={usage.month_reset_at}
                 />
               </div>
+            )}
+            {usage && usage.plan !== "free" && (
+              <button
+                onClick={openCustomerPortal}
+                className="hidden md:inline-flex items-center gap-1.5 font-body text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors min-h-[44px] px-1"
+                aria-label="Manage Billing"
+              >
+                <CreditCard className="w-3.5 h-3.5" />
+                <span>Manage Billing</span>
+              </button>
             )}
             <button
               onClick={scrollToUpload}
