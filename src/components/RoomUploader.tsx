@@ -128,6 +128,14 @@ const RoomUploader = ({
     }
   }, [initialImage, initialRoomType, initialStyle, initialCustomInstructions, initialPalette]);
 
+  // If the user changes style, clear the palette unless it belongs to the new style.
+  useEffect(() => {
+    if (palette && !getPalettesForStyle(style).includes(palette)) {
+      setPalette("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [style]);
+
   const handleFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) {
       toast.error("Please upload an image file");
