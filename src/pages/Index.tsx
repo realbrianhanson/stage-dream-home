@@ -16,7 +16,7 @@ import { openCustomerPortal } from "@/lib/billing";
 import { LogOut, ImageIcon, HelpCircle, CreditCard } from "lucide-react";
 
 type ResultState =
-  | { type: "single"; original: string; staged: string; isWatermarked?: boolean; mlsDisclosure?: boolean; meta?: { roomType: string; style: string; propertyName: string; customInstructions: string } }
+  | { type: "single"; original: string; staged: string; isWatermarked?: boolean; mlsDisclosure?: boolean; meta?: { roomType: string; style: string; propertyName: string; customInstructions: string; palette?: string } }
   | { type: "multi"; original: string; results: StagingResult[]; pendingStyles: string[]; isWatermarked?: boolean }
   | null;
 
@@ -41,6 +41,7 @@ const Index = () => {
     reStageRoomType?: string;
     reStageStyle?: string;
     reStageCustomInstructions?: string;
+    reStagePalette?: string;
   } | null;
 
   useEffect(() => {
@@ -65,7 +66,7 @@ const Index = () => {
     document.getElementById("upload-section")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleResult = (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean, meta?: { roomType: string; style: string; propertyName: string; customInstructions: string }) => {
+  const handleResult = (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean, meta?: { roomType: string; style: string; propertyName: string; customInstructions: string; palette?: string }) => {
     setResult({ type: "single", original, staged, isWatermarked, mlsDisclosure, meta });
     setStagingCount((prev) => prev + 1);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -182,6 +183,7 @@ const Index = () => {
               style: result.meta.style,
               propertyName: result.meta.propertyName,
               customInstructions: result.meta.customInstructions,
+              palette: result.meta.palette,
             } : undefined}
           />
         </div>
@@ -205,6 +207,7 @@ const Index = () => {
             initialRoomType={reStageState?.reStageRoomType}
             initialStyle={reStageState?.reStageStyle}
             initialCustomInstructions={reStageState?.reStageCustomInstructions}
+            initialPalette={reStageState?.reStagePalette}
             canStage={canStage}
             remainingStagings={remainingStagings}
             onStagingComplete={refresh}

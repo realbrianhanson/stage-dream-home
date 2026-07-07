@@ -17,7 +17,7 @@ import { uploadStagingImage } from "@/lib/uploadStagingImage";
 import { useAuth } from "@/hooks/useAuth";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 
-import { ROOM_TYPES, STYLES } from "@/config/catalogs";
+import { ROOM_TYPES, STYLES, pickPaletteForBatch } from "@/config/catalogs";
 
 export const MAX_BATCH = 15;
 const BATCH_DELAY_MS = 2000;
@@ -130,9 +130,16 @@ const BatchStaging = ({
   const [style, setStyle] = useState("Modern");
   const [propertyName, setPropertyName] = useState("");
   const [mlsDisclosure, setMlsDisclosure] = useState(false);
+  const [consistency, setConsistency] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [compareItem, setCompareItem] = useState<BatchItem | null>(null);
   const cancelledRef = useRef(false);
+  const batchSeedRef = useRef<string>(crypto.randomUUID());
+
+  // Palette is derived from style + a stable batch seed (or property name once
+  // the agent types one) so all rooms in this batch coordinate.
+  const paletteSeed = propertyName.trim() || batchSeedRef.current;
+  const sharedPalette = consistency ? pickPaletteForBatch(style, paletteSeed) : "";
 
   useEffect(() => {
     let cancelled = false;
@@ -198,6 +205,7 @@ const BatchStaging = ({
           style,
           mode: "stage",
           mls_disclosure: mlsDisclosure,
+          palette: sharedPalette || undefined,
         },
       });
       if (error) throw error;
@@ -226,6 +234,7 @@ const BatchStaging = ({
           style,
           property_address: propertyName.trim() || null,
           mls_disclosure: mlsDisclosure,
+          staging_palette: sharedPalette || null,
         } as any);
       }
 
@@ -455,6 +464,41 @@ const BatchStaging = ({
           />
         </button>
       </div>
+
+      {/* Shared consistency toggle */}
+      <div className="mb-6 p-4 rounded-xl border border-border">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="font-body text-sm font-medium">Consistent look across rooms</p>
+            <p className="font-body text-xs text-muted-foreground leading-snug mt-0.5">
+              Uses one coordinated palette so every room in this listing feels like the same designed home.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={consistency}
+            aria-label="Toggle consistent look across rooms"
+            disabled={processing}
+            onClick={() => setConsistency((v) => !v)}
+            className={`relative shrink-0 w-10 h-6 rounded-full transition-colors disabled:opacity-60 ${
+              consistency ? "bg-accent" : "bg-border"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-background shadow-sm transition-transform ${
+                consistency ? "translate-x-4" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+        {consistency && sharedPalette && (
+          <p className="font-body text-[11px] text-muted-foreground/70 mt-3 pt-3 border-t border-white/[0.04] italic">
+            Palette · {sharedPalette}
+          </p>
+        )}
+      </div>
+
 
       {/* Queue list */}
       <div className="mb-6 border border-white/[0.06] rounded-2xl bg-white/[0.02] overflow-hidden">

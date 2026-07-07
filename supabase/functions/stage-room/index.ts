@@ -237,8 +237,9 @@ serve(async (req) => {
       }
     };
 
-    const { image, roomType, style, customInstructions, aspectRatio, mode, mls_disclosure, refineInstruction } = await req.json();
+    const { image, roomType, style, customInstructions, aspectRatio, mode, mls_disclosure, refineInstruction, palette } = await req.json();
     const wantsMlsLabel = mls_disclosure === true && mode !== "remove";
+    const sanitizedPalette = typeof palette === "string" ? palette.slice(0, 200).trim() : "";
 
     if (!image) {
       await releaseSlot();
@@ -320,6 +321,10 @@ Add appropriate furniture like sofas, tables, chairs, rugs, lamps, artwork, plan
 
     if (sanitizedInstructions && !isRefine) {
       prompt += `\n\nAdditional requirements from the client: ${sanitizedInstructions}`;
+    }
+
+    if (sanitizedPalette && !isRemoval) {
+      prompt += `\n\nThis room is part of a whole-home staging. Use a consistent furniture collection and palette across rooms: ${sanitizedPalette}. Keep the same design language, wood tones, metal finishes, and textile palette so all rooms in this listing feel professionally coordinated.`;
     }
 
     const validRatios = ["16:9", "4:3", "3:4", "1:1"];

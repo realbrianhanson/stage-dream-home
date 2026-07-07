@@ -22,7 +22,7 @@ const INSTRUCTION_CHIPS = [
 
 const MAX_INSTRUCTIONS = 300;
 
-import { ROOM_TYPES, STYLES } from "@/config/catalogs";
+import { ROOM_TYPES, STYLES, getPalettesForStyle } from "@/config/catalogs";
 
 const ASPECT_RATIOS = [
   { value: "", label: "Match Photo" },
@@ -40,7 +40,7 @@ export interface StagingResult {
 }
 
 interface RoomUploaderProps {
-  onResult: (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean, meta?: { roomType: string; style: string; propertyName: string; customInstructions: string }) => void;
+  onResult: (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean, meta?: { roomType: string; style: string; propertyName: string; customInstructions: string; palette?: string }) => void;
   onMultiResult: (original: string, results: StagingResult[], isWatermarked?: boolean) => void;
   onMultiStart: (original: string, pendingStyles: string[]) => void;
   onMultiProgress: (result: StagingResult, remainingStyles: string[]) => void;
@@ -48,6 +48,7 @@ interface RoomUploaderProps {
   initialRoomType?: string;
   initialStyle?: string;
   initialCustomInstructions?: string;
+  initialPalette?: string;
   canStage: boolean;
   remainingStagings: number;
   onStagingComplete: () => Promise<void>;
@@ -64,6 +65,7 @@ const RoomUploader = ({
   initialRoomType,
   initialStyle,
   initialCustomInstructions,
+  initialPalette,
   canStage,
   remainingStagings,
   onStagingComplete,
@@ -82,6 +84,7 @@ const RoomUploader = ({
   const [propertyName, setPropertyName] = useState("");
   const [customInstructions, setCustomInstructions] = useState(initialCustomInstructions || "");
   const [aspectRatio, setAspectRatio] = useState("");
+  const [palette, setPalette] = useState(initialPalette || "");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressText, setProgressText] = useState("");
@@ -119,7 +122,19 @@ const RoomUploader = ({
       setCustomInstructions(initialCustomInstructions);
       setShowAdvanced(true);
     }
-  }, [initialImage, initialRoomType, initialStyle, initialCustomInstructions]);
+    if (initialPalette) {
+      setPalette(initialPalette);
+      setShowAdvanced(true);
+    }
+  }, [initialImage, initialRoomType, initialStyle, initialCustomInstructions, initialPalette]);
+
+  // If the user changes style, clear the palette unless it belongs to the new style.
+  useEffect(() => {
+    if (palette && !getPalettesForStyle(style).includes(palette)) {
+      setPalette("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [style]);
 
   const handleFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -215,8 +230,9 @@ const RoomUploader = ({
       if (count === 1) {
         setProgressText(isRemove ? "Removing furniture from your room..." : "Staging your room with AI...");
         const instrTrimmed = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
+        const paletteForRun = !isRemove && palette ? palette : "";
         const { data, error } = await supabase.functions.invoke("stage-room", {
-          body: { image, roomType, style: stylesToStage[0], customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined, mode: isRemove ? "remove" : "stage", mls_disclosure: !isRemove && mlsDisclosure },
+          body: { image, roomType, style: stylesToStage[0], customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined, mode: isRemove ? "remove" : "stage", mls_disclosure: !isRemove && mlsDisclosure, palette: paletteForRun || undefined },
         });
         // Always refresh usage after an attempt so the indicator matches DB.
         await onStagingComplete();
@@ -241,11 +257,12 @@ const RoomUploader = ({
             custom_instructions: instrTrimmed || null,
             aspect_ratio: aspectRatio || null,
             mls_disclosure: !isRemove && mlsDisclosure,
+            staging_palette: paletteForRun || null,
           } as any);
-          const meta = { roomType, style: stylesToStage[0], propertyName: propertyName.trim(), customInstructions: instrTrimmed };
+          const meta = { roomType, style: stylesToStage[0], propertyName: propertyName.trim(), customInstructions: instrTrimmed, palette: paletteForRun };
           onResult(originalUrl, stagedUrl, data.isWatermarked, !isRemove && mlsDisclosure, meta);
         } else {
-          const meta = { roomType, style: stylesToStage[0], propertyName: propertyName.trim(), customInstructions: instrTrimmed };
+          const meta = { roomType, style: stylesToStage[0], propertyName: propertyName.trim(), customInstructions: instrTrimmed, palette: paletteForRun };
           onResult(image, data.stagedImageUrl, data.isWatermarked, !isRemove && mlsDisclosure, meta);
         }
         toast.success(isRemove ? "Furniture removed successfully!" : "Room staged successfully!");
@@ -705,6 +722,27 @@ const RoomUploader = ({
                             </span>
                           </div>
                         </div>
+
+                        {mode === "stage" && !compareMode && (
+                          <div className="mt-5">
+                            <label className="font-body text-sm font-medium text-muted-foreground block mb-2">
+                              Coordinated palette (optional)
+                            </label>
+                            <select
+                              value={palette}
+                              onChange={(e) => setPalette(e.target.value)}
+                              className="w-full font-body text-sm bg-white/[0.02] border border-white/[0.06] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all appearance-none"
+                            >
+                              <option value="">Let AI decide</option>
+                              {getPalettesForStyle(style).map((p) => (
+                                <option key={p} value={p}>{p}</option>
+                              ))}
+                            </select>
+                            <p className="font-body text-[11px] text-muted-foreground/60 mt-1.5">
+                              Locks wood tones, textiles, and metal finishes for consistency across a listing.
+                            </p>
+                          </div>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>

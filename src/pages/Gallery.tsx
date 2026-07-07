@@ -126,6 +126,7 @@ const Gallery = () => {
         reStageRoomType: staging.room_type,
         reStageStyle: staging.style,
         reStageCustomInstructions: staging.custom_instructions || "",
+        reStagePalette: (staging as any).staging_palette || "",
       },
     });
   };
@@ -575,6 +576,7 @@ const Gallery = () => {
                 style: selectedStaging.style,
                 propertyName: selectedStaging.property_address,
                 customInstructions: selectedStaging.custom_instructions,
+                palette: (selectedStaging as any).staging_palette || null,
               }}
             />
           </motion.div>

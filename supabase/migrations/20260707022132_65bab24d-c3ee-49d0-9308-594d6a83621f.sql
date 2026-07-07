@@ -1,0 +1,1 @@
+ALTER TABLE public.stagings ADD COLUMN IF NOT EXISTS staging_palette text;
