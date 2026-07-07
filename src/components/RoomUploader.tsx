@@ -40,7 +40,7 @@ export interface StagingResult {
 }
 
 interface RoomUploaderProps {
-  onResult: (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean, meta?: { roomType: string; style: string; propertyName: string; customInstructions: string }) => void;
+  onResult: (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean, meta?: { roomType: string; style: string; propertyName: string; customInstructions: string; palette?: string }) => void;
   onMultiResult: (original: string, results: StagingResult[], isWatermarked?: boolean) => void;
   onMultiStart: (original: string, pendingStyles: string[]) => void;
   onMultiProgress: (result: StagingResult, remainingStyles: string[]) => void;
@@ -48,6 +48,7 @@ interface RoomUploaderProps {
   initialRoomType?: string;
   initialStyle?: string;
   initialCustomInstructions?: string;
+  initialPalette?: string;
   canStage: boolean;
   remainingStagings: number;
   onStagingComplete: () => Promise<void>;
