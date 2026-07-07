@@ -64,8 +64,16 @@ const Pricing = () => {
   const [billing, setBilling] = useState<Billing>("monthly");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const handleCta = (_planName: string) => {
-    navigate(user ? "/app" : "/auth");
+  const handleCta = (planId: PlanId) => {
+    if (planId === "free") {
+      navigate(user ? "/app" : "/auth");
+      return;
+    }
+    if (!user) {
+      navigate("/auth?next=/pricing");
+      return;
+    }
+    startCheckout(planId, billing);
   };
 
   return (
