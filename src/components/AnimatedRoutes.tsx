@@ -49,6 +49,8 @@ const AnimatedRoutes = () => {
           <Route path="/share/:token" element={<PageTransition><SharedStaging /></PageTransition>} />
           <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
           <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
+          <Route path="/billing/success" element={<PageTransition><CheckoutSuccess /></PageTransition>} />
+          <Route path="/billing/cancel" element={<PageTransition><CheckoutCancel /></PageTransition>} />
           <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
         </Routes>
       </AnimatePresence>
