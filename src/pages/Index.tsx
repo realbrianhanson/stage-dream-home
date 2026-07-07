@@ -12,7 +12,8 @@ import Logo from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
 import { useUsage } from "@/hooks/useUsage";
 import { supabase } from "@/integrations/supabase/client";
-import { LogOut, ImageIcon, HelpCircle } from "lucide-react";
+import { openCustomerPortal } from "@/lib/billing";
+import { LogOut, ImageIcon, HelpCircle, CreditCard } from "lucide-react";
 
 type ResultState =
   | { type: "single"; original: string; staged: string; isWatermarked?: boolean }
