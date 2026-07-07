@@ -1,0 +1,1 @@
+ALTER TABLE public.stagings ADD COLUMN IF NOT EXISTS mls_disclosure boolean NOT NULL DEFAULT false;
