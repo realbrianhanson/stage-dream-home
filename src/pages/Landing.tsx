@@ -276,7 +276,7 @@ const Landing = () => {
               { icon: Sparkles, title: "AI Intelligence", desc: "Our model understands room geometry, lighting, and design to create photorealistic results." },
               { icon: Clock, title: "30-Second Turnaround", desc: "No more waiting days for traditional staging. Get results in under a minute." },
               { icon: Palette, title: "6+ Design Styles", desc: "Modern, traditional, minimalist, Scandinavian, mid-century, and luxury aesthetics." },
-              { icon: TrendingUp, title: "Sell 73% Faster", desc: "Staged homes sell significantly faster and for higher prices than vacant ones." },
+              { icon: TrendingUp, title: "Listings That Move", desc: "Staged homes consistently sell faster and for more than vacant ones." },
             ].map((feature, i) => (
               <motion.div
                 key={feature.title}
