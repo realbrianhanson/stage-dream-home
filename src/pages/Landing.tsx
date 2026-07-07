@@ -265,8 +265,7 @@ const Landing = () => {
           </div>
         </div>
       </section>
-        </div>
-      </section>
+
 
       {/* Divider */}
       <div className="max-w-3xl mx-auto" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.15), transparent)' }} />
