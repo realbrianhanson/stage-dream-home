@@ -176,6 +176,7 @@ const Index = () => {
             after={result.staged}
             onReset={() => setResult(null)}
             isWatermarked={result.isWatermarked}
+            mlsDisclosure={result.mlsDisclosure}
           />
         </div>
       ) : result?.type === "multi" ? (
