@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, useTransform, useMotionValue } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Clock, Palette, TrendingUp, Sparkles, Check } from "lucide-react";
-import Logo from "@/components/Logo";
+import { ArrowRight, Clock, Palette, TrendingUp, Sparkles, Check, Upload, Wand2, Download } from "lucide-react";
 import SectionEyebrow from "@/components/SectionEyebrow";
+import MarketingNav from "@/components/MarketingNav";
+import MarketingFooter from "@/components/MarketingFooter";
+import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import { PRICING_PLANS, ANNUAL_DISCOUNT_LABEL, priceLabel } from "@/config/pricing";
 import { startCheckout } from "@/lib/billing";
 import { useAuth } from "@/hooks/useAuth";
