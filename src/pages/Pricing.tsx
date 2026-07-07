@@ -231,7 +231,7 @@ const Pricing = () => {
                 <thead>
                   <tr className="border-b border-border/60 bg-foreground/[0.02]">
                     <th className="text-left font-body text-[10px] font-medium uppercase tracking-[0.25em] text-muted-foreground px-6 py-6">Feature</th>
-                    {plans.map((p) => (
+                    {PRICING_PLANS.map((p) => (
                       <th
                         key={p.name}
                         className={`text-center px-6 py-6 ${p.highlight ? "relative" : ""}`}
