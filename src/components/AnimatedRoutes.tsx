@@ -10,6 +10,7 @@ const Auth = lazy(() => import("@/pages/Auth"));
 const Gallery = lazy(() => import("@/pages/Gallery"));
 const Pricing = lazy(() => import("@/pages/Pricing"));
 const SharedStaging = lazy(() => import("@/pages/SharedStaging"));
+const ListingPage = lazy(() => import("@/pages/ListingPage"));
 const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
