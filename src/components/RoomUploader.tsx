@@ -56,7 +56,7 @@ export interface StagingResult {
 }
 
 interface RoomUploaderProps {
-  onResult: (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean) => void;
+  onResult: (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean, meta?: { roomType: string; style: string; propertyName: string; customInstructions: string }) => void;
   onMultiResult: (original: string, results: StagingResult[], isWatermarked?: boolean) => void;
   onMultiStart: (original: string, pendingStyles: string[]) => void;
   onMultiProgress: (result: StagingResult, remainingStyles: string[]) => void;
