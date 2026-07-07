@@ -214,7 +214,7 @@ const Landing = () => {
             variants={fadeUp}
             custom={1}
           >
-            <BeforeAfterSlider before={beforeVacant} after={afterStaged} />
+            <InteractiveDemo />
           </motion.div>
         </div>
       </section>
