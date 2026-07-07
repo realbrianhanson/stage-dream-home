@@ -211,7 +211,7 @@ const RoomUploader = ({
         setProgressText(isRemove ? "Removing furniture from your room..." : "Staging your room with AI...");
         const instrTrimmed = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
         const { data, error } = await supabase.functions.invoke("stage-room", {
-          body: { image, roomType, style: stylesToStage[0], customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined, mode: isRemove ? "remove" : "stage" },
+          body: { image, roomType, style: stylesToStage[0], customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined, mode: isRemove ? "remove" : "stage", mls_disclosure: !isRemove && mlsDisclosure },
         });
         // Always refresh usage after an attempt so the indicator matches DB.
         await onStagingComplete();
