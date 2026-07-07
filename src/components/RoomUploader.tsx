@@ -722,6 +722,27 @@ const RoomUploader = ({
                             </span>
                           </div>
                         </div>
+
+                        {!isRemove && !compareMode && (
+                          <div className="mt-5">
+                            <label className="font-body text-sm font-medium text-muted-foreground block mb-2">
+                              Coordinated palette (optional)
+                            </label>
+                            <select
+                              value={palette}
+                              onChange={(e) => setPalette(e.target.value)}
+                              className="w-full font-body text-sm bg-white/[0.02] border border-white/[0.06] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all appearance-none"
+                            >
+                              <option value="">Let AI decide</option>
+                              {getPalettesForStyle(style).map((p) => (
+                                <option key={p} value={p}>{p}</option>
+                              ))}
+                            </select>
+                            <p className="font-body text-[11px] text-muted-foreground/60 mt-1.5">
+                              Locks wood tones, textiles, and metal finishes for consistency across a listing.
+                            </p>
+                          </div>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
