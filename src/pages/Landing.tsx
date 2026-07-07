@@ -42,31 +42,10 @@ const Landing = () => {
     glowY.set(((e.clientY - rect.top) / rect.height) * 100);
   };
 
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 60);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   return (
     <div className="min-h-screen bg-background overflow-x-hidden grain-overlay">
-      {/* Navbar */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 transition-all duration-300 border-b border-border/10 ${scrolled ? "py-3 backdrop-blur-xl bg-foreground/95" : "py-4 sm:py-5 backdrop-blur-md bg-background/20"}`}>
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-          <Logo light />
-          <div className="flex items-center gap-4 sm:gap-6">
-            <a href="#features" className="font-body text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors hidden md:block">Features</a>
-            <a href="#showcase" className="font-body text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors hidden md:block">Showcase</a>
-            <button onClick={() => navigate("/pricing")} className="font-body text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors hidden md:block">Pricing</button>
-            <button
-              onClick={() => navigate("/auth")}
-              className="font-body text-xs sm:text-sm font-semibold gold-gradient text-accent-foreground px-4 sm:px-6 py-2.5 rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap"
-            >
-              Get Started
-            </button>
-          </div>
-        </div>
-      </nav>
+      <MarketingNav />
+
 
       {/* Hero */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
