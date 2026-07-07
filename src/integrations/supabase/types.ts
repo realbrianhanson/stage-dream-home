@@ -95,7 +95,7 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: boolean
       }
-      decrement_staging: { Args: never; Returns: undefined }
+      decrement_staging: { Args: { p_user_id: string }; Returns: undefined }
       get_shared_staging: {
         Args: { p_token: string }
         Returns: {

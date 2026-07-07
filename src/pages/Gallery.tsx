@@ -91,11 +91,14 @@ const Gallery = () => {
       const origPath = extractPath(staging.original_image_url);
       const stagedPath = extractPath(staging.staged_image_url);
 
-      // Only delete the ORIGINAL file if no other staging row references the same URL
-      // (multi-style comparisons share one original).
-      const originalIsShared = stagings.some(
-        (s) => s.id !== id && s.original_image_url === staging.original_image_url
-      );
+      // Only delete the ORIGINAL file if no other staging row (across ALL pages)
+      // references the same URL — multi-style comparisons share one original.
+      const { count: siblingCount } = await supabase
+        .from("stagings")
+        .select("id", { count: "exact", head: true })
+        .eq("original_image_url", staging.original_image_url)
+        .neq("id", id);
+      const originalIsShared = (siblingCount ?? 0) > 0;
 
       const filesToRemove: string[] = [];
       if (stagedPath) filesToRemove.push(stagedPath);

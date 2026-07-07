@@ -154,9 +154,14 @@ serve(async (req) => {
     }
 
     // From here on, any failure MUST decrement the reserved slot.
+    // Use a service-role client so users cannot call decrement_staging themselves.
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
     const releaseSlot = async () => {
       try {
-        await supabaseClient.rpc("decrement_staging" as any);
+        await adminClient.rpc("decrement_staging" as any, { p_user_id: userId });
       } catch (e) {
         console.error("decrement_staging failed:", e);
       }
