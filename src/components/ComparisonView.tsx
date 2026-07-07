@@ -210,6 +210,7 @@ const ComparisonView = ({ original, results, pendingStyles = [], onReset, isWate
               after={selectedResult.stagedImageUrl}
               onReset={() => setSelectedResult(null)}
               isWatermarked={isWatermarked}
+              mlsDisclosure={selectedResult.mlsDisclosure}
             />
           </motion.div>
         )}
