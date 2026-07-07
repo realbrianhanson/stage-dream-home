@@ -61,7 +61,7 @@ interface RoomUploaderProps {
   initialCustomInstructions?: string;
   canStage: boolean;
   remainingStagings: number;
-  onStagingComplete: () => Promise<boolean>;
+  onStagingComplete: () => Promise<void>;
   usage: { plan: string; stagings_this_month: number } | null;
   freeLimit: number;
 }
