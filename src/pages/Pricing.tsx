@@ -129,7 +129,7 @@ const Pricing = () => {
             >
               Annual
               <span className="text-[10px] font-semibold tracking-wider uppercase text-accent bg-accent/10 border border-accent/20 px-1.5 py-0.5 rounded">
-                Save 17%
+                {ANNUAL_DISCOUNT_LABEL}
               </span>
             </button>
           </motion.div>
@@ -139,11 +139,12 @@ const Pricing = () => {
       {/* Plans */}
       <section className="px-6 pb-24">
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-6 md:gap-8 items-stretch">
-          {plans.map((plan, i) => {
-            const price = billing === "monthly" ? plan.monthly : plan.annual;
+          {PRICING_PLANS.map((plan, i) => {
+            const displayPrice = priceLabel(plan, billing);
+            const showYearly = billing === "annual" && plan.monthly > 0;
             return (
               <motion.div
-                key={plan.name}
+                key={plan.id}
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: "-50px" }}
@@ -166,16 +167,16 @@ const Pricing = () => {
                 </p>
                 <div className="flex items-baseline gap-1 mb-1">
                   <span className={`font-display text-5xl font-semibold ${plan.highlight ? "text-accent" : ""}`}>
-                    {price === 0 ? "Free" : `$${price}`}
+                    {displayPrice}
                   </span>
-                  {price > 0 && (
+                  {plan.monthly > 0 && (
                     <span className={`font-body text-sm ${plan.highlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                       /mo
                     </span>
                   )}
                 </div>
                 <p className={`font-body text-xs mb-8 h-4 ${plan.highlight ? "text-primary-foreground/40" : "text-muted-foreground/70"}`}>
-                  {price > 0 && billing === "annual" ? `billed annually ($${price * 12}/yr)` : ""}
+                  {showYearly ? yearlyTotal(plan) : ""}
                 </p>
 
                 <ul className="space-y-3 mb-8 flex-1">
@@ -188,7 +189,7 @@ const Pricing = () => {
                 </ul>
 
                 <button
-                  onClick={() => handleCta(plan.name)}
+                  onClick={() => handleCta(plan.id)}
                   className={`w-full font-body font-semibold text-sm py-3.5 rounded-lg transition-all flex items-center justify-center gap-2 group ${
                     plan.highlight
                       ? "gold-gradient-animated text-accent-foreground hover:opacity-90"
