@@ -13,6 +13,8 @@ const SharedStaging = lazy(() => import("@/pages/SharedStaging"));
 const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
+const CheckoutSuccess = lazy(() => import("@/pages/CheckoutSuccess"));
+const CheckoutCancel = lazy(() => import("@/pages/CheckoutCancel"));
 
 const RouteFallback = () => (
   <div className="min-h-screen bg-background grain-overlay flex flex-col items-center justify-center gap-5">
@@ -47,6 +49,8 @@ const AnimatedRoutes = () => {
           <Route path="/share/:token" element={<PageTransition><SharedStaging /></PageTransition>} />
           <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
           <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
+          <Route path="/billing/success" element={<PageTransition><CheckoutSuccess /></PageTransition>} />
+          <Route path="/billing/cancel" element={<PageTransition><CheckoutCancel /></PageTransition>} />
           <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
         </Routes>
       </AnimatePresence>

@@ -1,17 +1,39 @@
 import { Crown } from "lucide-react";
+import { getPlan } from "@/config/pricing";
 
 interface UsageIndicatorProps {
   plan: string;
   used: number;
   limit: number;
+  monthResetAt?: string | null;
 }
 
-const UsageIndicator = ({ plan, used, limit }: UsageIndicatorProps) => {
+const RESET_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+
+const formatResetDate = (monthResetAt?: string | null) => {
+  if (!monthResetAt) return null;
+  const nextReset = new Date(new Date(monthResetAt).getTime() + RESET_WINDOW_MS);
+  if (Number.isNaN(nextReset.getTime())) return null;
+  return nextReset.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+};
+
+const planLabel = (plan: string) => {
+  if (plan === "pro") return getPlan("pro").name;
+  if (plan === "studio") return getPlan("studio").name;
+  return getPlan("free").name;
+};
+
+const UsageIndicator = ({ plan, used, limit, monthResetAt }: UsageIndicatorProps) => {
   const isFree = plan === "free";
   const progress = isFree ? Math.min(used / limit, 1) : 1;
+  const resetLabel = formatResetDate(monthResetAt);
 
   return (
     <div className="flex items-center gap-3 font-body text-xs text-muted-foreground">
+      <span className="hidden md:inline-flex items-center gap-1.5 text-foreground/70">
+        {!isFree && <Crown className="w-3 h-3 text-accent" />}
+        <span className={isFree ? "" : "text-accent/85"}>{planLabel(plan)}</span>
+      </span>
       {isFree ? (
         <>
           <span>
@@ -23,11 +45,13 @@ const UsageIndicator = ({ plan, used, limit }: UsageIndicatorProps) => {
               style={{ width: `${progress * 100}%` }}
             />
           </div>
+          {resetLabel && (
+            <span className="hidden sm:inline text-muted-foreground/70">Resets {resetLabel}</span>
+          )}
         </>
       ) : (
-        <span className="flex items-center gap-1.5">
-          <Crown className="w-3 h-3 text-accent" />
-          <span className="text-accent/80">Unlimited stagings</span>
+        <span className="text-accent/80">
+          {plan === "studio" ? "500 stagings / month" : "Unlimited stagings"}
         </span>
       )}
     </div>

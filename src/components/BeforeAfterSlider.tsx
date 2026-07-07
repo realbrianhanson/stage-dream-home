@@ -3,6 +3,9 @@ import { motion } from "framer-motion";
 import { Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import DownloadWithPresets from "@/components/DownloadWithPresets";
+import { startCheckout } from "@/lib/billing";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 interface BeforeAfterSliderProps {
   before: string;
@@ -12,6 +15,8 @@ interface BeforeAfterSliderProps {
 }
 
 const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfterSliderProps) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [sliderPos, setSliderPos] = useState(50);
   const [containerWidth, setContainerWidth] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -211,9 +216,15 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfte
           >
             <p className="font-body text-sm text-muted-foreground">
               Free images include a small watermark.{" "}
-              <a href="/#pricing" className="text-accent hover:underline transition-colors">
+              <button
+                onClick={() => {
+                  if (!user) { navigate("/auth?next=/pricing"); return; }
+                  startCheckout("pro", "monthly");
+                }}
+                className="text-accent hover:underline transition-colors"
+              >
                 Upgrade to Pro
-              </a>{" "}
+              </button>{" "}
               for clean, watermark-free exports.
             </p>
           </motion.div>

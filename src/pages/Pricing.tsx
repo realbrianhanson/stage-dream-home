@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, CheckCircle2, Minus, ChevronDown } from "lucide-react";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
+import { PRICING_PLANS, ANNUAL_DISCOUNT_LABEL, priceLabel, yearlyTotal, type BillingPeriod, type PlanId } from "@/config/pricing";
+import { startCheckout } from "@/lib/billing";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -14,59 +16,10 @@ const fadeUp = {
   }),
 };
 
-type Billing = "monthly" | "annual";
-
-const plans = [
-  {
-    name: "Starter",
-    monthly: 0,
-    annual: 0,
-    blurb: "Try the magic. Stage your first listings free.",
-    cta: "Start Free",
-    features: [
-      "3 stagings per month",
-      "Standard quality output",
-      "All 6 design styles",
-      "Compare up to 3 styles",
-      "Watermarked downloads",
-    ],
-    highlight: false,
-  },
-  {
-    name: "Professional",
-    monthly: 29,
-    annual: 24,
-    blurb: "For agents and photographers staging weekly.",
-    cta: "Get Professional",
-    features: [
-      "Unlimited stagings",
-      "Ultra HD quality",
-      "All 6+ design styles",
-      "Priority processing queue",
-      "Download originals (no watermark)",
-      "Personal stagings library",
-      "Email support",
-    ],
-    highlight: true,
-  },
-  {
-    name: "Studio",
-    monthly: 79,
-    annual: 65,
-    blurb: "For high-volume listing agents and photographers.",
-    cta: "Get Studio",
-    features: [
-      "Everything in Professional",
-      "Higher monthly volume",
-      "Priority email support",
-      "Early access to new design styles",
-    ],
-    highlight: false,
-  },
-];
+type Billing = BillingPeriod;
 
 const compareRows: { label: string; values: (string | boolean)[] }[] = [
-  { label: "Monthly stagings", values: ["3", "Unlimited", "Unlimited"] },
+  { label: "Monthly stagings", values: ["3", "Unlimited (fair use)", "500"] },
   { label: "Output quality", values: ["Standard", "Ultra HD", "Ultra HD"] },
   { label: "Design styles", values: ["6", "6+", "6+"] },
   { label: "Multi-style compare", values: ["Up to 3", "Up to 6", "Up to 6"] },
@@ -111,8 +64,16 @@ const Pricing = () => {
   const [billing, setBilling] = useState<Billing>("monthly");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const handleCta = (_planName: string) => {
-    navigate(user ? "/app" : "/auth");
+  const handleCta = (planId: PlanId) => {
+    if (planId === "free") {
+      navigate(user ? "/app" : "/auth");
+      return;
+    }
+    if (!user) {
+      navigate("/auth?next=/pricing");
+      return;
+    }
+    startCheckout(planId, billing);
   };
 
   return (
@@ -168,7 +129,7 @@ const Pricing = () => {
             >
               Annual
               <span className="text-[10px] font-semibold tracking-wider uppercase text-accent bg-accent/10 border border-accent/20 px-1.5 py-0.5 rounded">
-                Save 17%
+                {ANNUAL_DISCOUNT_LABEL}
               </span>
             </button>
           </motion.div>
@@ -178,11 +139,12 @@ const Pricing = () => {
       {/* Plans */}
       <section className="px-6 pb-24">
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-6 md:gap-8 items-stretch">
-          {plans.map((plan, i) => {
-            const price = billing === "monthly" ? plan.monthly : plan.annual;
+          {PRICING_PLANS.map((plan, i) => {
+            const displayPrice = priceLabel(plan, billing);
+            const showYearly = billing === "annual" && plan.monthly > 0;
             return (
               <motion.div
-                key={plan.name}
+                key={plan.id}
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: "-50px" }}
@@ -205,16 +167,16 @@ const Pricing = () => {
                 </p>
                 <div className="flex items-baseline gap-1 mb-1">
                   <span className={`font-display text-5xl font-semibold ${plan.highlight ? "text-accent" : ""}`}>
-                    {price === 0 ? "Free" : `$${price}`}
+                    {displayPrice}
                   </span>
-                  {price > 0 && (
+                  {plan.monthly > 0 && (
                     <span className={`font-body text-sm ${plan.highlight ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                       /mo
                     </span>
                   )}
                 </div>
                 <p className={`font-body text-xs mb-8 h-4 ${plan.highlight ? "text-primary-foreground/40" : "text-muted-foreground/70"}`}>
-                  {price > 0 && billing === "annual" ? `billed annually ($${price * 12}/yr)` : ""}
+                  {showYearly ? yearlyTotal(plan) : ""}
                 </p>
 
                 <ul className="space-y-3 mb-8 flex-1">
@@ -227,7 +189,7 @@ const Pricing = () => {
                 </ul>
 
                 <button
-                  onClick={() => handleCta(plan.name)}
+                  onClick={() => handleCta(plan.id)}
                   className={`w-full font-body font-semibold text-sm py-3.5 rounded-lg transition-all flex items-center justify-center gap-2 group ${
                     plan.highlight
                       ? "gold-gradient-animated text-accent-foreground hover:opacity-90"
@@ -269,7 +231,7 @@ const Pricing = () => {
                 <thead>
                   <tr className="border-b border-border/60 bg-foreground/[0.02]">
                     <th className="text-left font-body text-[10px] font-medium uppercase tracking-[0.25em] text-muted-foreground px-6 py-6">Feature</th>
-                    {plans.map((p) => (
+                    {PRICING_PLANS.map((p) => (
                       <th
                         key={p.name}
                         className={`text-center px-6 py-6 ${p.highlight ? "relative" : ""}`}
@@ -299,7 +261,7 @@ const Pricing = () => {
                     >
                       <td className="font-body text-sm text-foreground/85 px-6 py-4">{row.label}</td>
                       {row.values.map((v, j) => {
-                        const isHighlighted = plans[j]?.highlight;
+                        const isHighlighted = PRICING_PLANS[j]?.highlight;
                         return (
                           <td
                             key={j}

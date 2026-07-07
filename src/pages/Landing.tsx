@@ -4,6 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, Clock, Palette, TrendingUp, Star, Sparkles, Check } from "lucide-react";
 import Logo from "@/components/Logo";
 import SectionEyebrow from "@/components/SectionEyebrow";
+import { PRICING_PLANS, ANNUAL_DISCOUNT_LABEL, priceLabel } from "@/config/pricing";
+import { startCheckout } from "@/lib/billing";
+import { useAuth } from "@/hooks/useAuth";
 import heroImage from "@/assets/landing-hero.jpg";
 import beforeVacant from "@/assets/before-vacant.jpg";
 import afterStaged from "@/assets/after-staged.jpg";
@@ -22,6 +25,7 @@ const fadeUp = {
 
 const Landing = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
   const glowX = useMotionValue(50);
@@ -445,19 +449,17 @@ const Landing = () => {
               >
                 Annual
                 <span className="text-[9px] tracking-[0.1em] gold-gradient text-accent-foreground px-2 py-0.5 rounded-full font-semibold">
-                  Save 20%
+                  {ANNUAL_DISCOUNT_LABEL}
                 </span>
               </button>
             </div>
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8 items-stretch">
-            {[
-              { name: "Starter", monthly: "Free", annual: "Free", period: "", features: ["3 rooms / month", "Standard quality", "All 6 design styles", "Compare up to 3 styles", "Watermarked exports"], highlight: false },
-              { name: "Professional", monthly: "$29", annual: "$23", period: "/mo", features: ["Unlimited rooms", "Ultra HD quality", "All 6+ styles", "Priority processing", "Download originals (no watermark)"], highlight: true },
-              { name: "Studio", monthly: "$79", annual: "$63", period: "/mo", features: ["Everything in Pro", "Higher monthly volume", "Priority email support", "Early access to new styles"], highlight: false },
-            ].map((plan, i) => {
-              const displayPrice = billing === "annual" ? plan.annual : plan.monthly;
+            {PRICING_PLANS.map((plan, i) => {
+              const displayPrice = priceLabel(plan, billing);
+              const period = plan.monthly === 0 ? "" : "/mo";
+              const shortFeatures = plan.features.slice(0, 5);
               const cardInner = (
                 <>
                   {plan.highlight && (
@@ -468,14 +470,14 @@ const Landing = () => {
                   <p className={`font-display text-lg font-medium mb-2 relative ${plan.highlight ? "text-primary-foreground" : ""}`}>{plan.name}</p>
                   <div className="flex items-baseline gap-1 mb-1 relative">
                     <span className={`font-display text-5xl font-light tracking-tight ${plan.highlight ? "text-accent" : "text-foreground"}`}>{displayPrice}</span>
-                    <span className={`font-body text-sm ${plan.highlight ? "text-primary-foreground/50" : "text-muted-foreground"}`}>{plan.period}</span>
+                    <span className={`font-body text-sm ${plan.highlight ? "text-primary-foreground/50" : "text-muted-foreground"}`}>{period}</span>
                   </div>
                   <p className={`font-body text-[10px] tracking-[0.2em] uppercase mb-7 h-4 ${plan.highlight ? "text-primary-foreground/40" : "text-muted-foreground/70"}`}>
-                    {billing === "annual" && plan.monthly !== "Free" ? "Billed annually" : ""}
+                    {billing === "annual" && plan.monthly > 0 ? "Billed annually" : ""}
                   </p>
                   <div className={`h-px w-12 mb-6 bg-accent/40 relative`} />
                   <ul className="space-y-3.5 mb-10 flex-grow relative">
-                    {plan.features.map((f) => (
+                    {shortFeatures.map((f) => (
                       <li key={f} className="flex items-start gap-3 font-body text-sm">
                         <span className="mt-[7px] flex-shrink-0 w-2 h-px bg-accent" />
                         <span className={plan.highlight ? "text-primary-foreground/80" : "text-foreground/75"}>{f}</span>
@@ -483,14 +485,24 @@ const Landing = () => {
                     ))}
                   </ul>
                   <button
-                    onClick={() => navigate("/pricing")}
+                    onClick={() => {
+                      if (plan.id === "free") {
+                        navigate(user ? "/app" : "/auth");
+                        return;
+                      }
+                      if (!user) {
+                        navigate("/auth?next=/pricing");
+                        return;
+                      }
+                      startCheckout(plan.id, billing);
+                    }}
                     className={`relative w-full font-body font-semibold text-xs tracking-[0.2em] uppercase py-4 rounded-lg transition-all ${
                       plan.highlight
                         ? "gold-gradient-animated text-accent-foreground hover:opacity-90"
                         : "border border-border hover:border-accent/50 hover:text-accent text-foreground"
                     }`}
                   >
-                    See Details
+                    {plan.id === "free" ? "Start Free" : `Choose ${plan.name}`}
                   </button>
                 </>
               );
