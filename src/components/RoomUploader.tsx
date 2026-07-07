@@ -665,10 +665,7 @@ const RoomUploader = ({
                         Upgrade for unlimited AI-powered virtual staging
                       </p>
                       <button
-                        onClick={() => {
-                          if (!user) { navigate("/auth?next=/pricing"); return; }
-                          startCheckout("pro", "monthly");
-                        }}
+                        onClick={() => navigate("/pricing")}
                         className="inline-block gold-gradient-animated text-accent-foreground font-body font-semibold text-sm px-8 py-3 rounded-lg hover:opacity-90 transition-opacity"
                       >
                         Upgrade to Pro — Unlimited Stagings
