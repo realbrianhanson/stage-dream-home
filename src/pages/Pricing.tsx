@@ -261,7 +261,7 @@ const Pricing = () => {
                     >
                       <td className="font-body text-sm text-foreground/85 px-6 py-4">{row.label}</td>
                       {row.values.map((v, j) => {
-                        const isHighlighted = plans[j]?.highlight;
+                        const isHighlighted = PRICING_PLANS[j]?.highlight;
                         return (
                           <td
                             key={j}
