@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Trash2, X, Upload, ArrowLeft, LogOut, Download, RefreshCw, Search, ChevronDown, ChevronRight, Share2 } from "lucide-react";
+import { Trash2, X, Upload, ArrowLeft, LogOut, Download, RefreshCw, Search, ChevronDown, ChevronRight, Share2, User, Home } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUsage } from "@/hooks/useUsage";
@@ -10,6 +10,8 @@ import Logo from "@/components/Logo";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import UsageIndicator from "@/components/UsageIndicator";
 import ShareDialog from "@/components/ShareDialog";
+import AgentProfileDialog from "@/components/AgentProfileDialog";
+import ListingShareDialog from "@/components/ListingShareDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
 
@@ -34,6 +36,8 @@ const Gallery = () => {
   const [selectedStaging, setSelectedStaging] = useState<Staging | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [shareStaging, setShareStaging] = useState<Staging | null>(null);
+  const [shareListingProperty, setShareListingProperty] = useState<string | null>(null);
+  const [showAgentCard, setShowAgentCard] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -207,6 +211,13 @@ const Gallery = () => {
               />
             )}
             <button
+              onClick={() => setShowAgentCard(true)}
+              className="font-body text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+            >
+              <User className="w-3.5 h-3.5" />
+              Your Card
+            </button>
+            <button
               onClick={() => navigate("/app")}
               className="font-body text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
             >
@@ -350,13 +361,25 @@ const Gallery = () => {
                             {groupStagings.length}
                           </span>
                         </button>
-                        <button
-                          onClick={() => handleBulkDownload(groupStagings)}
-                          className="font-body text-xs text-muted-foreground hover:text-accent border border-white/[0.06] hover:border-accent/30 rounded-lg px-3 py-1.5 flex items-center gap-1.5 transition-all"
-                        >
-                          <Download className="w-3 h-3" />
-                          Download All
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {groupName !== "Unlabeled" && (
+                            <button
+                              onClick={() => setShareListingProperty(groupName)}
+                              className="font-body text-xs text-muted-foreground hover:text-accent border border-white/[0.06] hover:border-accent/30 rounded-lg px-3 py-1.5 flex items-center gap-1.5 transition-all"
+                              title="Share a branded listing microsite"
+                            >
+                              <Home className="w-3 h-3" />
+                              Share Listing
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleBulkDownload(groupStagings)}
+                            className="font-body text-xs text-muted-foreground hover:text-accent border border-white/[0.06] hover:border-accent/30 rounded-lg px-3 py-1.5 flex items-center gap-1.5 transition-all"
+                          >
+                            <Download className="w-3 h-3" />
+                            Download All
+                          </button>
+                        </div>
                       </div>
 
                       {/* Divider */}
@@ -549,6 +572,21 @@ const Gallery = () => {
               setShareStaging((prev) => prev ? { ...prev, share_token: token } : prev);
             }}
           />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {shareListingProperty && (
+          <ListingShareDialog
+            propertyAddress={shareListingProperty}
+            onClose={() => setShareListingProperty(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showAgentCard && (
+          <AgentProfileDialog onClose={() => setShowAgentCard(false)} />
         )}
       </AnimatePresence>
 

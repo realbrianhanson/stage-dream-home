@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_profiles: {
+        Row: {
+          brokerage: string | null
+          created_at: string
+          display_name: string | null
+          email: string | null
+          headshot_url: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brokerage?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          headshot_url?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brokerage?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          headshot_url?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      listing_pages: {
+        Row: {
+          created_at: string
+          id: string
+          property_address: string
+          share_token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          property_address: string
+          share_token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          property_address?: string
+          share_token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       stagings: {
         Row: {
           aspect_ratio: string | null
@@ -108,6 +165,15 @@ export type Database = {
         Returns: boolean
       }
       decrement_staging: { Args: { p_user_id: string }; Returns: undefined }
+      get_listing_page: {
+        Args: { p_token: string }
+        Returns: {
+          agent: Json
+          created_at: string
+          property_address: string
+          stagings: Json
+        }[]
+      }
       get_shared_staging: {
         Args: { p_token: string }
         Returns: {
