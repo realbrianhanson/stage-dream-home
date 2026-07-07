@@ -16,7 +16,7 @@ import { openCustomerPortal } from "@/lib/billing";
 import { LogOut, ImageIcon, HelpCircle, CreditCard } from "lucide-react";
 
 type ResultState =
-  | { type: "single"; original: string; staged: string; isWatermarked?: boolean; mlsDisclosure?: boolean }
+  | { type: "single"; original: string; staged: string; isWatermarked?: boolean; mlsDisclosure?: boolean; meta?: { roomType: string; style: string; propertyName: string; customInstructions: string } }
   | { type: "multi"; original: string; results: StagingResult[]; pendingStyles: string[]; isWatermarked?: boolean }
   | null;
 
