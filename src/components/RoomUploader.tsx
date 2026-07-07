@@ -723,7 +723,7 @@ const RoomUploader = ({
                           </div>
                         </div>
 
-                        {!isRemove && !compareMode && (
+                        {mode === "stage" && !compareMode && (
                           <div className="mt-5">
                             <label className="font-body text-sm font-medium text-muted-foreground block mb-2">
                               Coordinated palette (optional)
