@@ -5,7 +5,7 @@ import { ArrowRight, Clock, Palette, TrendingUp, Sparkles, Check, Upload, Wand2,
 import SectionEyebrow from "@/components/SectionEyebrow";
 import MarketingNav from "@/components/MarketingNav";
 import MarketingFooter from "@/components/MarketingFooter";
-import BeforeAfterSlider from "@/components/BeforeAfterSlider";
+import InteractiveDemo from "@/components/InteractiveDemo";
 import { PRICING_PLANS, ANNUAL_DISCOUNT_LABEL, priceLabel } from "@/config/pricing";
 import { startCheckout } from "@/lib/billing";
 import { useAuth } from "@/hooks/useAuth";
