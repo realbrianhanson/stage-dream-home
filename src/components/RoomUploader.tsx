@@ -258,9 +258,11 @@ const RoomUploader = ({
             aspect_ratio: aspectRatio || null,
             mls_disclosure: !isRemove && mlsDisclosure,
           } as any);
-          onResult(originalUrl, stagedUrl, data.isWatermarked, !isRemove && mlsDisclosure);
+          const meta = { roomType, style: stylesToStage[0], propertyName: propertyName.trim(), customInstructions: instrTrimmed };
+          onResult(originalUrl, stagedUrl, data.isWatermarked, !isRemove && mlsDisclosure, meta);
         } else {
-          onResult(image, data.stagedImageUrl, data.isWatermarked, !isRemove && mlsDisclosure);
+          const meta = { roomType, style: stylesToStage[0], propertyName: propertyName.trim(), customInstructions: instrTrimmed };
+          onResult(image, data.stagedImageUrl, data.isWatermarked, !isRemove && mlsDisclosure, meta);
         }
         toast.success(isRemove ? "Furniture removed successfully!" : "Room staged successfully!");
       } else {
