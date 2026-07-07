@@ -327,7 +327,7 @@ const Landing = () => {
             variants={fadeUp}
             className="text-center mb-16"
           >
-            <SectionEyebrow number="03" label="Portfolio" />
+            <SectionEyebrow number="04" label="Portfolio" />
             <h2 className="font-display text-4xl md:text-6xl font-medium mb-6">
               Stunning <span className="italic text-accent">Results</span>
             </h2>
