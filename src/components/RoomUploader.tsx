@@ -88,6 +88,7 @@ const RoomUploader = ({
   const navigate = useNavigate();
   const [image, setImage] = useState<string | null>(initialImage || null);
   const [mode, setMode] = useState<"stage" | "remove">("stage");
+  const [mlsDisclosure, setMlsDisclosure] = useState(false);
   const [roomType, setRoomType] = useState(initialRoomType || "Living Room");
   const [style, setStyle] = useState(initialStyle || "Modern");
   const [selectedStyles, setSelectedStyles] = useState<string[]>([initialStyle || "Modern"]);
