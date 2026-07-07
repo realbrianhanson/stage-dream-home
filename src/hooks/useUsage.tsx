@@ -51,29 +51,11 @@ export const useUsage = () => {
       : Math.max(0, FREE_LIMIT - usage.stagings_this_month)
     : 0;
 
-  // Atomic check-and-increment via RPC. Returns true if allowed.
-  const checkAndIncrement = async (): Promise<boolean> => {
-    if (!user) return false;
-    const { data, error } = await supabase.rpc("check_and_increment_staging", {
-      p_user_id: user.id,
-    });
-    if (error) {
-      console.error("check_and_increment_staging error:", error);
-      return false;
-    }
-    const allowed = data === true;
-    if (allowed && usage) {
-      setUsage({ ...usage, stagings_this_month: usage.stagings_this_month + 1 });
-    }
-    return allowed;
-  };
-
   return {
     usage,
     loading,
     canStage,
     remainingStagings,
-    increment: checkAndIncrement,
     freeLimit: FREE_LIMIT,
     refresh: fetchOrCreate,
   };
