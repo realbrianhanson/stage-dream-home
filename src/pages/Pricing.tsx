@@ -131,7 +131,7 @@ const Pricing = () => {
                 custom={i}
                 className={`flex flex-col rounded-2xl border relative ${
                   plan.highlight
-                    ? "p-8 md:p-10 border-accent/30 bg-foreground text-primary-foreground shadow-glow-gold animate-pulse-glow"
+                    ? "p-8 md:p-10 border-accent/30 bg-foreground text-primary-foreground shadow-glow-gold"
                     : "p-8 border-border bg-card/40 backdrop-blur-sm"
                 }`}
               >
