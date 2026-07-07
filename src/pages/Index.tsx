@@ -183,6 +183,7 @@ const Index = () => {
               style: result.meta.style,
               propertyName: result.meta.propertyName,
               customInstructions: result.meta.customInstructions,
+              palette: result.meta.palette,
             } : undefined}
           />
         </div>
