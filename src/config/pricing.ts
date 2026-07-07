@@ -58,6 +58,7 @@ export const PRICING_PLANS: PricingPlan[] = [
       "High-resolution output",
       "All 6+ design styles",
       "Compare up to 6 styles",
+      "MLS disclosure label",
       "No watermark",
       "Download originals",
       "Personal stagings library",
