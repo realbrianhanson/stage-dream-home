@@ -237,8 +237,9 @@ serve(async (req) => {
       }
     };
 
-    const { image, roomType, style, customInstructions, aspectRatio, mode, mls_disclosure, refineInstruction } = await req.json();
+    const { image, roomType, style, customInstructions, aspectRatio, mode, mls_disclosure, refineInstruction, palette } = await req.json();
     const wantsMlsLabel = mls_disclosure === true && mode !== "remove";
+    const sanitizedPalette = typeof palette === "string" ? palette.slice(0, 200).trim() : "";
 
     if (!image) {
       await releaseSlot();
