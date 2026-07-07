@@ -207,6 +207,7 @@ const Index = () => {
             initialRoomType={reStageState?.reStageRoomType}
             initialStyle={reStageState?.reStageStyle}
             initialCustomInstructions={reStageState?.reStageCustomInstructions}
+            initialPalette={reStageState?.reStagePalette}
             canStage={canStage}
             remainingStagings={remainingStagings}
             onStagingComplete={refresh}
