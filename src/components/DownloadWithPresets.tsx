@@ -130,6 +130,8 @@ const DownloadWithPresets = ({
   const [imgSize, setImgSize] = useState<{ w: number; h: number } | null>(null);
   const [processing, setProcessing] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { usage } = useUsage();
+  const isPaid = !!usage && usage.plan !== "free";
 
   useEffect(() => {
     const img = new window.Image();
@@ -151,6 +153,7 @@ const DownloadWithPresets = ({
   }, [open]);
 
   const isPresetDisabled = (preset: DimensionPreset) => {
+    if (preset.paidOnly && !isPaid) return true;
     if (!preset.width || !preset.height || !imgSize) return false;
     return imgSize.w < preset.width || imgSize.h < preset.height;
   };
@@ -168,10 +171,14 @@ const DownloadWithPresets = ({
         img.src = imageUrl;
       });
 
-      const blob = await processImage(img, preset.width, preset.height, format);
+      const blob = await processImage(img, preset, format);
       if (!blob) throw new Error("Failed to process image");
 
-      const dims = preset.width ? `-${preset.width}x${preset.height}` : "";
+      const dims = preset.longEdge
+        ? `-${preset.longEdge}`
+        : preset.width
+        ? `-${preset.width}x${preset.height}`
+        : "";
       await triggerBlobDownload(blob, `${filename}${dims}.${format}`);
     } catch (err) {
       console.error("Download failed:", err);
