@@ -342,19 +342,7 @@ const Pricing = () => {
         </motion.div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border py-10 px-6 bg-card/40">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <Logo />
-          <p className="font-body text-sm text-muted-foreground">
-            © 2026 RealVision. All rights reserved.
-          </p>
-          <div className="flex gap-6">
-            <button onClick={() => navigate("/")} className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">Home</button>
-            <a href="mailto:support@realvision.ai" className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">Contact</a>
-          </div>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   );
 };
