@@ -570,6 +570,12 @@ const Gallery = () => {
               before={selectedStaging.original_image_url}
               after={selectedStaging.staged_image_url}
               onReset={() => setSelectedStaging(null)}
+              refineContext={{
+                roomType: selectedStaging.room_type,
+                style: selectedStaging.style,
+                propertyName: selectedStaging.property_address,
+                customInstructions: selectedStaging.custom_instructions,
+              }}
             />
           </motion.div>
         )}
