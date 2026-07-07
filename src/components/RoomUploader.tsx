@@ -4,6 +4,7 @@ import { Upload, Image as ImageIcon, X, Loader2, Lock, ToggleLeft, ToggleRight, 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { uploadStagingImage } from "@/lib/uploadStagingImage";
+import BatchStaging from "@/components/BatchStaging";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -101,8 +102,27 @@ const RoomUploader = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressText, setProgressText] = useState("");
   const [dragOver, setDragOver] = useState(false);
+  const [batchFiles, setBatchFiles] = useState<File[] | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cancelledRef = useRef(false);
+
+  const handleFiles = useCallback(
+    (files: File[]) => {
+      const imgs = files.filter((f) => f.type.startsWith("image/"));
+      if (imgs.length === 0) {
+        toast.error("Please upload image files");
+        return;
+      }
+      if (imgs.length >= 2) {
+        setBatchFiles(imgs);
+      } else {
+        handleFile(imgs[0]);
+      }
+    },
+    // handleFile is defined above and stable via useCallback
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
   useEffect(() => {
     if (initialImage) setImage(initialImage);
@@ -162,10 +182,10 @@ const RoomUploader = ({
     (e: React.DragEvent) => {
       e.preventDefault();
       setDragOver(false);
-      const file = e.dataTransfer.files[0];
-      if (file) handleFile(file);
+      const files = Array.from(e.dataTransfer.files);
+      if (files.length > 0) handleFiles(files);
     },
-    [handleFile]
+    [handleFiles]
   );
 
   const maxCompareStyles = usage && usage.plan !== "free" ? 6 : 3;
@@ -372,7 +392,22 @@ const RoomUploader = ({
           transition={{ delay: 0.1 }}
         >
           <AnimatePresence mode="wait">
-            {!image ? (
+            {batchFiles ? (
+              <motion.div
+                key="batch"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+              >
+                <BatchStaging
+                  initialFiles={batchFiles}
+                  usage={usage}
+                  remainingStagings={remainingStagings}
+                  onStagingComplete={onStagingComplete}
+                  onExit={() => setBatchFiles(null)}
+                />
+              </motion.div>
+            ) : !image ? (
               <motion.div
                 key="dropzone"
                 initial={{ opacity: 0 }}
@@ -396,16 +431,19 @@ const RoomUploader = ({
                   Drop your room photo here
                 </p>
                 <p className="font-body text-sm text-muted-foreground">
-                  or click to browse · JPG, PNG up to 10MB
+                  or click to browse · JPG, PNG up to 10MB · drop up to 15 to stage as a batch
                 </p>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
+                  multiple
                   className="hidden"
                   onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleFile(file);
+                    const files = Array.from(e.target.files || []);
+                    if (files.length > 0) handleFiles(files);
+                    // Reset so re-picking the same file works
+                    e.currentTarget.value = "";
                   }}
                 />
               </motion.div>
