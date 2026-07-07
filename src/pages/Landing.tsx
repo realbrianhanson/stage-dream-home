@@ -25,6 +25,7 @@ const fadeUp = {
 
 const Landing = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
   const glowX = useMotionValue(50);
