@@ -281,7 +281,7 @@ const Landing = () => {
             variants={fadeUp}
             className="text-center mb-20"
           >
-            <SectionEyebrow number="02" label="Why RealVision" />
+            <SectionEyebrow number="03" label="Why RealVision" />
             <h2 className="font-display text-4xl md:text-6xl font-medium">
               The Future of <span className="italic text-accent">Staging</span>
             </h2>
