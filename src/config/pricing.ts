@@ -36,7 +36,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     features: [
       "3 stagings per month",
       "Standard quality output",
-      "All 6 design styles",
+      "All 12 design styles",
       "Compare up to 3 styles",
       "MLS disclosure label",
       "Watermarked downloads",
