@@ -11,9 +11,10 @@ interface BeforeAfterSliderProps {
   after: string;
   onReset?: () => void;
   isWatermarked?: boolean;
+  mlsDisclosure?: boolean;
 }
 
-const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfterSliderProps) => {
+const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosure }: BeforeAfterSliderProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [sliderPos, setSliderPos] = useState(50);
