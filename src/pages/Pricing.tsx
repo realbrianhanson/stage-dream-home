@@ -77,28 +77,7 @@ const Pricing = () => {
 
   return (
     <div className="min-h-screen bg-background grain-overlay overflow-x-hidden">
-      {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 backdrop-blur-xl bg-foreground/95 border-b border-border/10">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <button onClick={() => navigate("/")}>
-            <Logo light />
-          </button>
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => navigate("/")}
-              className="font-body text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors hidden sm:block"
-            >
-              Home
-            </button>
-            <button
-              onClick={() => navigate(user ? "/app" : "/auth")}
-              className="font-body text-sm font-semibold gold-gradient text-accent-foreground px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
-            >
-              {user ? "Open App" : "Get Started"}
-            </button>
-          </div>
-        </div>
-      </nav>
+      <MarketingNav />
 
       {/* Hero */}
       <section className="pt-40 pb-16 px-6 relative">
