@@ -51,10 +51,11 @@ export interface StagingResult {
   style: string;
   stagedImageUrl: string;
   isWatermarked?: boolean;
+  mlsDisclosure?: boolean;
 }
 
 interface RoomUploaderProps {
-  onResult: (original: string, staged: string, isWatermarked?: boolean) => void;
+  onResult: (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean) => void;
   onMultiResult: (original: string, results: StagingResult[], isWatermarked?: boolean) => void;
   onMultiStart: (original: string, pendingStyles: string[]) => void;
   onMultiProgress: (result: StagingResult, remainingStyles: string[]) => void;
