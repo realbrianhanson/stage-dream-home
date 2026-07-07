@@ -178,6 +178,7 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
           refineInstruction: opts.refineInstruction,
           customInstructions: opts.mode === "stage" ? (opts.savedInstructions || "") : undefined,
           mls_disclosure: !!mlsDisclosure,
+          palette: refineContext.palette || undefined,
         },
       });
       await refresh();
@@ -201,6 +202,7 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
               ? (opts.refineInstruction || "").slice(0, 240)
               : (opts.savedInstructions || null),
           mls_disclosure: !!mlsDisclosure,
+          staging_palette: refineContext.palette || null,
         } as any);
       }
 
