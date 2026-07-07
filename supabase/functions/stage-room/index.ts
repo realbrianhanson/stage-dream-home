@@ -323,6 +323,10 @@ Add appropriate furniture like sofas, tables, chairs, rugs, lamps, artwork, plan
       prompt += `\n\nAdditional requirements from the client: ${sanitizedInstructions}`;
     }
 
+    if (sanitizedPalette && !isRemoval) {
+      prompt += `\n\nThis room is part of a whole-home staging. Use a consistent furniture collection and palette across rooms: ${sanitizedPalette}. Keep the same design language, wood tones, metal finishes, and textile palette so all rooms in this listing feel professionally coordinated.`;
+    }
+
     const validRatios = ["16:9", "4:3", "3:4", "1:1"];
     const sanitizedAspectRatio = typeof aspectRatio === "string" && validRatios.includes(aspectRatio) ? aspectRatio : null;
 
