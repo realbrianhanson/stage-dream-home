@@ -3,6 +3,9 @@ import { motion } from "framer-motion";
 import { Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import DownloadWithPresets from "@/components/DownloadWithPresets";
+import { startCheckout } from "@/lib/billing";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 interface BeforeAfterSliderProps {
   before: string;
