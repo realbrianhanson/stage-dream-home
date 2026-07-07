@@ -13,6 +13,8 @@ const SharedStaging = lazy(() => import("@/pages/SharedStaging"));
 const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
+const CheckoutSuccess = lazy(() => import("@/pages/CheckoutSuccess"));
+const CheckoutCancel = lazy(() => import("@/pages/CheckoutCancel"));
 
 const RouteFallback = () => (
   <div className="min-h-screen bg-background grain-overlay flex flex-col items-center justify-center gap-5">
