@@ -301,6 +301,7 @@ const RoomUploader = ({
                 property_address: propertyName.trim() || null,
                 custom_instructions: instrTrimmed || null,
                 aspect_ratio: aspectRatio || null,
+                mls_disclosure: mlsDisclosure,
               } as any);
 
               finalResult.stagedImageUrl = stagedUrl;
