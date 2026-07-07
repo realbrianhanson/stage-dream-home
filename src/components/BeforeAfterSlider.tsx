@@ -57,11 +57,21 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfte
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("Clipboard not available in this browser — use Download instead");
-      // Auto-trigger download as fallback
-      const link = document.createElement("a");
-      link.href = after;
-      link.download = "staged-room.png";
-      link.click();
+      // Auto-trigger download as fallback via blob URL (cross-origin safe)
+      try {
+        const res = await fetch(after);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "staged-room.jpg";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } catch {
+        toast.error("Download failed. Please try again.");
+      }
     }
   };
 

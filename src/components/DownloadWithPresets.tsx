@@ -10,11 +10,13 @@ interface DimensionPreset {
 }
 
 const PRESETS: DimensionPreset[] = [
-  { label: "Original Size", width: null, height: null, description: "No processing" },
+  { label: "Original Size", width: null, height: null, description: "No resizing" },
   { label: "MLS Standard", width: 1024, height: 768, description: "1024 × 768" },
   { label: "Web Optimized", width: 800, height: 600, description: "800 × 600" },
   { label: "Social Square", width: 1024, height: 1024, description: "1024 × 1024" },
 ];
+
+type Format = "jpg" | "png";
 
 function cropToCanvas(
   img: HTMLImageElement,
@@ -42,31 +44,24 @@ function cropToCanvas(
   canvas.width = targetW;
   canvas.height = targetH;
   const ctx = canvas.getContext("2d")!;
+  // For JPEG output we need a solid background under any transparency.
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, targetW, targetH);
   ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, targetW, targetH);
   return canvas;
 }
 
-function burnWatermark(canvas: HTMLCanvasElement) {
-  const ctx = canvas.getContext("2d")!;
-  const fontSize = Math.max(14, Math.round(canvas.width * 0.018));
-  ctx.save();
-  ctx.font = `${fontSize}px 'DM Sans', sans-serif`;
-  ctx.fillStyle = `rgba(255, 255, 255, 0.3)`;
-  ctx.textAlign = "right";
-  ctx.textBaseline = "bottom";
-  ctx.fillText("Staged by RealVision", canvas.width - 16, canvas.height - 12);
-  ctx.restore();
-}
-
-function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob | null> {
-  return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), "image/png"));
+function canvasToBlob(canvas: HTMLCanvasElement, format: Format): Promise<Blob | null> {
+  const mime = format === "png" ? "image/png" : "image/jpeg";
+  const quality = format === "jpg" ? 0.9 : undefined;
+  return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), mime, quality));
 }
 
 function processImage(
   img: HTMLImageElement,
   targetW: number | null,
   targetH: number | null,
-  watermark: boolean
+  format: Format
 ): Promise<Blob | null> {
   let canvas: HTMLCanvasElement;
   if (targetW && targetH) {
@@ -75,10 +70,25 @@ function processImage(
     canvas = document.createElement("canvas");
     canvas.width = img.naturalWidth;
     canvas.height = img.naturalHeight;
-    canvas.getContext("2d")!.drawImage(img, 0, 0);
+    const ctx = canvas.getContext("2d")!;
+    if (format === "jpg") {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    ctx.drawImage(img, 0, 0);
   }
-  if (watermark) burnWatermark(canvas);
-  return canvasToBlob(canvas);
+  return canvasToBlob(canvas, format);
+}
+
+async function triggerBlobDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 interface DownloadWithPresetsProps {
@@ -92,15 +102,15 @@ const DownloadWithPresets = ({
   imageUrl,
   filename = "staged-room",
   variant = "gold",
-  isWatermarked = false,
 }: DownloadWithPresetsProps) => {
   const [open, setOpen] = useState(false);
+  const [format, setFormat] = useState<Format>("jpg");
   const [imgSize, setImgSize] = useState<{ w: number; h: number } | null>(null);
   const [processing, setProcessing] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const img = new Image();
+    const img = new window.Image();
     img.crossOrigin = "anonymous";
     const onLoad = () => setImgSize({ w: img.naturalWidth, h: img.naturalHeight });
     img.addEventListener("load", onLoad);
@@ -126,42 +136,31 @@ const DownloadWithPresets = ({
   const handleDownload = async (preset: DimensionPreset) => {
     if (isPresetDisabled(preset)) return;
     setOpen(false);
-
     setProcessing(true);
     try {
-      // Skip processing for non-watermarked original
-      if (!preset.width && !preset.height && !isWatermarked) {
-        const link = document.createElement("a");
-        link.href = imageUrl;
-        link.download = `${filename}.png`;
-        link.click();
-        setProcessing(false);
-        return;
-      }
-
-      const img = new Image();
+      const img = new window.Image();
       img.crossOrigin = "anonymous";
       await new Promise<void>((resolve, reject) => {
         img.onload = () => resolve();
-        img.onerror = reject;
+        img.onerror = () => reject(new Error("Image load failed"));
         img.src = imageUrl;
       });
 
-      const blob = await processImage(img, preset.width, preset.height, isWatermarked);
+      const blob = await processImage(img, preset.width, preset.height, format);
       if (!blob) throw new Error("Failed to process image");
 
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${filename}${preset.width ? `-${preset.width}x${preset.height}` : ""}.png`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      toast.error("Failed to process image. Downloading original.");
-      const link = document.createElement("a");
-      link.href = imageUrl;
-      link.download = `${filename}.png`;
-      link.click();
+      const dims = preset.width ? `-${preset.width}x${preset.height}` : "";
+      await triggerBlobDownload(blob, `${filename}${dims}.${format}`);
+    } catch (err) {
+      console.error("Download failed:", err);
+      toast.error("Failed to prepare download — retrying with original file.");
+      try {
+        const res = await fetch(imageUrl);
+        const blob = await res.blob();
+        await triggerBlobDownload(blob, `${filename}.${format}`);
+      } catch {
+        toast.error("Download failed. Please try again.");
+      }
     } finally {
       setProcessing(false);
     }
@@ -179,7 +178,7 @@ const DownloadWithPresets = ({
         disabled={processing}
         className={`${btnBase} flex items-center gap-2`}
       >
-        <Download className={variant === "gold" ? "w-4 h-4" : "w-4 h-4"} />
+        <Download className="w-4 h-4" />
         {variant === "gold" && (
           <>
             {processing ? "Processing..." : "Download"}
@@ -189,7 +188,32 @@ const DownloadWithPresets = ({
       </button>
 
       {open && (
-        <div className="absolute bottom-full mb-2 right-0 z-50 min-w-[220px] rounded-xl border border-white/[0.08] bg-background/95 backdrop-blur-lg shadow-dramatic overflow-hidden">
+        <div className="absolute bottom-full mb-2 right-0 z-50 min-w-[240px] rounded-xl border border-white/[0.08] bg-background/95 backdrop-blur-lg shadow-dramatic overflow-hidden">
+          {/* Format toggle */}
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06]">
+            <span className="font-body text-[11px] tracking-wider uppercase text-muted-foreground/70">
+              Format
+            </span>
+            <div className="flex gap-1">
+              {(["jpg", "png"] as Format[]).map((f) => (
+                <button
+                  key={f}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFormat(f);
+                  }}
+                  className={`font-body text-[11px] font-semibold uppercase px-2.5 py-1 rounded-md transition-colors ${
+                    format === f
+                      ? "bg-accent/15 text-accent border border-accent/25"
+                      : "text-muted-foreground/70 border border-transparent hover:text-foreground"
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {PRESETS.map((preset) => {
             const disabled = isPresetDisabled(preset);
             return (
