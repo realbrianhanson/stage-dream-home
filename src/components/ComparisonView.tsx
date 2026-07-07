@@ -143,6 +143,7 @@ const ComparisonView = ({ original, results, pendingStyles = [], onReset, isWate
                       filename={`staged-${result.style.toLowerCase().replace(/\s+/g, "-")}`}
                       variant="outline"
                       isWatermarked={isWatermarked}
+                      mlsDisclosure={result.mlsDisclosure}
                     />
                   </div>
                 </div>
