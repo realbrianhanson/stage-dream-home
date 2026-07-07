@@ -17,7 +17,7 @@ import { uploadStagingImage } from "@/lib/uploadStagingImage";
 import { useAuth } from "@/hooks/useAuth";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 
-import { ROOM_TYPES, STYLES } from "@/config/catalogs";
+import { ROOM_TYPES, STYLES, pickPaletteForBatch } from "@/config/catalogs";
 
 export const MAX_BATCH = 15;
 const BATCH_DELAY_MS = 2000;
