@@ -23,7 +23,7 @@ const Index = () => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { usage, canStage, increment, freeLimit, remainingStagings, loading: usageLoading } = useUsage();
+  const { usage, canStage, refresh, freeLimit, remainingStagings, loading: usageLoading } = useUsage();
   const [result, setResult] = useState<ResultState>(null);
   const [stagingCount, setStagingCount] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
