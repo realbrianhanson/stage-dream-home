@@ -19,7 +19,7 @@ const fadeUp = {
 type Billing = BillingPeriod;
 
 const compareRows: { label: string; values: (string | boolean)[] }[] = [
-  { label: "Monthly stagings", values: ["3", "Unlimited", "Unlimited"] },
+  { label: "Monthly stagings", values: ["3", "Unlimited (fair use)", "500"] },
   { label: "Output quality", values: ["Standard", "Ultra HD", "Ultra HD"] },
   { label: "Design styles", values: ["6", "6+", "6+"] },
   { label: "Multi-style compare", values: ["Up to 3", "Up to 6", "Up to 6"] },
