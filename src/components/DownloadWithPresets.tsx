@@ -245,6 +245,7 @@ const DownloadWithPresets = ({
 
           {PRESETS.map((preset) => {
             const disabled = isPresetDisabled(preset);
+            const lockedForPlan = preset.paidOnly && !isPaid;
             return (
               <button
                 key={preset.label}
@@ -255,12 +256,28 @@ const DownloadWithPresets = ({
                     ? "text-muted-foreground/30 cursor-not-allowed"
                     : "text-foreground hover:bg-accent/[0.06] hover:text-accent"
                 }`}
-                title={disabled ? "Source image too small for this size" : undefined}
+                title={
+                  lockedForPlan
+                    ? "Available on paid plans"
+                    : disabled
+                    ? "Source image too small for this size"
+                    : undefined
+                }
               >
-                <span className="block font-medium text-xs">{preset.label}</span>
+                <span className="flex items-center gap-1.5 font-medium text-xs">
+                  {preset.label}
+                  {lockedForPlan && (
+                    <>
+                      <Lock className="w-3 h-3 text-muted-foreground/40" />
+                      <span className="text-[10px] uppercase tracking-wider text-accent/70 font-semibold">
+                        Pro
+                      </span>
+                    </>
+                  )}
+                </span>
                 <span className={`block text-[11px] ${disabled ? "text-muted-foreground/20" : "text-muted-foreground/60"}`}>
                   {preset.description}
-                  {disabled && " — source too small"}
+                  {!lockedForPlan && disabled && " — source too small"}
                 </span>
               </button>
             );
