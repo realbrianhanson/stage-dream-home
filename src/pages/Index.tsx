@@ -177,6 +177,12 @@ const Index = () => {
             onReset={() => setResult(null)}
             isWatermarked={result.isWatermarked}
             mlsDisclosure={result.mlsDisclosure}
+            refineContext={result.meta ? {
+              roomType: result.meta.roomType,
+              style: result.meta.style,
+              propertyName: result.meta.propertyName,
+              customInstructions: result.meta.customInstructions,
+            } : undefined}
           />
         </div>
       ) : result?.type === "multi" ? (
