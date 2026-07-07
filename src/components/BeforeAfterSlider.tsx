@@ -146,24 +146,29 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfte
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
           ref={containerRef}
-          className="relative rounded-2xl overflow-hidden shadow-elevated border border-white/[0.06] cursor-col-resize select-none"
+          className="relative rounded-2xl overflow-hidden shadow-elevated border border-white/[0.06] cursor-col-resize select-none mx-auto"
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleMouseUp}
-          style={{ aspectRatio: "16/10" }}
+          onTouchCancel={handleMouseUp}
+          style={{
+            aspectRatio: aspectRatio ? `${aspectRatio}` : "16 / 10",
+            maxHeight: "70vh",
+            width: aspectRatio ? `min(100%, calc(70vh * ${aspectRatio}))` : "100%",
+          }}
         >
           {/* After (full) */}
           <img src={after} alt="Staged room" className="absolute inset-0 w-full h-full object-cover" />
-          
+
           {/* Watermark overlay */}
           {isWatermarked && (
             <div className="absolute bottom-4 right-4 z-[5] bg-foreground/40 backdrop-blur-sm rounded-full px-3 py-1">
               <span className="font-body text-xs text-primary-foreground/40 select-none">RealVision</span>
             </div>
           )}
-          
+
           {/* Before (clipped) */}
           <div
             className="absolute inset-0 overflow-hidden"
@@ -179,10 +184,10 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfte
 
           {/* Slider handle */}
           <div
-            className="absolute top-0 bottom-0 z-10"
+            className="absolute top-0 bottom-0 z-10 touch-none"
             style={{ left: `${sliderPos}%`, transform: "translateX(-50%)" }}
             onMouseDown={handleMouseDown}
-            onTouchStart={handleMouseDown}
+            onTouchStart={handleHandleTouchStart}
           >
             <div className="w-0.5 h-full bg-primary-foreground/80" />
             <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, hsl(38 55% 45%), hsl(40 70% 62%))', boxShadow: '0 4px 20px hsl(38 60% 55% / 0.3)' }}>
