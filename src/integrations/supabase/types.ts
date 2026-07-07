@@ -26,6 +26,7 @@ export type Database = {
           room_type: string
           share_token: string | null
           staged_image_url: string
+          staging_palette: string | null
           style: string
           user_id: string
         }
@@ -40,6 +41,7 @@ export type Database = {
           room_type: string
           share_token?: string | null
           staged_image_url: string
+          staging_palette?: string | null
           style: string
           user_id: string
         }
@@ -54,6 +56,7 @@ export type Database = {
           room_type?: string
           share_token?: string | null
           staged_image_url?: string
+          staging_palette?: string | null
           style?: string
           user_id?: string
         }
