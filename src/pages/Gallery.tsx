@@ -575,6 +575,21 @@ const Gallery = () => {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {shareListingProperty && (
+          <ListingShareDialog
+            propertyAddress={shareListingProperty}
+            onClose={() => setShareListingProperty(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showAgentCard && (
+          <AgentProfileDialog onClose={() => setShowAgentCard(false)} />
+        )}
+      </AnimatePresence>
+
       {/* Before/After modal */}
       <AnimatePresence>
         {selectedStaging && (
