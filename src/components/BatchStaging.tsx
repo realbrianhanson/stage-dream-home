@@ -205,6 +205,7 @@ const BatchStaging = ({
           style,
           mode: "stage",
           mls_disclosure: mlsDisclosure,
+          palette: sharedPalette || undefined,
         },
       });
       if (error) throw error;
