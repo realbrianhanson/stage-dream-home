@@ -211,6 +211,13 @@ const Gallery = () => {
               />
             )}
             <button
+              onClick={() => setShowAgentCard(true)}
+              className="font-body text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+            >
+              <User className="w-3.5 h-3.5" />
+              Your Card
+            </button>
+            <button
               onClick={() => navigate("/app")}
               className="font-body text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
             >
