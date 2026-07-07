@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, useTransform, useMotionValue } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Clock, Palette, TrendingUp, Star, Sparkles, Check } from "lucide-react";
+import { ArrowRight, Clock, Palette, TrendingUp, Sparkles, Check } from "lucide-react";
 import Logo from "@/components/Logo";
 import SectionEyebrow from "@/components/SectionEyebrow";
 import { PRICING_PLANS, ANNUAL_DISCOUNT_LABEL, priceLabel } from "@/config/pricing";
