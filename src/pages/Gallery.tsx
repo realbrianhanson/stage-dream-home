@@ -126,6 +126,7 @@ const Gallery = () => {
         reStageRoomType: staging.room_type,
         reStageStyle: staging.style,
         reStageCustomInstructions: staging.custom_instructions || "",
+        reStagePalette: (staging as any).staging_palette || "",
       },
     });
   };
