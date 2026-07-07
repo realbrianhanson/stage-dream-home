@@ -79,10 +79,8 @@ const Gallery = () => {
   };
 
   const handleDelete = async (id: string) => {
-    // Find the staging to get storage paths before deleting
     const staging = stagings.find((s) => s.id === id);
-    
-    // Delete storage objects first to avoid orphaned files
+
     if (staging) {
       const extractPath = (url: string) => {
         try {
@@ -92,7 +90,17 @@ const Gallery = () => {
       };
       const origPath = extractPath(staging.original_image_url);
       const stagedPath = extractPath(staging.staged_image_url);
-      const filesToRemove = [origPath, stagedPath].filter(Boolean) as string[];
+
+      // Only delete the ORIGINAL file if no other staging row references the same URL
+      // (multi-style comparisons share one original).
+      const originalIsShared = stagings.some(
+        (s) => s.id !== id && s.original_image_url === staging.original_image_url
+      );
+
+      const filesToRemove: string[] = [];
+      if (stagedPath) filesToRemove.push(stagedPath);
+      if (origPath && !originalIsShared) filesToRemove.push(origPath);
+
       if (filesToRemove.length > 0) {
         await supabase.storage.from("stagings").remove(filesToRemove);
       }
@@ -122,11 +130,23 @@ const Gallery = () => {
   const handleBulkDownload = async (groupStagings: Staging[]) => {
     toast.info(`Downloading ${groupStagings.length} image${groupStagings.length > 1 ? "s" : ""}...`);
     for (const staging of groupStagings) {
-      const link = document.createElement("a");
-      link.href = staging.staged_image_url;
-      link.download = `${staging.room_type}-${staging.style}-${staging.id.slice(0, 8)}.png`;
-      link.click();
-      await new Promise((r) => setTimeout(r, 500));
+      try {
+        const res = await fetch(staging.staged_image_url);
+        if (!res.ok) throw new Error("Fetch failed");
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        const ext = blob.type.includes("png") ? "png" : "jpg";
+        link.download = `${staging.room_type}-${staging.style}-${staging.id.slice(0, 8)}.${ext}`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } catch (err) {
+        console.error("Bulk download item failed:", err);
+      }
+      await new Promise((r) => setTimeout(r, 400));
     }
   };
 
