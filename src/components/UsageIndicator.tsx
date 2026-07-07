@@ -29,32 +29,46 @@ const UsageIndicator = ({ plan, used, limit, monthResetAt }: UsageIndicatorProps
   const resetLabel = formatResetDate(monthResetAt);
 
   return (
-    <div className="flex items-center gap-3 font-body text-xs text-muted-foreground">
-      <span className="hidden md:inline-flex items-center gap-1.5 text-foreground/70">
+    <>
+      {/* Compact pill for mobile (<sm) */}
+      <div className="sm:hidden inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 font-body text-[11px] text-primary-foreground/80">
         {!isFree && <Crown className="w-3 h-3 text-accent" />}
-        <span className={isFree ? "" : "text-accent/85"}>{planLabel(plan)}</span>
-      </span>
-      {isFree ? (
-        <>
-          <span>
-            {used} of {limit} stagings used
+        <span className="text-accent/85">{planLabel(plan)}</span>
+        {isFree && (
+          <span className="text-primary-foreground/70">
+            · {used}/{limit}
           </span>
-          <div className="w-20 h-1 rounded-full bg-white/[0.06] overflow-hidden">
-            <div
-              className="h-full rounded-full bg-accent/70 transition-all duration-500"
-              style={{ width: `${progress * 100}%` }}
-            />
-          </div>
-          {resetLabel && (
-            <span className="hidden sm:inline text-muted-foreground/70">Resets {resetLabel}</span>
-          )}
-        </>
-      ) : (
-        <span className="text-accent/80">
-          {plan === "studio" ? "500 stagings / month" : "Unlimited stagings"}
+        )}
+      </div>
+
+      {/* Full indicator for ≥sm */}
+      <div className="hidden sm:flex items-center gap-3 font-body text-xs text-muted-foreground">
+        <span className="hidden md:inline-flex items-center gap-1.5 text-foreground/70">
+          {!isFree && <Crown className="w-3 h-3 text-accent" />}
+          <span className={isFree ? "" : "text-accent/85"}>{planLabel(plan)}</span>
         </span>
-      )}
-    </div>
+        {isFree ? (
+          <>
+            <span>
+              {used} of {limit} stagings used
+            </span>
+            <div className="w-20 h-1 rounded-full bg-white/[0.06] overflow-hidden">
+              <div
+                className="h-full rounded-full bg-accent/70 transition-all duration-500"
+                style={{ width: `${progress * 100}%` }}
+              />
+            </div>
+            {resetLabel && (
+              <span className="hidden md:inline text-muted-foreground/70">Resets {resetLabel}</span>
+            )}
+          </>
+        ) : (
+          <span className="text-accent/80">
+            {plan === "studio" ? "500 stagings / month" : "Unlimited stagings"}
+          </span>
+        )}
+      </div>
+    </>
   );
 };
 
