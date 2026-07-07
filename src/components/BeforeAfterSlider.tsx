@@ -120,7 +120,7 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
   };
   const handleCopyToClipboard = async () => {
     try {
-      const response = await fetch(after);
+      const response = await fetch(currentAfter);
       const blob = await response.blob();
       const pngBlob = blob.type === "image/png" ? blob : await convertToPngBlob(blob);
       await navigator.clipboard.write([
@@ -133,7 +133,7 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
       toast.error("Clipboard not available in this browser — use Download instead");
       // Auto-trigger download as fallback via blob URL (cross-origin safe)
       try {
-        const res = await fetch(after);
+        const res = await fetch(currentAfter);
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -148,6 +148,118 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
       }
     }
   };
+
+  const stripRefinedSuffix = (s: string) => s.replace(/\s*\(refined\)\s*$/i, "");
+
+  const runStaging = async (opts: {
+    mode: "stage" | "refine";
+    image: string;
+    refineInstruction?: string;
+    savedStyle: string;
+    savedInstructions?: string | null;
+    versionLabel: string;
+  }) => {
+    if (!refineContext) return;
+    if (!canStage) {
+      toast.error(`You've used all ${freeLimit} free stagings this month.`, {
+        action: { label: "Upgrade", onClick: () => navigate("/pricing") },
+      });
+      return;
+    }
+    setRefining(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("stage-room", {
+        body: {
+          image: opts.image,
+          mode: opts.mode,
+          roomType: refineContext.roomType,
+          style: stripRefinedSuffix(refineContext.style),
+          refineInstruction: opts.refineInstruction,
+          customInstructions: opts.mode === "stage" ? (opts.savedInstructions || "") : undefined,
+          mls_disclosure: !!mlsDisclosure,
+        },
+      });
+      await refresh();
+      if (error) throw error;
+      if (!data?.stagedImageUrl) throw new Error("No image returned");
+
+      let finalUrl: string = data.stagedImageUrl;
+      if (user) {
+        const stagingId = crypto.randomUUID();
+        finalUrl = await uploadStagingImage(user.id, stagingId, data.stagedImageUrl, "staged");
+        await supabase.from("stagings").insert({
+          id: stagingId,
+          user_id: user.id,
+          original_image_url: before,
+          staged_image_url: finalUrl,
+          room_type: refineContext.roomType,
+          style: opts.savedStyle,
+          property_address: refineContext.propertyName?.trim() || null,
+          custom_instructions:
+            opts.mode === "refine"
+              ? (opts.refineInstruction || "").slice(0, 240)
+              : (opts.savedInstructions || null),
+          mls_disclosure: !!mlsDisclosure,
+        } as any);
+      }
+
+      setVersions((prev) => {
+        const next = [
+          ...prev,
+          { url: finalUrl, label: opts.versionLabel, isWatermarked: !!data.isWatermarked },
+        ];
+        setActiveIdx(next.length - 1);
+        return next;
+      });
+      toast.success(opts.mode === "refine" ? "Refined!" : "Regenerated");
+    } catch (err: any) {
+      console.error(`${opts.mode} failed:`, err);
+      toast.error(err?.message || `${opts.mode === "refine" ? "Refine" : "Regenerate"} failed. Please try again.`);
+    } finally {
+      setRefining(false);
+    }
+  };
+
+  const handleRefine = () => {
+    const instruction = freeText.trim();
+    if (!instruction) {
+      toast.error("Add a change to apply");
+      return;
+    }
+    if (!refineContext) return;
+    const base = stripRefinedSuffix(refineContext.style);
+    runStaging({
+      mode: "refine",
+      image: currentAfter,
+      refineInstruction: instruction,
+      savedStyle: `${base} (refined)`,
+      versionLabel: `${base} (refined)`,
+    }).then(() => setFreeText(""));
+  };
+
+  const handleRegenerate = () => {
+    if (!refineContext) return;
+    const base = stripRefinedSuffix(refineContext.style);
+    runStaging({
+      mode: "stage",
+      image: before,
+      savedStyle: base,
+      savedInstructions: refineContext.customInstructions || null,
+      versionLabel: `${base} · regen`,
+    });
+  };
+
+  const addChip = (chip: string) => {
+    setFreeText((v) => {
+      const cur = v.trim();
+      const addition = chip.toLowerCase();
+      if (!cur) return chip;
+      if (cur.toLowerCase().includes(addition)) return cur;
+      const combined = `${cur}, ${addition}`;
+      return combined.length > 120 ? cur : combined;
+    });
+  };
+
 
   const convertToPngBlob = (blob: Blob): Promise<Blob> => {
     return new Promise((resolve, reject) => {
