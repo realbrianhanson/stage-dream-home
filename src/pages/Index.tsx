@@ -16,7 +16,7 @@ import { openCustomerPortal } from "@/lib/billing";
 import { LogOut, ImageIcon, HelpCircle, CreditCard } from "lucide-react";
 
 type ResultState =
-  | { type: "single"; original: string; staged: string; isWatermarked?: boolean }
+  | { type: "single"; original: string; staged: string; isWatermarked?: boolean; mlsDisclosure?: boolean }
   | { type: "multi"; original: string; results: StagingResult[]; pendingStyles: string[]; isWatermarked?: boolean }
   | null;
 
@@ -65,8 +65,8 @@ const Index = () => {
     document.getElementById("upload-section")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleResult = (original: string, staged: string, isWatermarked?: boolean) => {
-    setResult({ type: "single", original, staged, isWatermarked });
+  const handleResult = (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean) => {
+    setResult({ type: "single", original, staged, isWatermarked, mlsDisclosure });
     setStagingCount((prev) => prev + 1);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -176,6 +176,7 @@ const Index = () => {
             after={result.staged}
             onReset={() => setResult(null)}
             isWatermarked={result.isWatermarked}
+            mlsDisclosure={result.mlsDisclosure}
           />
         </div>
       ) : result?.type === "multi" ? (

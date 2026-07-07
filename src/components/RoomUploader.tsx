@@ -51,10 +51,11 @@ export interface StagingResult {
   style: string;
   stagedImageUrl: string;
   isWatermarked?: boolean;
+  mlsDisclosure?: boolean;
 }
 
 interface RoomUploaderProps {
-  onResult: (original: string, staged: string, isWatermarked?: boolean) => void;
+  onResult: (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean) => void;
   onMultiResult: (original: string, results: StagingResult[], isWatermarked?: boolean) => void;
   onMultiStart: (original: string, pendingStyles: string[]) => void;
   onMultiProgress: (result: StagingResult, remainingStyles: string[]) => void;
@@ -88,6 +89,7 @@ const RoomUploader = ({
   const navigate = useNavigate();
   const [image, setImage] = useState<string | null>(initialImage || null);
   const [mode, setMode] = useState<"stage" | "remove">("stage");
+  const [mlsDisclosure, setMlsDisclosure] = useState(false);
   const [roomType, setRoomType] = useState(initialRoomType || "Living Room");
   const [style, setStyle] = useState(initialStyle || "Modern");
   const [selectedStyles, setSelectedStyles] = useState<string[]>([initialStyle || "Modern"]);
@@ -210,7 +212,7 @@ const RoomUploader = ({
         setProgressText(isRemove ? "Removing furniture from your room..." : "Staging your room with AI...");
         const instrTrimmed = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
         const { data, error } = await supabase.functions.invoke("stage-room", {
-          body: { image, roomType, style: stylesToStage[0], customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined, mode: isRemove ? "remove" : "stage" },
+          body: { image, roomType, style: stylesToStage[0], customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined, mode: isRemove ? "remove" : "stage", mls_disclosure: !isRemove && mlsDisclosure },
         });
         // Always refresh usage after an attempt so the indicator matches DB.
         await onStagingComplete();
@@ -234,10 +236,11 @@ const RoomUploader = ({
             property_address: propertyName.trim() || null,
             custom_instructions: instrTrimmed || null,
             aspect_ratio: aspectRatio || null,
+            mls_disclosure: !isRemove && mlsDisclosure,
           } as any);
-          onResult(originalUrl, stagedUrl, data.isWatermarked);
+          onResult(originalUrl, stagedUrl, data.isWatermarked, !isRemove && mlsDisclosure);
         } else {
-          onResult(image, data.stagedImageUrl, data.isWatermarked);
+          onResult(image, data.stagedImageUrl, data.isWatermarked, !isRemove && mlsDisclosure);
         }
         toast.success(isRemove ? "Furniture removed successfully!" : "Room staged successfully!");
       } else {
@@ -268,7 +271,7 @@ const RoomUploader = ({
           try {
             const instrTrimmed = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
             const { data, error } = await supabase.functions.invoke("stage-room", {
-              body: { image, roomType, style: currentStyle, customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined },
+              body: { image, roomType, style: currentStyle, customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined, mls_disclosure: mlsDisclosure },
             });
             if (error) {
               // 402 (quota) or other — stop the loop for quota exhaustion
@@ -282,7 +285,7 @@ const RoomUploader = ({
             }
             if (!data?.stagedImageUrl) throw new Error(`No staged image returned for ${currentStyle}`);
 
-            let finalResult: StagingResult = { style: currentStyle, stagedImageUrl: data.stagedImageUrl, isWatermarked: data.isWatermarked };
+            let finalResult: StagingResult = { style: currentStyle, stagedImageUrl: data.stagedImageUrl, isWatermarked: data.isWatermarked, mlsDisclosure: mlsDisclosure };
 
             // Upload staged image and save to db (reuse shared original)
             if (user && sharedOriginalUrl) {
@@ -299,6 +302,7 @@ const RoomUploader = ({
                 property_address: propertyName.trim() || null,
                 custom_instructions: instrTrimmed || null,
                 aspect_ratio: aspectRatio || null,
+                mls_disclosure: mlsDisclosure,
               } as any);
 
               finalResult.stagedImageUrl = stagedUrl;
@@ -485,6 +489,35 @@ const RoomUploader = ({
                     </button>
                   </div>
                 </div>
+
+                {/* MLS disclosure toggle (stage mode only) */}
+                {mode === "stage" && (
+                  <div className="mb-8 flex items-start justify-between gap-4 p-4 rounded-xl border border-border">
+                    <div className="min-w-0">
+                      <p className="font-body text-sm font-medium">MLS disclosure label</p>
+                      <p className="font-body text-xs text-muted-foreground leading-snug mt-0.5">
+                        Adds a subtle "Virtually Staged" label required by many MLS boards.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={mlsDisclosure}
+                      aria-label="Toggle MLS disclosure label"
+                      onClick={() => setMlsDisclosure((v) => !v)}
+                      className={`relative shrink-0 w-10 h-6 rounded-full transition-colors ${
+                        mlsDisclosure ? "bg-accent" : "bg-border"
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-background shadow-sm transition-transform ${
+                          mlsDisclosure ? "translate-x-4" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                )}
+
 
                 {/* Options */}
                 <div className={`grid ${mode === "stage" ? "md:grid-cols-2" : "grid-cols-1"} gap-8 mb-6`}>

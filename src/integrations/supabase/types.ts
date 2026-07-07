@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           custom_instructions: string | null
           id: string
+          mls_disclosure: boolean
           original_image_url: string
           property_address: string | null
           room_type: string
@@ -33,6 +34,7 @@ export type Database = {
           created_at?: string
           custom_instructions?: string | null
           id?: string
+          mls_disclosure?: boolean
           original_image_url: string
           property_address?: string | null
           room_type: string
@@ -46,6 +48,7 @@ export type Database = {
           created_at?: string
           custom_instructions?: string | null
           id?: string
+          mls_disclosure?: boolean
           original_image_url?: string
           property_address?: string | null
           room_type?: string

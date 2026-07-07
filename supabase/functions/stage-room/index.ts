@@ -49,76 +49,105 @@ function bytesToBase64(bytes: Uint8Array): string {
   return btoa(bin);
 }
 
-async function applyWatermark(sourceUrl: string): Promise<string> {
-  const res = await fetch(sourceUrl);
-  if (!res.ok) throw new Error("Failed to fetch generated image for watermarking");
-  const bytes = new Uint8Array(await res.arrayBuffer());
-  const img = await decode(bytes);
-  if (!(img instanceof Image)) throw new Error("Unsupported image format");
+// --- Paid-plan upscale cap ---
+const MAX_LONG_EDGE = 3000;
 
-  const font = await loadFont();
+function paintWatermark(img: Image, font: Uint8Array | null) {
   if (!font) {
     // Font unavailable — draw a solid pill in the corner so free files are still marked.
     const barH = Math.max(28, Math.round(img.height * 0.04));
     const bar = new Image(img.width, barH).fill(0x000000aa);
     img.composite(bar, 0, img.height - barH);
-  } else {
-    const fontSize = Math.max(22, Math.round(img.width * 0.028));
-    const text = "Staged by RealVision";
-    const textImg = Image.renderText(font, fontSize, text, 0xffffffcc);
-    const padX = Math.round(img.width * 0.02);
-    const padY = Math.round(img.height * 0.02);
-    const x = Math.max(0, img.width - textImg.width - padX);
-    const y = Math.max(0, img.height - textImg.height - padY);
-    // Soft shadow for legibility
-    const shadow = Image.renderText(font, fontSize, text, 0x00000099);
-    img.composite(shadow, x + 2, y + 2);
-    img.composite(textImg, x, y);
+    return;
   }
-
-  const out = await img.encode(); // PNG
-  return `data:image/png;base64,${bytesToBase64(out)}`;
+  const fontSize = Math.max(22, Math.round(img.width * 0.028));
+  const text = "Staged by RealVision";
+  const textImg = Image.renderText(font, fontSize, text, 0xffffffcc);
+  const padX = Math.round(img.width * 0.02);
+  const padY = Math.round(img.height * 0.02);
+  const x = Math.max(0, img.width - textImg.width - padX);
+  const y = Math.max(0, img.height - textImg.height - padY);
+  const shadow = Image.renderText(font, fontSize, text, 0x00000099);
+  img.composite(shadow, x + 2, y + 2);
+  img.composite(textImg, x, y);
 }
 
-// --- Paid-plan upscale (2x, cap long edge at 3000px; fall back to 1.5x on failure) ---
-const MAX_LONG_EDGE = 3000;
-
-async function upscaleForPaid(sourceUrl: string): Promise<string> {
-  const res = await fetch(sourceUrl);
-  if (!res.ok) throw new Error("Failed to fetch generated image for upscaling");
-  const bytes = new Uint8Array(await res.arrayBuffer());
-  const img = await decode(bytes);
-  if (!(img instanceof Image)) throw new Error("Unsupported image format");
-
-  const longEdge = Math.max(img.width, img.height);
-
-  const targetsFor = (factor: number) => {
-    const capped = Math.min(longEdge * factor, MAX_LONG_EDGE);
-    const scale = capped / longEdge;
-    return {
-      w: Math.max(1, Math.round(img.width * scale)),
-      h: Math.max(1, Math.round(img.height * scale)),
-    };
-  };
-
-  // Try 2x first, fall back to 1.5x on memory/time pressure.
-  for (const factor of [2, 1.5]) {
-    try {
-      const { w, h } = targetsFor(factor);
-      if (w === img.width && h === img.height) {
-        // Already at/above cap — no-op resample.
-        const out = await img.encode();
-        return `data:image/png;base64,${bytesToBase64(out)}`;
-      }
-      // ImageScript's default RESIZE_AUTO uses its highest-quality resampler.
-      const up = img.clone().resize(w, h);
-      const out = await up.encode();
-      return `data:image/png;base64,${bytesToBase64(out)}`;
-    } catch (err) {
-      console.warn(`Upscale ${factor}x failed, trying smaller:`, err);
-    }
+function paintMlsLabel(img: Image, font: Uint8Array | null) {
+  if (!font) {
+    // Font unavailable — draw a subtle pill bottom-left as fallback.
+    const barW = Math.max(120, Math.round(img.width * 0.22));
+    const barH = Math.max(24, Math.round(img.height * 0.035));
+    const bar = new Image(barW, barH).fill(0x00000099);
+    img.composite(bar, 0, img.height - barH);
+    return;
   }
-  throw new Error("All upscale attempts failed");
+  const fontSize = Math.max(20, Math.round(img.width * 0.022));
+  const text = "Virtually Staged";
+  const textImg = Image.renderText(font, fontSize, text, 0xffffffbf); // ~75% opacity
+  const padX = Math.round(img.width * 0.02);
+  const padY = Math.round(img.height * 0.02);
+  const x = padX;
+  const y = Math.max(0, img.height - textImg.height - padY);
+  const shadow = Image.renderText(font, fontSize, text, 0x00000099);
+  img.composite(shadow, x + 2, y + 2);
+  img.composite(textImg, x, y);
+}
+
+interface PostprocessOpts {
+  watermark: boolean; // free-plan RealVision mark, bottom-right
+  mlsLabel: boolean;  // "Virtually Staged", bottom-left
+  upscale: boolean;   // paid-plan hi-res upscale
+}
+
+/**
+ * Single decode/encode pass that optionally upscales, then paints the MLS
+ * disclosure label (bottom-left) and/or the free-plan watermark (bottom-right).
+ * Falls back gracefully on upscale failure and returns the source URL unchanged
+ * if nothing needs to happen.
+ */
+async function postprocessImage(sourceUrl: string, opts: PostprocessOpts): Promise<string> {
+  if (!opts.watermark && !opts.mlsLabel && !opts.upscale) return sourceUrl;
+
+  const res = await fetch(sourceUrl);
+  if (!res.ok) throw new Error("Failed to fetch generated image for postprocessing");
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  const decoded = await decode(bytes);
+  if (!(decoded instanceof Image)) throw new Error("Unsupported image format");
+  let img: Image = decoded;
+
+  // Upscale first so any overlays are painted at final resolution.
+  if (opts.upscale) {
+    const longEdge = Math.max(img.width, img.height);
+    const targetsFor = (factor: number) => {
+      const capped = Math.min(longEdge * factor, MAX_LONG_EDGE);
+      const scale = capped / longEdge;
+      return {
+        w: Math.max(1, Math.round(img.width * scale)),
+        h: Math.max(1, Math.round(img.height * scale)),
+      };
+    };
+    let upscaled: Image | null = null;
+    for (const factor of [2, 1.5]) {
+      try {
+        const { w, h } = targetsFor(factor);
+        if (w === img.width && h === img.height) break; // already at cap
+        upscaled = img.clone().resize(w, h);
+        break;
+      } catch (err) {
+        console.warn(`Upscale ${factor}x failed, trying smaller:`, err);
+      }
+    }
+    if (upscaled) img = upscaled;
+  }
+
+  if (opts.mlsLabel || opts.watermark) {
+    const font = await loadFont();
+    if (opts.mlsLabel) paintMlsLabel(img, font);
+    if (opts.watermark) paintWatermark(img, font);
+  }
+
+  const out = await img.encode();
+  return `data:image/png;base64,${bytesToBase64(out)}`;
 }
 
 serve(async (req) => {
@@ -208,7 +237,8 @@ serve(async (req) => {
       }
     };
 
-    const { image, roomType, style, customInstructions, aspectRatio, mode } = await req.json();
+    const { image, roomType, style, customInstructions, aspectRatio, mode, mls_disclosure } = await req.json();
+    const wantsMlsLabel = mls_disclosure === true && mode !== "remove";
 
     if (!image) {
       await releaseSlot();
@@ -329,31 +359,35 @@ Add appropriate furniture like sofas, tables, chairs, rugs, lamps, artwork, plan
       );
     }
 
-    // Enforce watermark server-side for free plan so clients never receive a clean file.
-    if (userPlan === "free") {
-      try {
-        stagedImageUrl = await applyWatermark(stagedImageUrl);
-      } catch (wmErr) {
-        console.error("Watermarking failed:", wmErr);
-        // Better to fail than deliver a clean file to a free user.
+    // Single decode/encode pass: upscale for paid, then MLS label (bottom-left)
+    // and free-plan watermark (bottom-right) as requested.
+    const isFree = userPlan === "free";
+    try {
+      stagedImageUrl = await postprocessImage(stagedImageUrl, {
+        watermark: isFree,
+        mlsLabel: wantsMlsLabel,
+        upscale: !isFree,
+      });
+    } catch (ppErr) {
+      console.error("Postprocess failed:", ppErr);
+      if (isFree) {
+        // Free plan must never receive a clean file — fail closed.
         await releaseSlot();
         return new Response(
           JSON.stringify({ error: "Failed to finalize your image. Please try again." }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-    } else {
-      // Paid plans: attempt high-res upscale. On failure, deliver the un-upscaled image
-      // rather than erroring the whole staging.
-      try {
-        stagedImageUrl = await upscaleForPaid(stagedImageUrl);
-      } catch (upErr) {
-        console.error("Upscale skipped, returning original:", upErr);
-      }
+      // Paid: return the un-postprocessed image rather than erroring the whole staging.
     }
 
     return new Response(
-      JSON.stringify({ stagedImageUrl, plan: userPlan, isWatermarked: userPlan === "free" }),
+      JSON.stringify({
+        stagedImageUrl,
+        plan: userPlan,
+        isWatermarked: isFree,
+        mlsDisclosure: wantsMlsLabel,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

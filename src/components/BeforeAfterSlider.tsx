@@ -11,9 +11,10 @@ interface BeforeAfterSliderProps {
   after: string;
   onReset?: () => void;
   isWatermarked?: boolean;
+  mlsDisclosure?: boolean;
 }
 
-const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfterSliderProps) => {
+const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosure }: BeforeAfterSliderProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [sliderPos, setSliderPos] = useState(50);
@@ -208,7 +209,7 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked }: BeforeAfte
 
         {/* Actions */}
         <div className="flex justify-center gap-4 mt-8">
-          <DownloadWithPresets imageUrl={after} filename="staged-room" variant="gold" isWatermarked={isWatermarked} />
+          <DownloadWithPresets imageUrl={after} filename="staged-room" variant="gold" isWatermarked={isWatermarked} mlsDisclosure={mlsDisclosure} />
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
