@@ -118,12 +118,14 @@ interface DownloadWithPresetsProps {
   filename?: string;
   variant?: "gold" | "outline";
   isWatermarked?: boolean;
+  mlsDisclosure?: boolean;
 }
 
 const DownloadWithPresets = ({
   imageUrl,
   filename = "staged-room",
   variant = "gold",
+  mlsDisclosure = false,
 }: DownloadWithPresetsProps) => {
   const [open, setOpen] = useState(false);
   const [format, setFormat] = useState<Format>("jpg");
