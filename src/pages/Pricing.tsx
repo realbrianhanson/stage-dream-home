@@ -49,7 +49,7 @@ const faqs = [
   },
   {
     q: "Is my data private?",
-    a: "Yes. Your room photos are private to your account and never used to train models. See our Privacy Policy for full details.",
+    a: "Yes. Your photos are stored at long, unguessable private URLs, and only your account can browse your gallery. Public share links are created only when you explicitly generate one. Your images are never used to train models. See our Privacy Policy for full details.",
   },
   {
     q: "Do you have an API or white-label option?",
