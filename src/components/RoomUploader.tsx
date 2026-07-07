@@ -84,6 +84,7 @@ const RoomUploader = ({
   const [propertyName, setPropertyName] = useState("");
   const [customInstructions, setCustomInstructions] = useState(initialCustomInstructions || "");
   const [aspectRatio, setAspectRatio] = useState("");
+  const [palette, setPalette] = useState(initialPalette || "");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressText, setProgressText] = useState("");
