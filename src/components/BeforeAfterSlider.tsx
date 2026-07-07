@@ -321,10 +321,10 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
           }}
         >
           {/* After (full) */}
-          <img src={after} alt="Staged room" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={currentAfter} alt="Staged room" className="absolute inset-0 w-full h-full object-cover" />
 
           {/* Watermark overlay */}
-          {isWatermarked && (
+          {currentWatermarked && (
             <div className="absolute bottom-4 right-4 z-[5] bg-foreground/40 backdrop-blur-sm rounded-full px-3 py-1">
               <span className="font-body text-xs text-primary-foreground/40 select-none">RealVision</span>
             </div>
