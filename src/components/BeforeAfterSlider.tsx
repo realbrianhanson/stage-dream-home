@@ -14,6 +14,7 @@ export interface RefineContext {
   style: string;
   propertyName?: string | null;
   customInstructions?: string | null;
+  palette?: string | null;
 }
 
 const REFINE_CHIPS = [
