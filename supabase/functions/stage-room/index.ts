@@ -268,7 +268,22 @@ serve(async (req) => {
 
     const isRemoval = mode === "remove";
     const isRefine = mode === "refine";
-    const safeRoomType = (roomType || "room").toString().toLowerCase();
+    const normalizeRoomType = (raw: string) => {
+      const lower = raw.toLowerCase().trim();
+      // Make multi-word / punctuated room labels read naturally in the prompt.
+      const map: Record<string, string> = {
+        "outdoor / patio": "outdoor patio space",
+        "outdoor/patio": "outdoor patio space",
+        "home office": "home office",
+        "home gym": "home gym",
+        "dining room": "dining room",
+        "living room": "living room",
+        "nursery": "nursery",
+        "basement": "basement",
+      };
+      return map[lower] ?? lower.replace(/\s*\/\s*/g, " ").replace(/\s+/g, " ");
+    };
+    const safeRoomType = normalizeRoomType((roomType || "room").toString());
     const safeStyle = (style || "Modern").toString().toLowerCase();
 
     let prompt: string;
