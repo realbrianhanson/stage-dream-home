@@ -181,14 +181,16 @@ const DownloadWithPresets = ({
         : preset.width
         ? `-${preset.width}x${preset.height}`
         : "";
-      await triggerBlobDownload(blob, `${filename}${dims}.${format}`);
+      const mlsTag = mlsDisclosure ? "-virtually-staged" : "";
+      await triggerBlobDownload(blob, `${filename}${dims}${mlsTag}.${format}`);
     } catch (err) {
       console.error("Download failed:", err);
       toast.error("Failed to prepare download — retrying with original file.");
       try {
         const res = await fetch(imageUrl);
         const blob = await res.blob();
-        await triggerBlobDownload(blob, `${filename}.${format}`);
+        const mlsTag = mlsDisclosure ? "-virtually-staged" : "";
+        await triggerBlobDownload(blob, `${filename}${mlsTag}.${format}`);
       } catch {
         toast.error("Download failed. Please try again.");
       }
