@@ -576,6 +576,7 @@ const Gallery = () => {
                 style: selectedStaging.style,
                 propertyName: selectedStaging.property_address,
                 customInstructions: selectedStaging.custom_instructions,
+                palette: (selectedStaging as any).staging_palette || null,
               }}
             />
           </motion.div>
