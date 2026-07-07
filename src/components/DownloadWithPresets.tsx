@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef } from "react";
-import { Download, ChevronDown } from "lucide-react";
+import { Download, ChevronDown, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { useUsage } from "@/hooks/useUsage";
 
 interface DimensionPreset {
   label: string;
   width: number | null;
   height: number | null;
   description: string;
+  longEdge?: number;
+  paidOnly?: boolean;
 }
 
 const PRESETS: DimensionPreset[] = [
@@ -14,6 +17,7 @@ const PRESETS: DimensionPreset[] = [
   { label: "MLS Standard", width: 1024, height: 768, description: "1024 × 768" },
   { label: "Web Optimized", width: 800, height: 600, description: "800 × 600" },
   { label: "Social Square", width: 1024, height: 1024, description: "1024 × 1024" },
+  { label: "MLS Print (3000px)", width: null, height: null, longEdge: 3000, description: "High-res, long edge 3000px", paidOnly: true },
 ];
 
 type Format = "jpg" | "png";
