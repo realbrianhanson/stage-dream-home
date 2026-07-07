@@ -190,7 +190,7 @@ const Index = () => {
             initialCustomInstructions={reStageState?.reStageCustomInstructions}
             canStage={canStage}
             remainingStagings={remainingStagings}
-            onStagingComplete={increment}
+            onStagingComplete={refresh}
             usage={usage}
             freeLimit={freeLimit}
           />
