@@ -1,8 +1,7 @@
 import { ReactNode } from "react";
-import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
-import Logo from "@/components/Logo";
+import MarketingNav from "@/components/MarketingNav";
+import MarketingFooter from "@/components/MarketingFooter";
 
 interface LegalPageProps {
   eyebrow: string;
@@ -14,24 +13,13 @@ interface LegalPageProps {
 const LegalPage = ({ eyebrow, title, updated, children }: LegalPageProps) => {
   return (
     <div className="min-h-screen bg-background grain-overlay">
-      <nav className="px-4 sm:px-6 py-5 border-b border-border/40">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Logo />
-          <Link
-            to="/"
-            className="font-body text-xs tracking-[0.2em] uppercase text-muted-foreground hover:text-accent transition-colors flex items-center gap-2"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back
-          </Link>
-        </div>
-      </nav>
+      <MarketingNav />
 
       <motion.article
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: [0.25, 0.4, 0.25, 1] }}
-        className="max-w-3xl mx-auto px-6 py-20 sm:py-28"
+        className="max-w-3xl mx-auto px-6 pt-32 pb-20 sm:pt-40 sm:pb-28"
       >
         <header className="mb-16 text-center">
           <p className="font-body text-[10px] tracking-[0.5em] uppercase text-accent mb-6">
@@ -68,6 +56,8 @@ const LegalPage = ({ eyebrow, title, updated, children }: LegalPageProps) => {
           </p>
         </footer>
       </motion.article>
+
+      <MarketingFooter />
     </div>
   );
 };

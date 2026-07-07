@@ -110,14 +110,12 @@ const Index = () => {
           <Logo light />
           <div className="flex items-center gap-2 sm:gap-4">
             {usage && (
-              <div className="hidden sm:block">
-                <UsageIndicator
-                  plan={usage.plan}
-                  used={usage.stagings_this_month}
-                  limit={freeLimit}
-                  monthResetAt={usage.month_reset_at}
-                />
-              </div>
+              <UsageIndicator
+                plan={usage.plan}
+                used={usage.stagings_this_month}
+                limit={freeLimit}
+                monthResetAt={usage.month_reset_at}
+              />
             )}
             {usage && usage.plan !== "free" && (
               <button

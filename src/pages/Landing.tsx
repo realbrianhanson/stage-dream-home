@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, useTransform, useMotionValue } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Clock, Palette, TrendingUp, Sparkles, Check } from "lucide-react";
-import Logo from "@/components/Logo";
+import { ArrowRight, Clock, Palette, TrendingUp, Sparkles, Check, Upload, Wand2, Download } from "lucide-react";
 import SectionEyebrow from "@/components/SectionEyebrow";
+import MarketingNav from "@/components/MarketingNav";
+import MarketingFooter from "@/components/MarketingFooter";
+import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import { PRICING_PLANS, ANNUAL_DISCOUNT_LABEL, priceLabel } from "@/config/pricing";
 import { startCheckout } from "@/lib/billing";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,7 +28,6 @@ const fadeUp = {
 const Landing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [scrolled, setScrolled] = useState(false);
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
   const glowX = useMotionValue(50);
   const glowY = useMotionValue(50);
@@ -41,36 +42,15 @@ const Landing = () => {
     glowY.set(((e.clientY - rect.top) / rect.height) * 100);
   };
 
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 60);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   return (
     <div className="min-h-screen bg-background overflow-x-hidden grain-overlay">
-      {/* Navbar */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 transition-all duration-300 border-b border-border/10 ${scrolled ? "py-3 backdrop-blur-xl bg-foreground/95" : "py-4 sm:py-5 backdrop-blur-md bg-background/20"}`}>
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-          <Logo light />
-          <div className="flex items-center gap-4 sm:gap-6">
-            <a href="#features" className="font-body text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors hidden md:block">Features</a>
-            <a href="#showcase" className="font-body text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors hidden md:block">Showcase</a>
-            <button onClick={() => navigate("/pricing")} className="font-body text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors hidden md:block">Pricing</button>
-            <button
-              onClick={() => navigate("/auth")}
-              className="font-body text-xs sm:text-sm font-semibold gold-gradient text-accent-foreground px-4 sm:px-6 py-2.5 rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap"
-            >
-              Get Started
-            </button>
-          </div>
-        </div>
-      </nav>
+      <MarketingNav />
+
 
       {/* Hero */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
-          <img src={heroImage} alt="Luxury staged living room" className="w-full h-full object-cover" loading="eager" />
+          <img src={heroImage} alt="Luxury staged living room" width={1920} height={1080} className="w-full h-full object-cover" loading="eager" fetchPriority="high" />
           <div className="absolute inset-0 bg-foreground/60" />
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-transparent to-foreground/30" />
         </div>
@@ -233,23 +213,59 @@ const Landing = () => {
             viewport={{ once: true, margin: "-100px" }}
             variants={fadeUp}
             custom={1}
-            className="grid md:grid-cols-2 gap-6"
           >
-            <div className="relative rounded-2xl overflow-hidden shadow-elevated border border-border/30 group hover:shadow-dramatic transition-shadow duration-500">
-              <img src={beforeVacant} alt="Vacant unfurnished room" className="w-full h-full object-cover" loading="lazy" />
-              <div className="absolute top-4 left-4 bg-foreground/70 text-primary-foreground rounded-lg px-4 py-2 text-sm font-body font-semibold tracking-wide">
-                Before
-              </div>
-            </div>
-            <div className="relative rounded-2xl overflow-hidden shadow-elevated border border-border/30 group hover:shadow-dramatic transition-shadow duration-500">
-              <img src={afterStaged} alt="Same room virtually staged with furniture" className="w-full h-full object-cover" loading="lazy" />
-              <div className="absolute top-4 left-4 gold-gradient-animated text-accent-foreground rounded-lg px-4 py-2 text-sm font-body font-semibold tracking-wide">
-                After
-              </div>
-            </div>
+            <BeforeAfterSlider before={beforeVacant} after={afterStaged} />
           </motion.div>
         </div>
       </section>
+
+      {/* Divider */}
+      <div className="max-w-3xl mx-auto" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.15), transparent)' }} />
+
+      {/* How It Works */}
+      <section className="py-32 px-6 bg-background relative">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none" style={{ background: 'radial-gradient(ellipse, hsl(38 60% 55% / 0.04) 0%, transparent 70%)' }} />
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeUp}
+            className="text-center mb-20"
+          >
+            <SectionEyebrow number="02" label="How It Works" />
+            <h2 className="font-display text-4xl md:text-6xl font-medium">
+              Three steps, <span className="italic text-accent">one gorgeous listing</span>
+            </h2>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              { icon: Upload, step: "01", title: "Upload your photo", desc: "Drop in a clear photo of any vacant or lightly furnished room. JPG or PNG, any resolution." },
+              { icon: Wand2, step: "02", title: "Choose your style", desc: "Pick from Modern, Scandinavian, Luxury and more — or compare several side by side." },
+              { icon: Download, step: "03", title: "Download and list", desc: "In under thirty seconds, download high-resolution staged photos ready for your listing." },
+            ].map((s, i) => (
+              <motion.div
+                key={s.title}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-50px" }}
+                variants={fadeUp}
+                custom={i}
+                className="group p-8 rounded-2xl border border-white/[0.06] hover:border-accent/25 transition-all duration-500 bg-white/[0.02] backdrop-blur-sm hover:bg-white/[0.04] hover:shadow-dramatic hover:-translate-y-1 relative"
+              >
+                <span className="absolute top-6 right-8 font-display text-5xl font-light text-accent/15 select-none">{s.step}</span>
+                <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/15 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
+                  <s.icon className="w-5 h-5 text-accent" />
+                </div>
+                <h3 className="font-display text-xl font-medium mb-3">{s.title}</h3>
+                <p className="font-body text-muted-foreground text-sm leading-relaxed">{s.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
 
       {/* Divider */}
       <div className="max-w-3xl mx-auto" style={{ height: '1px', background: 'linear-gradient(90deg, transparent, hsl(38 60% 55% / 0.15), transparent)' }} />
@@ -265,7 +281,7 @@ const Landing = () => {
             variants={fadeUp}
             className="text-center mb-20"
           >
-            <SectionEyebrow number="02" label="Why RealVision" />
+            <SectionEyebrow number="03" label="Why RealVision" />
             <h2 className="font-display text-4xl md:text-6xl font-medium">
               The Future of <span className="italic text-accent">Staging</span>
             </h2>
@@ -311,7 +327,7 @@ const Landing = () => {
             variants={fadeUp}
             className="text-center mb-16"
           >
-            <SectionEyebrow number="03" label="Portfolio" />
+            <SectionEyebrow number="04" label="Portfolio" />
             <h2 className="font-display text-4xl md:text-6xl font-medium mb-6">
               Stunning <span className="italic text-accent">Results</span>
             </h2>
@@ -338,6 +354,8 @@ const Landing = () => {
                 <img
                   src={item.img}
                   alt={item.label}
+                  width={800}
+                  height={1000}
                   className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700"
                   loading="lazy"
                 />
@@ -555,20 +573,7 @@ const Landing = () => {
         </motion.div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/[0.04] py-12 px-6 bg-foreground/[0.03]">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <Logo />
-          <p className="font-body text-sm text-muted-foreground">
-            © 2026 RealVision. AI-powered virtual staging for real estate professionals.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-            <a href="/privacy" className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">Privacy</a>
-            <a href="/terms" className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">Terms</a>
-            <a href="mailto:support@realvision.ai" className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">Contact</a>
-          </div>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   );
 };

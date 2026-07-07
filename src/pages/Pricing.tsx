@@ -2,7 +2,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, CheckCircle2, Minus, ChevronDown } from "lucide-react";
-import Logo from "@/components/Logo";
+import MarketingNav from "@/components/MarketingNav";
+import MarketingFooter from "@/components/MarketingFooter";
 import { useAuth } from "@/hooks/useAuth";
 import { PRICING_PLANS, ANNUAL_DISCOUNT_LABEL, priceLabel, yearlyTotal, type BillingPeriod, type PlanId } from "@/config/pricing";
 import { startCheckout } from "@/lib/billing";
@@ -77,28 +78,7 @@ const Pricing = () => {
 
   return (
     <div className="min-h-screen bg-background grain-overlay overflow-x-hidden">
-      {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 backdrop-blur-xl bg-foreground/95 border-b border-border/10">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <button onClick={() => navigate("/")}>
-            <Logo light />
-          </button>
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => navigate("/")}
-              className="font-body text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors hidden sm:block"
-            >
-              Home
-            </button>
-            <button
-              onClick={() => navigate(user ? "/app" : "/auth")}
-              className="font-body text-sm font-semibold gold-gradient text-accent-foreground px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
-            >
-              {user ? "Open App" : "Get Started"}
-            </button>
-          </div>
-        </div>
-      </nav>
+      <MarketingNav />
 
       {/* Hero */}
       <section className="pt-40 pb-16 px-6 relative">
@@ -151,7 +131,7 @@ const Pricing = () => {
                 custom={i}
                 className={`flex flex-col rounded-2xl border relative ${
                   plan.highlight
-                    ? "p-8 md:p-10 border-accent/30 bg-foreground text-primary-foreground shadow-glow-gold animate-pulse-glow"
+                    ? "p-8 md:p-10 border-accent/30 bg-foreground text-primary-foreground shadow-glow-gold"
                     : "p-8 border-border bg-card/40 backdrop-blur-sm"
                 }`}
               >
@@ -225,8 +205,16 @@ const Pricing = () => {
             custom={1}
             className="rounded-2xl border border-border/60 bg-card/30 backdrop-blur-sm overflow-hidden shadow-soft"
           >
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div
+              className="overflow-x-auto"
+              style={{
+                WebkitMaskImage:
+                  "linear-gradient(to right, transparent 0, black 24px, black calc(100% - 24px), transparent 100%)",
+                maskImage:
+                  "linear-gradient(to right, transparent 0, black 24px, black calc(100% - 24px), transparent 100%)",
+              }}
+            >
+              <table className="w-full min-w-[640px]">
                 <thead>
                   <tr className="border-b border-border/60 bg-foreground/[0.02]">
                     <th className="text-left font-body text-[10px] font-medium uppercase tracking-[0.25em] text-muted-foreground px-6 py-6">Feature</th>
@@ -362,19 +350,7 @@ const Pricing = () => {
         </motion.div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border py-10 px-6 bg-card/40">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <Logo />
-          <p className="font-body text-sm text-muted-foreground">
-            © 2026 RealVision. All rights reserved.
-          </p>
-          <div className="flex gap-6">
-            <button onClick={() => navigate("/")} className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">Home</button>
-            <a href="mailto:support@realvision.ai" className="font-body text-xs text-muted-foreground hover:text-accent transition-colors">Contact</a>
-          </div>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   );
 };

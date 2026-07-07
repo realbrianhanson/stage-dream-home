@@ -4,7 +4,7 @@ import { Upload, Image as ImageIcon, X, Loader2, Lock, ToggleLeft, ToggleRight, 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { uploadStagingImage } from "@/lib/uploadStagingImage";
-import { startCheckout } from "@/lib/billing";
+
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 
@@ -665,10 +665,7 @@ const RoomUploader = ({
                         Upgrade for unlimited AI-powered virtual staging
                       </p>
                       <button
-                        onClick={() => {
-                          if (!user) { navigate("/auth?next=/pricing"); return; }
-                          startCheckout("pro", "monthly");
-                        }}
+                        onClick={() => navigate("/pricing")}
                         className="inline-block gold-gradient-animated text-accent-foreground font-body font-semibold text-sm px-8 py-3 rounded-lg hover:opacity-90 transition-opacity"
                       >
                         Upgrade to Pro — Unlimited Stagings
