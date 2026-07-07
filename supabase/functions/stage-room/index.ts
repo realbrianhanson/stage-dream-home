@@ -161,6 +161,39 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const startedAt = Date.now();
+  let logUserId: string | null = null;
+  let logKind: "stage" | "remove" | "refine" = "stage";
+  let logRoomType: string | null = null;
+  let logStyle: string | null = null;
+  let logPlan: string | null = null;
+  let logMlsDisclosure = false;
+  let logAdminClient: ReturnType<typeof createClient> | null = null;
+
+  const writeLog = async (success: boolean, errorText: string | null) => {
+    try {
+      const client =
+        logAdminClient ??
+        createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+        );
+      await client.from("generation_logs" as any).insert({
+        user_id: logUserId,
+        kind: logKind,
+        room_type: logRoomType,
+        style: logStyle,
+        plan: logPlan,
+        success,
+        error_text: errorText ? errorText.slice(0, 2000) : null,
+        duration_ms: Date.now() - startedAt,
+        mls_disclosure: logMlsDisclosure,
+      });
+    } catch (e) {
+      console.error("generation_logs insert failed:", e);
+    }
+  };
+
   try {
     // Auth verification
     const authHeader = req.headers.get("Authorization");
