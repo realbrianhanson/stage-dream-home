@@ -1,10 +1,35 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Sparkles, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import DownloadWithPresets from "@/components/DownloadWithPresets";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { useUsage } from "@/hooks/useUsage";
+import { supabase } from "@/integrations/supabase/client";
+import { uploadStagingImage } from "@/lib/uploadStagingImage";
+
+export interface RefineContext {
+  roomType: string;
+  style: string;
+  propertyName?: string | null;
+  customInstructions?: string | null;
+}
+
+const REFINE_CHIPS = [
+  "Less furniture",
+  "Warmer tones",
+  "Different sofa",
+  "More minimal",
+  "Brighter",
+  "Add plants",
+];
+
+interface Version {
+  url: string;
+  label: string;
+  isWatermarked?: boolean;
+}
 
 interface BeforeAfterSliderProps {
   before: string;
@@ -12,11 +37,14 @@ interface BeforeAfterSliderProps {
   onReset?: () => void;
   isWatermarked?: boolean;
   mlsDisclosure?: boolean;
+  refineContext?: RefineContext;
 }
 
-const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosure }: BeforeAfterSliderProps) => {
+const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosure, refineContext }: BeforeAfterSliderProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { canStage, refresh, usage, remainingStagings, freeLimit } = useUsage();
+  const isFree = usage?.plan === "free";
   const [sliderPos, setSliderPos] = useState(50);
   const [containerWidth, setContainerWidth] = useState(0);
   const [aspectRatio, setAspectRatio] = useState<number | null>(null);
