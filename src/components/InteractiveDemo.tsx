@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import beforeLiving from "@/assets/before-vacant.jpg";
 import afterLiving from "@/assets/after-staged.jpg";
 
@@ -15,15 +15,62 @@ const PAIR = {
 const KEY_STEP = 5;
 const clamp = (n: number) => Math.min(100, Math.max(0, n));
 
+// Hero intro: open on the vacant room, glide to reveal the staging, then
+// settle in the middle. [position %, milliseconds to get there]
+const INTRO: Array<[number, number]> = [
+  [92, 0],
+  [92, 700],
+  [28, 1500],
+  [50, 700],
+];
+const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
 /**
  * Drag (or use the arrow keys) to compare a vacant photo with its staged
  * version. Lightweight on purpose: the full results viewer lives in the app.
  */
 const InteractiveDemo = ({ variant = "inline" }: { variant?: "inline" | "hero" }) => {
   const hero = variant === "hero";
-  const [pos, setPos] = useState(50);
+  const playIntro = hero && !prefersReducedMotion();
+  const [pos, setPos] = useState(playIntro ? INTRO[0][0] : 50);
   const frameRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
+  // Any user input ends the intro immediately.
+  const touched = useRef(false);
+
+  useEffect(() => {
+    if (!playIntro) return;
+    let raf = 0;
+    let start = 0;
+    const total = INTRO.reduce((sum, [, ms]) => sum + ms, 0);
+    const frame = (now: number) => {
+      if (touched.current) return;
+      if (!start) start = now;
+      let elapsed = now - start;
+      let from = INTRO[0][0];
+      for (const [to, ms] of INTRO.slice(1)) {
+        if (elapsed <= ms) {
+          setPos(from + (to - from) * easeInOut(ms === 0 ? 1 : elapsed / ms));
+          raf = requestAnimationFrame(frame);
+          return;
+        }
+        elapsed -= ms;
+        from = to;
+      }
+      setPos(INTRO[INTRO.length - 1][0]);
+    };
+    raf = requestAnimationFrame(frame);
+    const failsafe = window.setTimeout(() => {
+      if (!touched.current) setPos(50);
+    }, total + 500);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(failsafe);
+    };
+  }, [playIntro]);
 
   const moveTo = useCallback((clientX: number) => {
     const rect = frameRef.current?.getBoundingClientRect();
@@ -32,6 +79,7 @@ const InteractiveDemo = ({ variant = "inline" }: { variant?: "inline" | "hero" }
   }, []);
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    touched.current = true;
     dragging.current = true;
     e.currentTarget.setPointerCapture(e.pointerId);
     moveTo(e.clientX);
@@ -53,6 +101,7 @@ const InteractiveDemo = ({ variant = "inline" }: { variant?: "inline" | "hero" }
       End: 100,
     };
     if (e.key in next) {
+      touched.current = true;
       e.preventDefault();
       setPos(clamp(next[e.key]));
     }

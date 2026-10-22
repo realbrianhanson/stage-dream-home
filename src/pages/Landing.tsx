@@ -1,83 +1,54 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import {
-  Brush,
-  Check,
-  ChevronDown,
-  CloudSun,
-  Download,
-  Eraser,
-  Files,
-  PaintRoller,
-  Ruler,
-  SlidersHorizontal,
-  Sofa,
-  Sprout,
-  Sunset,
-  Tag,
-  Upload,
-  type LucideIcon,
-} from "lucide-react";
-import SectionEyebrow from "@/components/SectionEyebrow";
+import { ChevronDown } from "lucide-react";
 import MarketingNav from "@/components/MarketingNav";
 import MarketingFooter from "@/components/MarketingFooter";
 import InteractiveDemo from "@/components/InteractiveDemo";
 import { PRICING_PLANS, ANNUAL_DISCOUNT_LABEL, priceLabel, type BillingPeriod } from "@/config/pricing";
-import { TOOLS, type ToolId } from "@/config/tools";
+import { TOOLS } from "@/config/tools";
 import { STYLES } from "@/config/catalogs";
 import { useAuth } from "@/hooks/useAuth";
-import beforeLiving from "@/assets/before-vacant.jpg";
-import afterLiving from "@/assets/after-staged.jpg";
+import galleryLiving from "@/assets/hero-staged-room.jpg";
+import closingRoom from "@/assets/landing-hero.jpg";
 import showcaseBedroom from "@/assets/showcase-bedroom.jpg";
 import showcaseKitchen from "@/assets/showcase-kitchen.jpg";
-import showcaseLiving from "@/assets/showcase-living.jpg";
 
 const FREE_PLAN = PRICING_PLANS[0];
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const FREE_QUOTA = capitalize(FREE_PLAN.quotaLabel);
 
-const TOOL_ICONS: Record<ToolId, LucideIcon> = {
-  stage: Sofa,
-  remove: Eraser,
-  declutter: Brush,
-  recolor: PaintRoller,
-  dusk: Sunset,
-  sky: CloudSun,
-  lawn: Sprout,
+const TOOL_TITLES: Partial<Record<string, string>> = {
+  recolor: "Recolor walls, floors or cabinets",
 };
 
-const SHOWCASE = [
-  { img: showcaseLiving, label: "Living room, Modern style", alt: "Living room staged with a curved sofa, round coffee table and large abstract painting" },
-  { img: showcaseBedroom, label: "Bedroom, Luxury style", alt: "Bedroom staged with an upholstered bed, satin bedding and bedside lamps" },
-  { img: showcaseKitchen, label: "Kitchen, Modern style", alt: "Kitchen with walnut cabinets, marble island and pendant lights" },
-];
-
 const STEPS = [
-  { icon: Upload, title: "Upload a listing photo", desc: "A JPG, PNG or WebP of a room or exterior. Wide, level, well-lit shots work best." },
-  { icon: SlidersHorizontal, title: "Pick a tool and a style", desc: "Add furniture in one of 12 styles, or clear, recolor or brighten what's already there." },
-  { icon: Download, title: "Download for the MLS", desc: "Your result is ready in about a minute. Download it, or export originals and edits as pairs." },
+  { title: "Upload a listing photo", desc: "A JPG, PNG or WebP of a room or an exterior. Wide, level, well-lit shots give the best results." },
+  { title: "Choose a tool and a style", desc: "Furnish it in one of 12 styles, or clear, recolor or brighten what's already there." },
+  { title: "Download for the MLS", desc: "Your image is ready in about a minute. Download it, or export originals and edits as pairs." },
 ];
 
 const HONESTY = [
-  { icon: Tag, title: "“Virtually staged” label", desc: "Turn on the label and it's printed on the photo, so the disclosure travels with the image." },
-  { icon: Files, title: "Original and edited pairs", desc: "Export a listing as a zip of before/after pairs, named to sort together, with a disclosure note included." },
-  { icon: Ruler, title: "The house stays the house", desc: "Walls, windows, floors, fixtures and built-ins are kept as they are. Defects aren't painted over." },
+  { title: "A “Virtually staged” label", desc: "Turn it on and the disclosure is printed on the photo, so it travels with the image wherever it's posted." },
+  { title: "Originals and edits, paired", desc: "Export a listing as a zip of before and after pairs, named to sort together, with a disclosure note included." },
+  { title: "The house stays the house", desc: "Walls, windows, floors, fixtures and views are kept exactly as they are. Defects are never painted over." },
 ];
 
 const FAQS = [
-  { q: "How long does a staging take?", a: "About a minute per image. You can keep working while it runs, and every result is saved to your gallery." },
+  { q: "How long does a staging take?", a: "About a minute per image. You can keep working while it runs, and every result is saved to your library." },
   { q: "Can I use these photos on the MLS?", a: "Most MLS boards allow virtually staged photos as long as you disclose them and keep the original. Turn on the “Virtually staged” label, and use the pairs export to upload originals next to edits. Check your board's rules, since they vary." },
   { q: "What photos work best?", a: "Wide, level shots in good light, taken from a corner or doorway. Empty or lightly furnished rooms give the cleanest staging. Very dark, blurry or fisheye photos give weaker results." },
   { q: "Who owns the images?", a: "You keep ownership of the photos you upload, and you can use the edited images to market your listings. We don't use your photos to train AI models." },
   { q: "Can I cancel anytime?", a: "Yes. Cancel from your billing settings and you keep your plan until the end of the period you paid for." },
 ];
 
-const sectionClass = "px-4 sm:px-6 py-20 md:py-28 scroll-mt-16";
-const headingClass = "font-display font-normal text-4xl md:text-5xl tracking-[-0.025em] leading-[1.05] text-foreground";
-const primaryBtn =
-  "gold-gradient-animated inline-flex items-center justify-center font-body text-sm font-medium text-accent-foreground px-6 py-3.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
-const secondaryBtn =
-  "inline-flex items-center justify-center font-body text-sm font-medium text-foreground px-5 py-3 rounded-md border border-border bg-background hover:bg-card transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+const HERO_FACTS = ["12 interior styles", "7 photo tools", "About a minute per photo", "MLS-ready exports"];
+
+const container = "max-w-[1240px] mx-auto";
+const section = "px-4 sm:px-6 py-24 md:py-36 scroll-mt-16";
+const h2 = "font-display font-normal text-4xl md:text-5xl lg:text-[3.5rem] leading-[1.04] tracking-[-0.025em]";
+const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+const primaryBtn = `gold-gradient-animated inline-flex items-center justify-center font-body text-sm font-medium px-6 py-3.5 rounded-md ${focusRing}`;
+const secondaryBtn = `inline-flex items-center justify-center font-body text-sm font-medium text-foreground px-6 py-3.5 rounded-md border border-border bg-background hover:bg-card transition-colors ${focusRing}`;
 
 /** Scroll to `#id` when the URL hash changes (React Router doesn't). */
 const useHashScroll = () => {
@@ -91,182 +62,38 @@ const useHashScroll = () => {
   }, [hash]);
 };
 
-const HERO_FACTS = ["12 interior styles", "7 photo tools", "About a minute per photo", "MLS-ready exports"];
-
-const Hero = ({ startHref }: { startHref: string }) => {
-  return (
-    <section className="px-4 sm:px-6 pt-14 pb-16 md:pt-24 md:pb-24">
-      <div className="max-w-[1240px] mx-auto">
-        <div className="hero-enter grid gap-8 lg:grid-cols-12 lg:items-end">
-          <h1 className="lg:col-span-8 font-display font-normal text-[2.75rem] leading-[1.02] sm:text-6xl md:text-7xl lg:text-[5.5rem] tracking-[-0.03em] text-foreground">
-            Show buyers the home it could be.
-          </h1>
-          <div className="lg:col-span-4 lg:pb-3">
-            <p className="font-body text-lg leading-relaxed text-muted-foreground max-w-md">
-              Virtual staging and photo edits for listing agents and photographers. Upload a room, choose a style, and
-              have an MLS-ready image in about a minute.
-            </p>
-            <div className="mt-7 flex flex-col sm:flex-row gap-3">
-              <Link to={startHref} className={primaryBtn}>
-                Stage a room free
-              </Link>
-              <Link to="/pricing" className={secondaryBtn}>
-                See pricing
-              </Link>
-            </div>
-            <p className="mt-4 font-body text-sm text-muted-foreground">{FREE_QUOTA} free. No credit card needed.</p>
-          </div>
-        </div>
-
-        <div className="mt-12 md:mt-16">
-          <InteractiveDemo variant="hero" />
-        </div>
-
-        <ul className="mt-8 grid grid-cols-2 md:grid-cols-4 border-t border-border">
-          {HERO_FACTS.map((fact, i) => (
-            <li
-              key={fact}
-              className={`pt-5 pb-1 font-body text-sm text-foreground ${i % 2 === 1 ? "pl-4 md:pl-6" : ""} ${i >= 2 ? "md:pl-6" : ""} md:border-l md:first:border-l-0 md:first:pl-0 border-border`}
-            >
-              {fact}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-};
-
-const StagingCard = () => (
-  <article className="rounded-2xl border border-border bg-card overflow-hidden lg:col-span-3">
-    <div className="grid lg:grid-cols-2">
-      <div className="grid grid-cols-2 gap-px bg-border lg:min-h-[340px]">
-        <figure className="relative m-0 bg-background">
-          <img src={beforeLiving} alt="Empty living room before staging" width={960} height={640} loading="lazy" className="h-full w-full object-cover aspect-[3/4] sm:aspect-[4/3] lg:aspect-auto" />
-          <figcaption className="absolute left-3 top-3 rounded-md bg-background/90 px-2 py-1 font-body text-xs font-medium text-foreground">Before</figcaption>
-        </figure>
-        <figure className="relative m-0 bg-background">
-          <img src={afterLiving} alt="The same living room after Add furniture" width={1248} height={832} loading="lazy" className="h-full w-full object-cover aspect-[3/4] sm:aspect-[4/3] lg:aspect-auto" />
-          <figcaption className="absolute left-3 top-3 rounded-md bg-accent px-2 py-1 font-body text-xs font-medium text-accent-foreground">After</figcaption>
-        </figure>
-      </div>
-      <div className="p-6 md:p-10 flex flex-col justify-center">
-        <Sofa className="w-6 h-6 text-accent" aria-hidden />
-        <h3 className="mt-4 font-display text-3xl font-normal tracking-[-0.02em]">Add furniture</h3>
-        <p className="mt-2 font-body text-muted-foreground leading-relaxed">
-          Furnish an empty room to scale, in the style that suits the buyer. Generate a few options and keep the one you
-          like, or compare styles side by side.
-        </p>
-        <p className="mt-6 font-body text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">{STYLES.length} styles: </span>
-          {STYLES.join(", ")}
-        </p>
-      </div>
-    </div>
-  </article>
-);
-
-const ToolsSection = () => {
-  const otherTools = TOOLS.filter((t) => t.id !== "stage");
-  return (
-    <section id="tools" className={`${sectionClass} border-t border-border`}>
-      <div className="max-w-[1240px] mx-auto">
-        <div className="max-w-2xl mb-12">
-          <SectionEyebrow label="What you can do" />
-          <h2 className={headingClass}>Seven edits for listing photos</h2>
-          <p className="mt-4 font-body text-lg text-muted-foreground">
-            Stage empty rooms, clear out the ones that aren't, and fix the exterior shot before it goes live.
+const Hero = ({ startHref }: { startHref: string }) => (
+  <section className="px-4 sm:px-6 pt-14 pb-20 md:pt-24 md:pb-28">
+    <div className={container}>
+      <div className="hero-enter grid gap-8 lg:grid-cols-12 lg:items-end">
+        <h1 className="lg:col-span-8 font-display font-normal text-[2.75rem] leading-[1.02] sm:text-6xl md:text-7xl lg:text-[5.5rem] tracking-[-0.03em] text-foreground">
+          Show buyers the home it could be.
+        </h1>
+        <div className="lg:col-span-4 lg:pb-3">
+          <p className="font-body text-lg leading-relaxed text-muted-foreground max-w-md">
+            Virtual staging and photo edits for listing agents and photographers. Upload a room, choose a style, and
+            have an MLS-ready image in about a minute.
           </p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <StagingCard />
-          {otherTools.map((tool) => {
-            const Icon = TOOL_ICONS[tool.id];
-            return (
-              <article key={tool.id} className="flex flex-col rounded-2xl border border-border bg-background p-7 md:p-9 min-h-[220px] transition-colors hover:border-foreground/25">
-                <div className="flex items-start justify-between gap-4">
-                  <Icon className="w-6 h-6 text-accent" aria-hidden />
-                  <span className="rounded-md border border-border px-2 py-0.5 font-body text-xs text-muted-foreground">
-                    {tool.exterior ? "Exterior" : "Interior"}
-                  </span>
-                </div>
-                <h3 className="mt-auto pt-10 font-display text-2xl font-normal tracking-[-0.02em]">
-                  {tool.id === "recolor" ? "Recolor walls, floors, cabinets" : tool.label}
-                </h3>
-                <p className="mt-2 font-body text-muted-foreground">{tool.blurb}.</p>
-              </article>
-            );
-          })}
-        </div>
-
-        <div className="mt-16">
-          <h3 className="font-body text-lg font-semibold tracking-tight mb-4">More staged rooms</h3>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {SHOWCASE.map((item) => (
-              <figure key={item.label} className="m-0">
-                <img
-                  src={item.img}
-                  alt={item.alt}
-                  width={640}
-                  height={512}
-                  loading="lazy"
-                  className="w-full aspect-[5/4] object-cover rounded-xl border border-border"
-                />
-                <figcaption className="mt-2 font-body text-sm text-muted-foreground">{item.label}</figcaption>
-              </figure>
-            ))}
+          <div className="mt-7 flex flex-col sm:flex-row gap-3">
+            <Link to={startHref} className={primaryBtn}>
+              Stage a room free
+            </Link>
+            <Link to="/pricing" className={secondaryBtn}>
+              See pricing
+            </Link>
           </div>
+          <p className="mt-4 font-body text-sm text-muted-foreground">{FREE_QUOTA} free. No credit card needed.</p>
         </div>
       </div>
-    </section>
-  );
-};
 
-const StepsSection = () => (
-  <section className={`${sectionClass} bg-card border-y border-border`}>
-    <div className="max-w-[1240px] mx-auto">
-      <div className="max-w-2xl mb-12">
-        <SectionEyebrow label="How it works" />
-        <h2 className={headingClass}>From upload to listing in three steps</h2>
+      <div className="mt-12 md:mt-16">
+        <InteractiveDemo variant="hero" />
       </div>
-      <ol className="grid gap-4 md:grid-cols-3">
-        {STEPS.map((s, i) => (
-          <li key={s.title} className="rounded-xl border border-border bg-background p-6 md:p-8">
-            <div className="flex items-center gap-3">
-              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent-soft font-body text-sm font-semibold text-accent tabular-nums">
-                {i + 1}
-              </span>
-              <s.icon className="w-5 h-5 text-muted-foreground" aria-hidden />
-            </div>
-            <h3 className="mt-auto pt-10 font-display text-2xl font-normal tracking-[-0.02em]">{s.title}</h3>
-            <p className="mt-2 font-body text-muted-foreground leading-relaxed">{s.desc}</p>
-          </li>
-        ))}
-      </ol>
-    </div>
-  </section>
-);
 
-const HonestySection = () => (
-  <section className={sectionClass}>
-    <div className="max-w-[1240px] mx-auto grid gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-      <div>
-        <SectionEyebrow label="Built for MLS rules" />
-        <h2 className={headingClass}>Edited photos that are honest about it</h2>
-        <p className="mt-4 font-body text-lg text-muted-foreground leading-relaxed">
-          Buyers should see the room they'll walk into. RealVision changes what's in it, not the room itself, and makes
-          disclosure the easy part.
-        </p>
-      </div>
-      <ul className="divide-y divide-border rounded-xl border border-border">
-        {HONESTY.map((h) => (
-          <li key={h.title} className="flex gap-4 p-6">
-            <h.icon className="w-5 h-5 mt-0.5 shrink-0 text-accent" aria-hidden />
-            <div>
-              <h3 className="font-body text-base font-semibold">{h.title}</h3>
-              <p className="mt-1 font-body text-muted-foreground leading-relaxed">{h.desc}</p>
-            </div>
+      <ul className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-y-4 border-t border-border">
+        {HERO_FACTS.map((fact) => (
+          <li key={fact} className="pt-5 font-body text-sm text-foreground md:border-l md:border-border md:pl-6 md:first:border-l-0 md:first:pl-0">
+            {fact}
           </li>
         ))}
       </ul>
@@ -274,24 +101,156 @@ const HonestySection = () => (
   </section>
 );
 
-const PricingSummary = () => {
+/** The seven tools as a typographic index, the way a brochure lists services. */
+const ToolsIndex = ({ startHref }: { startHref: string }) => (
+  <section id="tools" className={`${section} border-t border-border`}>
+    <div className={`${container} grid gap-12 lg:grid-cols-12`}>
+      <div className="lg:col-span-5">
+        <div className="lg:sticky lg:top-28">
+          <h2 className={h2}>Every edit a listing photo needs.</h2>
+          <p className="mt-6 font-body text-lg leading-relaxed text-muted-foreground max-w-md">
+            Furnish an empty room, clear out a furnished one, or fix the exterior shot before it goes live. Every edit
+            keeps the room's walls, windows and floors exactly as they are.
+          </p>
+          <Link
+            to={startHref}
+            className={`mt-8 inline-block font-body text-sm font-medium text-foreground underline decoration-border underline-offset-[6px] hover:decoration-foreground transition-colors rounded-sm ${focusRing}`}
+          >
+            Open the studio
+          </Link>
+        </div>
+      </div>
+
+      <ul className="lg:col-span-7 border-b border-border">
+        {TOOLS.map((tool) => (
+          <li key={tool.id} className="grid grid-cols-[1fr_auto] gap-x-6 gap-y-2 border-t border-border py-7 md:py-8">
+            <h3 className="font-display text-[1.75rem] md:text-[2.125rem] leading-tight tracking-[-0.02em] text-foreground">
+              {TOOL_TITLES[tool.id] ?? tool.label}
+            </h3>
+            <span className="row-span-2 self-start pt-2 font-body text-sm text-muted-foreground">
+              {tool.exterior ? "Exterior" : "Interior"}
+            </span>
+            <p className="font-body text-base text-muted-foreground">{tool.blurb}.</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+);
+
+const StyleGallery = () => (
+  <section className={`${section} pt-0 md:pt-0`}>
+    <div className={container}>
+      <div className="grid gap-6 lg:grid-cols-12 lg:items-end mb-12 md:mb-16">
+        <h2 className={`${h2} lg:col-span-7`}>Twelve styles. One look across the listing.</h2>
+        <p className="lg:col-span-5 font-body text-lg leading-relaxed text-muted-foreground">
+          Choose a style for each room, then lock a matching palette of woods, fabrics and metals so every photo reads as
+          the same home.
+        </p>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-12">
+        <figure className="m-0 lg:col-span-8">
+          <img
+            src={galleryLiving}
+            alt="A bright living room with cream sofas, a crystal chandelier and tall draped windows"
+            width={1600}
+            height={900}
+            loading="lazy"
+            decoding="async"
+            className="w-full aspect-[16/10] object-cover rounded-2xl bg-card"
+          />
+          <figcaption className="mt-3 font-body text-sm text-muted-foreground">Luxury living room</figcaption>
+        </figure>
+        <div className="grid gap-4 sm:grid-cols-2 lg:col-span-4 lg:grid-cols-1">
+          {[
+            { src: showcaseBedroom, alt: "A bedroom with an upholstered headboard, satin bedding and brass lamps", label: "Luxury bedroom" },
+            { src: showcaseKitchen, alt: "A kitchen with walnut cabinets, a marble island and glass pendant lights", label: "Modern kitchen" },
+          ].map((img) => (
+            <figure key={img.label} className="m-0">
+              <img
+                src={img.src}
+                alt={img.alt}
+                width={640}
+                height={512}
+                loading="lazy"
+                decoding="async"
+                className="w-full aspect-[16/11] object-cover rounded-2xl bg-card"
+              />
+              <figcaption className="mt-3 font-body text-sm text-muted-foreground">{img.label}</figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
+
+      <ul aria-label="Design styles" className="mt-14 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border-t border-border">
+        {STYLES.map((s) => (
+          <li key={s} className="border-b border-border py-4 font-display text-xl tracking-[-0.01em] text-foreground">
+            {s}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+);
+
+const Steps = () => (
+  <section className={`${section} bg-card border-y border-border`}>
+    <div className={container}>
+      <h2 className={`${h2} max-w-2xl`}>From upload to listing in three steps.</h2>
+      <ol className="mt-14 grid gap-10 md:grid-cols-3 md:gap-8">
+        {STEPS.map((s, i) => (
+          <li key={s.title} className="border-t border-foreground/80 pt-6">
+            <span className="font-display text-6xl leading-none tracking-[-0.03em] text-foreground tabular-nums" aria-hidden>
+              {i + 1}
+            </span>
+            <h3 className="mt-8 font-body text-lg font-semibold text-foreground">{s.title}</h3>
+            <p className="mt-2 font-body leading-relaxed text-muted-foreground">{s.desc}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+);
+
+/** The one dark band on the page: the honesty promise. */
+const Honesty = () => (
+  <section className={`${section} bg-foreground text-background`}>
+    <div className={`${container} grid gap-14 lg:grid-cols-12`}>
+      <div className="lg:col-span-5">
+        <h2 className={`${h2} text-white`}>Edited photos that stay honest.</h2>
+        <p className="mt-6 font-body text-lg leading-relaxed text-white/75 max-w-md">
+          Buyers should see the room they'll walk into. RealVision changes what's in it, never the room itself, and
+          makes disclosure the easy part.
+        </p>
+      </div>
+      <ul className="lg:col-span-7 border-b border-white/15">
+        {HONESTY.map((h) => (
+          <li key={h.title} className="border-t border-white/15 py-7">
+            <h3 className="font-display text-2xl md:text-[1.75rem] tracking-[-0.015em] text-white">{h.title}</h3>
+            <p className="mt-2 font-body leading-relaxed text-white/70 max-w-xl">{h.desc}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+);
+
+const Pricing = () => {
   const [period, setPeriod] = useState<BillingPeriod>("monthly");
   return (
-    <section id="pricing" className={`${sectionClass} bg-card border-y border-border`}>
-      <div className="max-w-[1240px] mx-auto">
-        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-10">
-          <div className="max-w-2xl">
-            <SectionEyebrow label="Pricing" />
-            <h2 className={headingClass}>Start free, upgrade when you list more</h2>
-          </div>
-          <div role="group" aria-label="Billing period" className="inline-flex self-start rounded-md border border-border bg-background p-1">
+    <section id="pricing" className={section}>
+      <div className={container}>
+        <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between mb-12">
+          <h2 className={`${h2} max-w-2xl`}>Start free. Upgrade when you list more.</h2>
+          <div role="group" aria-label="Billing period" className="inline-flex self-start md:self-auto rounded-md border border-border bg-background p-1">
             {(["monthly", "annual"] as const).map((p) => (
               <button
                 key={p}
                 type="button"
                 aria-pressed={period === p}
                 onClick={() => setPeriod(p)}
-                className={`rounded px-3 py-1.5 font-body text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                className={`rounded px-3.5 py-1.5 font-body text-sm transition-colors ${focusRing} ${
                   period === p ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -302,56 +261,64 @@ const PricingSummary = () => {
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
-          {PRICING_PLANS.map((plan) => (
-            <article
-              key={plan.id}
-              className={`rounded-xl border bg-background p-6 md:p-8 ${plan.highlight ? "border-accent ring-1 ring-accent" : "border-border"}`}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="font-body text-lg font-semibold">{plan.name}</h3>
-                {plan.highlight && (
-                  <span className="rounded-md bg-accent-soft px-2 py-0.5 font-body text-xs font-medium text-accent">Most popular</span>
-                )}
-              </div>
-              <p className="mt-4 flex items-baseline gap-1">
-                <span className="font-display text-4xl font-normal tracking-[-0.02em] tabular-nums">{priceLabel(plan, period)}</span>
-                {plan.monthly > 0 && <span className="font-body text-sm text-muted-foreground">/mo</span>}
-              </p>
-              <p className="mt-1 font-body text-sm font-medium text-foreground tabular-nums">{plan.quotaLabel}</p>
-              <p className="mt-3 font-body text-sm text-muted-foreground">{plan.blurb}</p>
-            </article>
-          ))}
+          {PRICING_PLANS.map((plan) => {
+            const dark = plan.highlight;
+            return (
+              <article
+                key={plan.id}
+                className={`flex flex-col rounded-2xl p-7 md:p-9 ${dark ? "bg-foreground text-white" : "border border-border bg-background"}`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="font-body text-base font-semibold">{plan.name}</h3>
+                  {dark && <span className="rounded-md bg-white/10 px-2 py-0.5 font-body text-xs font-medium text-white">Most popular</span>}
+                </div>
+                <p className="mt-8 flex items-baseline gap-1.5">
+                  <span className="font-display text-5xl tracking-[-0.03em] tabular-nums">{priceLabel(plan, period)}</span>
+                  {plan.monthly > 0 && <span className={`font-body text-sm ${dark ? "text-white/70" : "text-muted-foreground"}`}>/month</span>}
+                </p>
+                <p className={`mt-2 font-body text-sm ${dark ? "text-white/70" : "text-muted-foreground"}`}>{plan.blurb}</p>
+                <ul className={`mt-8 space-y-2.5 border-t pt-6 font-body text-sm ${dark ? "border-white/15 text-white/85" : "border-border text-foreground"}`}>
+                  {plan.features.slice(0, 4).map((f) => (
+                    <li key={f}>{f}</li>
+                  ))}
+                </ul>
+              </article>
+            );
+          })}
         </div>
 
-        <Link to="/pricing" className={`${secondaryBtn} mt-8`}>
-          Compare plans
+        <Link
+          to="/pricing"
+          className={`mt-10 inline-block font-body text-sm font-medium text-foreground underline decoration-border underline-offset-[6px] hover:decoration-foreground transition-colors rounded-sm ${focusRing}`}
+        >
+          Compare every plan
         </Link>
       </div>
     </section>
   );
 };
 
-const FaqSection = () => (
-  <section className={sectionClass}>
-    <div className="max-w-[1240px] mx-auto grid gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-      <div>
-        <SectionEyebrow label="FAQ" />
-        <h2 className={headingClass}>Questions agents ask</h2>
-        <p className="mt-4 font-body text-muted-foreground">
+const Faq = () => (
+  <section className={`${section} border-t border-border`}>
+    <div className={`${container} grid gap-12 lg:grid-cols-12`}>
+      <div className="lg:col-span-5">
+        <h2 className={h2}>Questions agents ask.</h2>
+        <p className="mt-6 font-body text-muted-foreground">
           Something else?{" "}
-          <a href="mailto:support@realvision.ai" className="text-accent underline-offset-4 hover:underline">
-            Email support
+          <a href="mailto:support@realvision.ai" className={`text-foreground underline underline-offset-4 rounded-sm ${focusRing}`}>
+            Email us
           </a>
+          .
         </p>
       </div>
-      <div className="divide-y divide-border border-y border-border">
+      <div className="lg:col-span-7 border-b border-border">
         {FAQS.map((f) => (
-          <details key={f.q} className="group">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 font-body text-base font-medium text-foreground rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+          <details key={f.q} className="group border-t border-border">
+            <summary className={`flex cursor-pointer list-none items-center justify-between gap-6 py-6 font-body text-lg text-foreground rounded-sm ${focusRing} [&::-webkit-details-marker]:hidden`}>
               {f.q}
-              <ChevronDown className="w-4 h-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
+              <ChevronDown className="w-5 h-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
             </summary>
-            <p className="pb-5 pr-8 font-body text-muted-foreground leading-relaxed">{f.a}</p>
+            <p className="pb-6 pr-10 font-body leading-relaxed text-muted-foreground">{f.a}</p>
           </details>
         ))}
       </div>
@@ -359,25 +326,37 @@ const FaqSection = () => (
   </section>
 );
 
-const ClosingCta = ({ startHref }: { startHref: string }) => (
-  <section className="px-4 sm:px-6 pb-20 md:pb-28">
-    <div className="max-w-[1240px] mx-auto rounded-xl border border-border bg-card p-8 md:p-12 flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
-      <div className="max-w-xl">
-        <h2 className={headingClass}>Try it on your next listing</h2>
-        <ul className="mt-4 flex flex-col gap-2 font-body text-muted-foreground">
-          {[`${FREE_QUOTA} on the free plan`, `Every tool and all ${STYLES.length} styles`, "No credit card to start"].map((t) => (
-            <li key={t} className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-accent" aria-hidden />
-              {t}
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div className="flex flex-col sm:flex-row gap-3">
-        <Link to={startHref} className={primaryBtn}>
+/** Full-bleed photo close, with the call to action over it. */
+const Closing = ({ startHref }: { startHref: string }) => (
+  <section className="relative isolate overflow-hidden">
+    <img
+      src={closingRoom}
+      alt=""
+      width={1600}
+      height={900}
+      loading="lazy"
+      decoding="async"
+      className="absolute inset-0 -z-10 h-full w-full object-cover"
+    />
+    <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/80 via-black/55 to-black/20" aria-hidden />
+    <div className={`${container} px-4 sm:px-6 py-28 md:py-44`}>
+      <h2 className="font-display font-normal text-5xl md:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.03em] text-white max-w-2xl">
+        Stage your next listing tonight.
+      </h2>
+      <p className="mt-6 font-body text-lg text-white/80 max-w-md">
+        {FREE_QUOTA} are free, with every tool and all {STYLES.length} styles. No credit card needed.
+      </p>
+      <div className="mt-10 flex flex-col sm:flex-row gap-3">
+        <Link
+          to={startHref}
+          className={`inline-flex items-center justify-center rounded-md bg-white px-6 py-3.5 font-body text-sm font-medium text-foreground hover:bg-white/90 transition-colors ${focusRing} focus-visible:ring-offset-black`}
+        >
           Stage a room free
         </Link>
-        <Link to="/pricing" className={secondaryBtn}>
+        <Link
+          to="/pricing"
+          className={`inline-flex items-center justify-center rounded-md border border-white/40 px-6 py-3.5 font-body text-sm font-medium text-white hover:bg-white/10 transition-colors ${focusRing} focus-visible:ring-offset-black`}
+        >
           See pricing
         </Link>
       </div>
@@ -395,12 +374,13 @@ const Landing = () => {
       <MarketingNav />
       <main>
         <Hero startHref={startHref} />
-        <ToolsSection />
-        <StepsSection />
-        <HonestySection />
-        <PricingSummary />
-        <FaqSection />
-        <ClosingCta startHref={startHref} />
+        <ToolsIndex startHref={startHref} />
+        <StyleGallery />
+        <Steps />
+        <Honesty />
+        <Pricing />
+        <Faq />
+        <Closing startHref={startHref} />
       </main>
       <MarketingFooter />
     </div>

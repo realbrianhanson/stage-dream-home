@@ -104,7 +104,7 @@ const CompareTable = () => (
             <tr className="border-b border-border bg-card">
               <th scope="col" className="text-left font-body text-sm font-medium text-muted-foreground px-5 py-4">Feature</th>
               {PRICING_PLANS.map((p) => (
-                <th scope="col" key={p.id} className={`px-5 py-4 text-center font-body text-sm font-semibold ${p.highlight ? "text-accent" : "text-foreground"}`}>
+                <th scope="col" key={p.id} className={`px-5 py-4 text-center font-body text-sm font-semibold text-foreground`}>
                   {p.name}
                 </th>
               ))}
@@ -117,7 +117,7 @@ const CompareTable = () => (
                 {row.values.map((v, j) => {
                   const highlight = !!PRICING_PLANS[j]?.highlight;
                   return (
-                    <td key={PRICING_PLANS[j]?.id ?? j} className={`px-5 py-3.5 text-center ${highlight ? "bg-accent-soft/50" : ""}`}>
+                    <td key={PRICING_PLANS[j]?.id ?? j} className={`px-5 py-3.5 text-center ${highlight ? "bg-card" : ""}`}>
                       <CompareCell value={v} highlight={highlight} />
                     </td>
                   );
@@ -138,7 +138,7 @@ const FaqSection = () => (
         <h2 className="font-display text-2xl md:text-3xl font-normal tracking-[-0.02em]">Billing questions</h2>
         <p className="mt-3 font-body text-muted-foreground">
           Something else?{" "}
-          <a href="mailto:support@realvision.ai" className="text-accent underline-offset-4 hover:underline">
+          <a href="mailto:support@realvision.ai" className="text-foreground underline underline-offset-4">
             Email support
           </a>
         </p>
@@ -212,13 +212,13 @@ const Pricing = () => {
                 <article
                   key={plan.id}
                   className={`flex flex-col rounded-xl border bg-background p-6 md:p-8 ${
-                    plan.highlight ? "border-accent ring-1 ring-accent" : "border-border"
+                    plan.highlight ? "border-foreground ring-1 ring-foreground" : "border-border"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3 min-h-[24px]">
                     <h2 className="font-body text-lg font-semibold">{plan.name}</h2>
                     {plan.highlight && (
-                      <span className="rounded-md bg-accent-soft px-2 py-0.5 font-body text-xs font-medium text-accent">
+                      <span className="rounded-md bg-foreground px-2 py-0.5 font-body text-xs font-medium text-background">
                         Most popular
                       </span>
                     )}
