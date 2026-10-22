@@ -51,8 +51,8 @@ const AgentProfileDialog = ({ onClose }: Props) => {
 
   const handleUpload = async (file: File) => {
     if (!user) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please choose an image file");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Please choose a JPG, PNG or WebP image");
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
@@ -176,7 +176,7 @@ const AgentProfileDialog = ({ onClose }: Props) => {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0];

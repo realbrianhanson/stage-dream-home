@@ -53,10 +53,37 @@ Deno.serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" });
 
-    // Reuse existing Stripe customer if one exists for this email
-    let customerId: string | undefined;
-    const existing = await stripe.customers.list({ email: user.email!, limit: 1 });
-    if (existing.data.length > 0) customerId = existing.data[0].id;
+    const admin = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { data: usage } = await admin
+      .from("usage")
+      .select("plan, stripe_customer_id, stripe_subscription_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    // Already paying: send them to the billing portal to switch plans instead of
+    // opening a second subscription.
+    if (usage?.plan && usage.plan !== "free" && usage.stripe_subscription_id) {
+      return new Response(JSON.stringify({ error: "already_subscribed" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Reuse the customer on file, else one with this email.
+    let customerId = (usage?.stripe_customer_id as string | null | undefined) ?? undefined;
+    if (!customerId) {
+      const existing = await stripe.customers.list({ email: user.email!, limit: 1 });
+      customerId = existing.data[0]?.id;
+    }
+    if (customerId) {
+      const subs = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 20 });
+      if (subs.data.some((s) => ["active", "trialing", "past_due"].includes(s.status))) {
+        return new Response(JSON.stringify({ error: "already_subscribed" }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     const unitAmount = period === "annual" ? plan.annualYearly : plan.monthly;
     const interval = period === "annual" ? "year" : "month";

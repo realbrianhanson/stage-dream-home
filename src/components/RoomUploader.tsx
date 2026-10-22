@@ -280,6 +280,9 @@ const RoomUploader = ({
         }
 
         let quotaHit = false;
+        // Each style gets its own palette from the shared catalog, unless one was picked.
+        const comparePaletteFor = (s: string) =>
+          palette && getPalettesForStyle(s).includes(palette) ? palette : "";
 
         for (let i = 0; i < stylesToStage.length; i++) {
           if (cancelledRef.current) {
@@ -288,13 +291,14 @@ const RoomUploader = ({
           }
 
           const currentStyle = stylesToStage[i];
+          const comparePalette = comparePaletteFor(currentStyle);
           const remaining = stylesToStage.slice(i + 1);
           setProgressText(`Staging ${i + 1} of ${count}... ${currentStyle}`);
 
           try {
             const instrTrimmed = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
             const { data, error } = await supabase.functions.invoke("stage-room", {
-              body: { image, roomType, style: currentStyle, customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined, mls_disclosure: mlsDisclosure },
+              body: { image, roomType, style: currentStyle, customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined, mode: "stage", mls_disclosure: mlsDisclosure, palette: comparePalette || undefined },
             });
             if (error) {
               // 402 (quota) or other — stop the loop for quota exhaustion
@@ -326,6 +330,7 @@ const RoomUploader = ({
                 custom_instructions: instrTrimmed || null,
                 aspect_ratio: aspectRatio || null,
                 mls_disclosure: mlsDisclosure,
+                staging_palette: comparePalette || null,
               } as any);
 
               finalResult.stagedImageUrl = stagedUrl;
@@ -364,7 +369,8 @@ const RoomUploader = ({
     }
   };
 
-  const limitReached = usage && usage.plan === "free" && !canStage;
+  const limitReached = !!usage && !canStage;
+  const isFreePlan = !usage || usage.plan === "free";
   const activeStyleCount = compareMode ? selectedStyles.length : 1;
 
   return (
@@ -754,16 +760,20 @@ const RoomUploader = ({
                     <div className="text-center py-6 border border-white/[0.06] rounded-2xl bg-white/[0.02]">
                       <Lock className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
                       <p className="font-display text-lg font-medium mb-1">
-                        You've used all {freeLimit} free stagings this month
+                        {isFreePlan
+                          ? `You've used all ${freeLimit} free stagings this month`
+                          : "You've used all of this month's stagings"}
                       </p>
                       <p className="font-body text-sm text-muted-foreground mb-5">
-                        Upgrade for unlimited AI-powered virtual staging
+                        {isFreePlan
+                          ? "Upgrade for hundreds of stagings a month, with no watermark"
+                          : "Your count resets 30 days after your cycle started. Need more? Move up a plan."}
                       </p>
                       <button
                         onClick={() => navigate("/pricing")}
                         className="inline-block gold-gradient-animated text-accent-foreground font-body font-semibold text-sm px-8 py-3 rounded-lg hover:opacity-90 transition-opacity"
                       >
-                        Upgrade to Pro — Unlimited Stagings
+                        {isFreePlan ? "See plans" : "Compare plans"}
                       </button>
                     </div>
                   ) : (

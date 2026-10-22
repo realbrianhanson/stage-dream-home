@@ -194,7 +194,10 @@ export type Database = {
           id: string
           month_reset_at: string | null
           onboarding_complete: boolean
+          is_admin: boolean
           plan: string
+          rl_window_count: number
+          rl_window_start: string
           stagings_this_month: number
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
@@ -205,7 +208,10 @@ export type Database = {
           id?: string
           month_reset_at?: string | null
           onboarding_complete?: boolean
+          is_admin?: boolean
           plan?: string
+          rl_window_count?: number
+          rl_window_start?: string
           stagings_this_month?: number
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -216,7 +222,10 @@ export type Database = {
           id?: string
           month_reset_at?: string | null
           onboarding_complete?: boolean
+          is_admin?: boolean
           plan?: string
+          rl_window_count?: number
+          rl_window_start?: string
           stagings_this_month?: number
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -243,6 +252,8 @@ export type Database = {
           stagings: Json
         }[]
       }
+      plan_monthly_limit: { Args: { p_plan: string }; Returns: number }
+      reserve_staging: { Args: never; Returns: string }
       get_shared_staging: {
         Args: { p_token: string }
         Returns: {

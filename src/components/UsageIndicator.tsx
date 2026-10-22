@@ -18,6 +18,7 @@ const formatResetDate = (monthResetAt?: string | null) => {
 };
 
 const planLabel = (plan: string) => {
+  if (plan === "admin") return "Admin";
   if (plan === "pro") return getPlan("pro").name;
   if (plan === "studio") return getPlan("studio").name;
   return getPlan("free").name;
@@ -64,7 +65,7 @@ const UsageIndicator = ({ plan, used, limit, monthResetAt }: UsageIndicatorProps
           </>
         ) : (
           <span className="text-accent/80">
-            {plan === "studio" ? "500 stagings / month" : "Unlimited stagings"}
+            {plan === "admin" ? "Unlimited" : `${used} / ${limit} this month`}
           </span>
         )}
       </div>

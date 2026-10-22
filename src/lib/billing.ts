@@ -22,6 +22,11 @@ export async function startCheckout(planId: PlanId, period: BillingPeriod) {
       toast.info(BILLING_NOT_CONFIGURED_MSG);
       return;
     }
+    if (data?.error === "already_subscribed") {
+      toast.info("You already have a subscription. Opening billing so you can change plans…");
+      await openCustomerPortal();
+      return;
+    }
     if (error) throw error;
     if (!data?.url) {
       toast.info(BILLING_NOT_CONFIGURED_MSG);

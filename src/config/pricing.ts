@@ -12,7 +12,7 @@ export interface PricingPlan {
   annualEffective: number; // USD/mo effective (annualYearly / 12), rounded for display
   blurb: string;
   quotaLabel: string;
-  monthlyQuota: number | "unlimited";
+  monthlyQuota: number; // keep in sync with plan_monthly_limit() in the DB
   features: string[];
   highlight: boolean;
   cta: string;
@@ -51,10 +51,10 @@ export const PRICING_PLANS: PricingPlan[] = [
     annualYearly: 288,
     annualEffective: 24,
     blurb: "For agents and photographers staging weekly.",
-    quotaLabel: "Unlimited stagings",
-    monthlyQuota: "unlimited",
+    quotaLabel: "300 stagings / month",
+    monthlyQuota: 300,
     features: [
-      "Unlimited stagings (fair use)",
+      "300 stagings per month",
       "High-resolution output",
       "All 12 design styles",
       "Compare up to 6 styles",
@@ -99,3 +99,6 @@ export const priceLabel = (plan: PricingPlan, period: BillingPeriod) => {
 
 export const yearlyTotal = (plan: PricingPlan) =>
   plan.annualYearly > 0 ? `billed annually ($${plan.annualYearly}/yr)` : "";
+
+export const monthlyQuotaFor = (planId: string): number =>
+  getPlan((PRICING_PLANS.some((p) => p.id === planId) ? planId : "free") as PlanId).monthlyQuota;

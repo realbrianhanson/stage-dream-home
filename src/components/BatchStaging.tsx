@@ -182,7 +182,7 @@ const BatchStaging = ({
   const pendingCount = items.filter(
     (i) => i.status === "queued" || i.status === "failed"
   ).length;
-  const exceedsFreeLimit = !!isFree && pendingCount > remainingStagings;
+  const exceedsFreeLimit = pendingCount > remainingStagings;
   const progressPct =
     totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
 
@@ -271,9 +271,9 @@ const BatchStaging = ({
     if (processing) return;
     if (exceedsFreeLimit) {
       toast.error(
-        `Free plan has ${remainingStagings} staging${
+        `You have ${remainingStagings} staging${
           remainingStagings === 1 ? "" : "s"
-        } left. Upgrade for more.`
+        } left this month.${isFree ? " Upgrade for more." : ""}`
       );
       return;
     }
@@ -650,7 +650,7 @@ const BatchStaging = ({
             {pendingCount === 0
               ? "All photos staged"
               : exceedsFreeLimit
-              ? `Not enough stagings left on Free (${remainingStagings})`
+              ? `Not enough stagings left this month (${remainingStagings})`
               : `Stage ${pendingCount} Photo${pendingCount !== 1 ? "s" : ""}`}
           </motion.button>
         ) : (

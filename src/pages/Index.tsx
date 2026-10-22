@@ -24,7 +24,7 @@ const Index = () => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { usage, canStage, refresh, freeLimit, remainingStagings, loading: usageLoading } = useUsage();
+  const { usage, canStage, refresh, freeLimit, planLimit, remainingStagings, loading: usageLoading } = useUsage();
   const [result, setResult] = useState<ResultState>(null);
   const [stagingCount, setStagingCount] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -114,7 +114,7 @@ const Index = () => {
               <UsageIndicator
                 plan={usage.plan}
                 used={usage.stagings_this_month}
-                limit={freeLimit}
+                limit={planLimit}
                 monthResetAt={usage.month_reset_at}
               />
             )}
