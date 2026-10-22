@@ -18,10 +18,9 @@ export interface PricingPlan {
   cta: string;
 }
 
-// Annual discount: monthly * 12 * 0.828... ≈ 17% off
-// Pro:    29 * 12 = 348 → 288/yr → 24/mo effective  (~17% off)
-// Studio: 79 * 12 = 948 → 780/yr → 65/mo effective  (~17% off)
-export const ANNUAL_DISCOUNT_LABEL = "Save 17%";
+// Annual = 10 months' price (about 17% off). Per-image model cost is roughly
+// $0.15–0.25 at full resolution, so monthly limits keep each plan profitable.
+export const ANNUAL_DISCOUNT_LABEL = "2 months free";
 
 export const PRICING_PLANS: PricingPlan[] = [
   {
@@ -30,61 +29,55 @@ export const PRICING_PLANS: PricingPlan[] = [
     monthly: 0,
     annualYearly: 0,
     annualEffective: 0,
-    blurb: "Try the magic. Stage your first listings free.",
-    quotaLabel: "3 stagings / month",
+    blurb: "Try it on your next listing.",
+    quotaLabel: "3 stagings a month",
     monthlyQuota: 3,
     features: [
-      "3 stagings per month",
-      "Standard quality output",
+      "3 stagings a month",
+      "Every tool: staging, removal, declutter, dusk, sky, lawn, recolor",
       "All 12 design styles",
       "Compare up to 3 styles",
-      "MLS disclosure label",
-      "Watermarked downloads",
+      "Standard resolution with a watermark",
     ],
     highlight: false,
-    cta: "Start Free",
+    cta: "Start free",
   },
   {
     id: "pro",
     name: "Professional",
-    monthly: 29,
-    annualYearly: 288,
-    annualEffective: 24,
-    blurb: "For agents and photographers staging weekly.",
-    quotaLabel: "300 stagings / month",
-    monthlyQuota: 300,
+    monthly: 39,
+    annualYearly: 390,
+    annualEffective: 33,
+    blurb: "For agents with a few listings a month.",
+    quotaLabel: "100 stagings a month",
+    monthlyQuota: 100,
     features: [
-      "300 stagings per month",
-      "High-resolution output",
-      "All 12 design styles",
+      "100 stagings a month",
+      "High resolution, no watermark",
+      "Up to 4 options per photo",
       "Compare up to 6 styles",
-      "MLS disclosure label",
-      "No watermark",
-      "Download originals",
-      "Personal stagings library",
-      "Email support",
+      "MLS export with before/after pairs",
+      "Listing pages to share with buyers",
     ],
     highlight: true,
-    cta: "Get Professional",
+    cta: "Choose Professional",
   },
   {
     id: "studio",
     name: "Studio",
-    monthly: 79,
-    annualYearly: 780,
-    annualEffective: 65,
-    blurb: "For high-volume listing agents and photographers.",
-    quotaLabel: "500 stagings / month",
-    monthlyQuota: 500,
+    monthly: 99,
+    annualYearly: 990,
+    annualEffective: 83,
+    blurb: "For photographers and teams shooting every week.",
+    quotaLabel: "300 stagings a month",
+    monthlyQuota: 300,
     features: [
+      "300 stagings a month",
       "Everything in Professional",
-      "500 stagings per month",
-      "MLS disclosure label",
       "Priority email support",
-      "Early access to new design styles",
     ],
     highlight: false,
-    cta: "Get Studio",
+    cta: "Choose Studio",
   },
 ];
 

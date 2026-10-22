@@ -22,11 +22,12 @@ export const isEntitled = (status: string) => ENTITLED_STATUSES.has(status);
 
 const asPaidPlan = (v: unknown): PaidPlan | null => (v === "pro" || v === "studio" ? v : null);
 
-/** Legacy fallback for subscriptions created before plan_id metadata existed. */
+/** Plan from the subscription price (checkout uses inline prices, not price IDs). */
 export function planFromPrice(price: PriceLike | null | undefined): PaidPlan | null {
   const amount = price?.unit_amount ?? null;
-  if (amount === 2900 || amount === 28800) return "pro";
-  if (amount === 7900 || amount === 78000) return "studio";
+  // Current prices, then the original 2026 launch prices for older subscribers.
+  if (amount === 3900 || amount === 39000 || amount === 2900 || amount === 28800) return "pro";
+  if (amount === 9900 || amount === 99000 || amount === 7900 || amount === 78000) return "studio";
   const n = (price?.nickname ?? "").toLowerCase();
   if (n.includes("studio")) return "studio";
   if (n.includes("professional") || n.includes("pro")) return "pro";

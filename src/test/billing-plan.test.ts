@@ -21,7 +21,7 @@ describe("planForSubscription", () => {
   });
 
   it("leaves the plan alone when a paying sub has an unknown price", () => {
-    expect(planForSubscription(sub("active", { items: { data: [{ price: { unit_amount: 4900 } }] } }))).toBeNull();
+    expect(planForSubscription(sub("active", { items: { data: [{ price: { unit_amount: 4800 } }] } }))).toBeNull();
   });
 
   it("drops non-paying subscriptions to free", () => {
@@ -39,8 +39,8 @@ describe("planForSubscription", () => {
 describe("monthlyQuotaFor", () => {
   it("matches plan_monthly_limit() in the database", () => {
     expect(monthlyQuotaFor("free")).toBe(3);
-    expect(monthlyQuotaFor("pro")).toBe(300);
-    expect(monthlyQuotaFor("studio")).toBe(500);
+    expect(monthlyQuotaFor("pro")).toBe(100);
+    expect(monthlyQuotaFor("studio")).toBe(300);
     expect(monthlyQuotaFor("bogus")).toBe(3);
   });
 });

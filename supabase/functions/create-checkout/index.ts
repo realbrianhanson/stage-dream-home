@@ -8,8 +8,8 @@ import Stripe from "npm:stripe@14";
 
 // Prices are the single source of truth. Keep in sync with src/config/pricing.ts.
 const PLAN_PRICING: Record<string, { name: string; monthly: number; annualYearly: number }> = {
-  pro: { name: "RealVision Professional", monthly: 2900, annualYearly: 28800 }, // cents
-  studio: { name: "RealVision Studio", monthly: 7900, annualYearly: 78000 },
+  pro: { name: "RealVision Professional", monthly: 3900, annualYearly: 39000 }, // cents
+  studio: { name: "RealVision Studio", monthly: 9900, annualYearly: 99000 },
 };
 
 Deno.serve(async (req) => {
