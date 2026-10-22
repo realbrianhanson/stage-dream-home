@@ -3,15 +3,20 @@ import { Link, useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import MarketingNav from "@/components/MarketingNav";
 import MarketingFooter from "@/components/MarketingFooter";
-import InteractiveDemo from "@/components/InteractiveDemo";
+import InteractiveDemo, { type DemoPair } from "@/components/InteractiveDemo";
 import { PRICING_PLANS, ANNUAL_DISCOUNT_LABEL, priceLabel, type BillingPeriod } from "@/config/pricing";
 import { TOOLS } from "@/config/tools";
 import { STYLES } from "@/config/catalogs";
 import { useAuth } from "@/hooks/useAuth";
-import galleryLiving from "@/assets/hero-staged-room.jpg";
 import closingRoom from "@/assets/landing-hero.jpg";
-import showcaseBedroom from "@/assets/showcase-bedroom.jpg";
-import showcaseKitchen from "@/assets/showcase-kitchen.jpg";
+import livingBefore from "@/assets/pair-living-before.jpg";
+import livingAfter from "@/assets/pair-living-after.jpg";
+import livingAlt from "@/assets/pair-living-staged-alt.jpg";
+import bedroomBefore from "@/assets/pair-bedroom-before.jpg";
+import bedroomRecolor from "@/assets/pair-bedroom-recolor.jpg";
+import bedroomStaged from "@/assets/pair-bedroom-staged.jpg";
+import kitchenBefore from "@/assets/pair-kitchen-before.jpg";
+import kitchenAfter from "@/assets/pair-kitchen-after.jpg";
 
 const FREE_PLAN = PRICING_PLANS[0];
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -43,6 +48,43 @@ const FAQS = [
 
 const HERO_FACTS = ["12 interior styles", "7 photo tools", "About a minute per photo", "MLS-ready exports"];
 
+// Real RealVision results on our sample photos, aligned to the originals.
+const HERO_PAIRS: Array<DemoPair & { id: string; tab: string }> = [
+  {
+    id: "living",
+    tab: "Furnish a living room",
+    before: livingBefore,
+    after: livingAfter,
+    width: 1920,
+    height: 1280,
+    beforeAlt: "An empty living room with wood floors and tall windows",
+    afterAlt: "The same living room staged with a white sofa, leather lounge chairs, a glass coffee table and a large rug",
+    afterLabel: "Staged, Modern",
+  },
+  {
+    id: "walls",
+    tab: "Repaint the walls",
+    before: bedroomBefore,
+    after: bedroomRecolor,
+    width: 1600,
+    height: 1280,
+    beforeAlt: "An empty bedroom with brown walls and dark wood floors",
+    afterAlt: "The same bedroom with the walls repainted warm white",
+    afterLabel: "Walls in warm white",
+  },
+  {
+    id: "kitchen",
+    tab: "Style a kitchen",
+    before: kitchenBefore,
+    after: kitchenAfter,
+    width: 1600,
+    height: 1280,
+    beforeAlt: "An empty kitchen with oak cabinets and a white quartz island",
+    afterAlt: "The same kitchen styled with four bar stools, a runner rug and countertop decor",
+    afterLabel: "Staged, Modern",
+  },
+];
+
 const container = "max-w-[1240px] mx-auto";
 const section = "px-4 sm:px-6 py-24 md:py-36 scroll-mt-16";
 const h2 = "font-display font-normal text-4xl md:text-5xl lg:text-[3.5rem] leading-[1.04] tracking-[-0.025em]";
@@ -62,44 +104,69 @@ const useHashScroll = () => {
   }, [hash]);
 };
 
-const Hero = ({ startHref }: { startHref: string }) => (
-  <section className="px-4 sm:px-6 pt-14 pb-20 md:pt-24 md:pb-28">
-    <div className={container}>
-      <div className="hero-enter grid gap-8 lg:grid-cols-12 lg:items-end">
-        <h1 className="lg:col-span-8 font-display font-normal text-[2.75rem] leading-[1.02] sm:text-6xl md:text-7xl lg:text-[5.5rem] tracking-[-0.03em] text-foreground">
-          Show buyers the home it could be.
-        </h1>
-        <div className="lg:col-span-4 lg:pb-3">
-          <p className="font-body text-lg leading-relaxed text-muted-foreground max-w-md">
-            Virtual staging and photo edits for listing agents and photographers. Upload a room, choose a style, and
-            have an MLS-ready image in about a minute.
-          </p>
-          <div className="mt-7 flex flex-col sm:flex-row gap-3">
-            <Link to={startHref} className={primaryBtn}>
-              Stage a room free
-            </Link>
-            <Link to="/pricing" className={secondaryBtn}>
-              See pricing
-            </Link>
+const Hero = ({ startHref }: { startHref: string }) => {
+  const [active, setActive] = useState(0);
+  const pair = HERO_PAIRS[active];
+  return (
+    <section>
+      <div className="relative">
+        <div className="relative h-[82vw] max-h-[620px] sm:h-[min(84vh,880px)] sm:max-h-none sm:min-h-[560px]">
+          {/* Remount per pair so each one replays the reveal. */}
+          <InteractiveDemo key={pair.id} pair={pair} variant="immersive" intro handleTop={24} />
+        </div>
+
+        <div className="lg:absolute lg:inset-x-0 lg:bottom-0 lg:pointer-events-none">
+          <div className="max-w-[1240px] mx-auto lg:px-6">
+            <div className="hero-enter lg:pointer-events-auto bg-background px-4 sm:px-6 pt-9 pb-4 lg:-ml-10 lg:max-w-[620px] lg:rounded-tr-2xl lg:px-10 lg:pt-11 lg:pb-10">
+              <h1 className="font-display font-normal text-[2.6rem] leading-[1.02] sm:text-6xl lg:text-[4.25rem] tracking-[-0.03em] text-foreground">
+                Show buyers the home it could be.
+              </h1>
+              <p className="mt-5 font-body text-lg leading-relaxed text-muted-foreground max-w-md">
+                Virtual staging and photo edits for listing agents and photographers. Upload a room, choose a style, and
+                have an MLS-ready image in about a minute.
+              </p>
+              <div className="mt-7 flex flex-col sm:flex-row gap-3">
+                <Link to={startHref} className={primaryBtn}>
+                  Stage a room free
+                </Link>
+                <Link to="/pricing" className={secondaryBtn}>
+                  See pricing
+                </Link>
+              </div>
+              <div role="group" aria-label="Example result" className="mt-8 flex flex-wrap gap-x-5 gap-y-2 border-t border-border pt-5">
+                {HERO_PAIRS.map((p, i) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    aria-pressed={i === active}
+                    onClick={() => setActive(i)}
+                    className={`font-body text-sm transition-colors rounded-sm ${focusRing} ${
+                      i === active
+                        ? "text-foreground underline decoration-foreground underline-offset-[7px]"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {p.tab}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <p className="mt-4 font-body text-sm text-muted-foreground">{FREE_QUOTA} free. No credit card needed.</p>
         </div>
       </div>
 
-      <div className="mt-12 md:mt-16">
-        <InteractiveDemo variant="hero" />
+      <div className="px-4 sm:px-6">
+        <ul className={`${container} mt-8 lg:mt-0 grid grid-cols-2 md:grid-cols-4 gap-y-4 border-t border-border`}>
+          {HERO_FACTS.map((fact) => (
+            <li key={fact} className="pt-5 pb-2 font-body text-sm text-foreground md:border-l md:border-border md:pl-6 md:first:border-l-0 md:first:pl-0">
+              {fact}
+            </li>
+          ))}
+        </ul>
       </div>
-
-      <ul className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-y-4 border-t border-border">
-        {HERO_FACTS.map((fact) => (
-          <li key={fact} className="pt-5 font-body text-sm text-foreground md:border-l md:border-border md:pl-6 md:first:border-l-0 md:first:pl-0">
-            {fact}
-          </li>
-        ))}
-      </ul>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 /** The seven tools as a typographic index, the way a brochure lists services. */
 const ToolsIndex = ({ startHref }: { startHref: string }) => (
@@ -138,6 +205,38 @@ const ToolsIndex = ({ startHref }: { startHref: string }) => (
   </section>
 );
 
+/** A finished result with its original photo inset, so every claim shows its source. */
+const GalleryShot = ({
+  src,
+  original,
+  width,
+  height,
+  alt,
+  caption,
+  aspect,
+  className = "",
+}: {
+  src: string;
+  original: string;
+  width: number;
+  height: number;
+  alt: string;
+  caption: string;
+  aspect: string;
+  className?: string;
+}) => (
+  <figure className={`m-0 ${className}`}>
+    <div className="relative">
+      <img src={src} alt={alt} width={width} height={height} loading="lazy" decoding="async" className={`w-full ${aspect} object-cover rounded-2xl bg-card`} />
+      <div className="absolute left-3 bottom-3 w-[28%] max-w-[180px] overflow-hidden rounded-lg border-2 border-white shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]">
+        <img src={original} alt="" width={width} height={height} loading="lazy" decoding="async" className="aspect-[4/3] w-full object-cover" />
+        <span className="absolute left-1.5 top-1.5 rounded bg-white/90 px-1.5 py-0.5 font-body text-[11px] font-medium text-foreground">Original</span>
+      </div>
+    </div>
+    <figcaption className="mt-3 font-body text-sm text-muted-foreground">{caption}</figcaption>
+  </figure>
+);
+
 const StyleGallery = () => (
   <section className={`${section} pt-0 md:pt-0`}>
     <div className={container}>
@@ -150,36 +249,35 @@ const StyleGallery = () => (
       </div>
 
       <div className="grid gap-4 lg:grid-cols-12">
-        <figure className="m-0 lg:col-span-8">
-          <img
-            src={galleryLiving}
-            alt="A bright living room with cream sofas, a crystal chandelier and tall draped windows"
-            width={1600}
-            height={900}
-            loading="lazy"
-            decoding="async"
-            className="w-full aspect-[16/10] object-cover rounded-2xl bg-card"
-          />
-          <figcaption className="mt-3 font-body text-sm text-muted-foreground">Luxury living room</figcaption>
-        </figure>
+        <GalleryShot
+          className="lg:col-span-8"
+          src={livingAlt}
+          original={livingBefore}
+          width={1920}
+          height={1280}
+          alt="A living room staged in a Modern style with cream lounge chairs, a walnut coffee table and an ottoman"
+          caption="Living room, Modern"
+          aspect="aspect-[16/10]"
+        />
         <div className="grid gap-4 sm:grid-cols-2 lg:col-span-4 lg:grid-cols-1">
-          {[
-            { src: showcaseBedroom, alt: "A bedroom with an upholstered headboard, satin bedding and brass lamps", label: "Luxury bedroom" },
-            { src: showcaseKitchen, alt: "A kitchen with walnut cabinets, a marble island and glass pendant lights", label: "Modern kitchen" },
-          ].map((img) => (
-            <figure key={img.label} className="m-0">
-              <img
-                src={img.src}
-                alt={img.alt}
-                width={640}
-                height={512}
-                loading="lazy"
-                decoding="async"
-                className="w-full aspect-[16/11] object-cover rounded-2xl bg-card"
-              />
-              <figcaption className="mt-3 font-body text-sm text-muted-foreground">{img.label}</figcaption>
-            </figure>
-          ))}
+          <GalleryShot
+            src={bedroomStaged}
+            original={bedroomBefore}
+            width={1600}
+            height={1280}
+            alt="A bedroom staged in a Scandinavian style with an upholstered bed, oak nightstands and a woven rug"
+            caption="Bedroom, Scandinavian"
+            aspect="aspect-[16/11]"
+          />
+          <GalleryShot
+            src={kitchenAfter}
+            original={kitchenBefore}
+            width={1600}
+            height={1280}
+            alt="A kitchen styled with bar stools at the island and countertop decor"
+            caption="Kitchen, Modern"
+            aspect="aspect-[16/11]"
+          />
         </div>
       </div>
 

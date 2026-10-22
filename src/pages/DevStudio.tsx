@@ -3,8 +3,8 @@
 import { useState } from "react";
 import RoomUploader from "@/components/RoomUploader";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
-import beforeImg from "@/assets/before-vacant.jpg";
-import afterImg from "@/assets/after-staged.jpg";
+import beforeImg from "@/assets/pair-living-before.jpg";
+import afterImg from "@/assets/pair-living-after.jpg";
 
 const DevStudio = () => {
   const [plan, setPlan] = useState("admin");

@@ -82,8 +82,9 @@ interface Finished {
 async function finishImage(src: GeneratedImage, opts: Finish): Promise<Finished> {
   const needsPaint = opts.watermark || opts.mlsLabel;
   const mime = sniffMime(src.bytes);
-  // Nothing to paint: store the model's file as-is and skip a costly re-encode.
-  if (!needsPaint && mime) return { bytes: src.bytes, mime, ext: mime.split("/")[1].replace("jpeg", "jpg") };
+  // Nothing to paint and already a JPEG: store the model's file as-is.
+  // PNGs (Gemini) are re-encoded so a 2K result is ~0.5 MB, not ~7 MB.
+  if (!needsPaint && mime === "image/jpeg") return { bytes: src.bytes, mime, ext: "jpg" };
 
   const decoded = await decode(src.bytes);
   if (!(decoded instanceof Image)) throw new Error("Unsupported image format");
@@ -420,8 +421,10 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Awaited: work left running after the response can be cut off when the
+  // isolate shuts down, which silently dropped log rows.
   const r = ctx.request;
-  admin
+  const { error: logError } = await admin
     .from("generation_logs")
     .insert({
       user_id: ctx.userId,
@@ -434,10 +437,8 @@ Deno.serve(async (req) => {
       duration_ms: Date.now() - startedAt,
       mls_disclosure: r?.wantsMlsLabel ?? false,
       model: ctx.model,
-    })
-    .then(({ error }) => {
-      if (error) console.error("generation_logs insert failed:", error);
     });
+  if (logError) console.error("generation_logs insert failed:", logError);
 
   return outcome.response;
 });

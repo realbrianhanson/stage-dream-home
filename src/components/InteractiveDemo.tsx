@@ -1,26 +1,25 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
-import beforeLiving from "@/assets/before-vacant.jpg";
-import afterLiving from "@/assets/after-staged.jpg";
 
-// The one real pair we ship: the same living room photo, before and after
-// "Add furniture" in the Modern style. Both images are 3:2.
-const PAIR = {
-  before: beforeLiving,
-  after: afterLiving,
-  caption: "Living room, Modern style",
-  width: 1248,
-  height: 832,
-};
+export interface DemoPair {
+  before: string;
+  after: string;
+  width: number;
+  height: number;
+  beforeAlt: string;
+  afterAlt: string;
+  /** Short label for the edited side, e.g. "Staged, Modern". */
+  afterLabel: string;
+}
 
 const KEY_STEP = 5;
 const clamp = (n: number) => Math.min(100, Math.max(0, n));
 
-// Hero intro: open on the vacant room, glide to reveal the staging, then
-// settle in the middle. [position %, milliseconds to get there]
+// Intro: open on the original photo, glide to reveal the edit, then settle in
+// the middle. [position %, milliseconds to get there]
 const INTRO: Array<[number, number]> = [
-  [92, 0],
-  [92, 700],
-  [28, 1500],
+  [94, 0],
+  [94, 600],
+  [26, 1500],
   [50, 700],
 ];
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -28,17 +27,27 @@ const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t 
 const prefersReducedMotion = () =>
   typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
+interface InteractiveDemoProps {
+  pair: DemoPair;
+  /** "framed": rounded card. "immersive": fills its parent edge to edge. */
+  variant?: "framed" | "immersive";
+  /** Play the one-time reveal on mount. */
+  intro?: boolean;
+  /** Vertical position of the drag handle, in % of the height. */
+  handleTop?: number;
+}
+
 /**
- * Drag (or use the arrow keys) to compare a vacant photo with its staged
- * version. Lightweight on purpose: the full results viewer lives in the app.
+ * Drag (or use the arrow keys) to compare an original photo with its edited
+ * version. Pairs are aligned to the original, so the line never jumps.
  */
-const InteractiveDemo = ({ variant = "inline" }: { variant?: "inline" | "hero" }) => {
-  const hero = variant === "hero";
-  const playIntro = hero && !prefersReducedMotion();
+const InteractiveDemo = ({ pair, variant = "framed", intro = false, handleTop = 50 }: InteractiveDemoProps) => {
+  const immersive = variant === "immersive";
+  const playIntro = intro && !prefersReducedMotion();
   const [pos, setPos] = useState(playIntro ? INTRO[0][0] : 50);
   const frameRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
-  // Any user input ends the intro immediately.
+  // Any input from the visitor ends the intro immediately.
   const touched = useRef(false);
 
   useEffect(() => {
@@ -53,7 +62,7 @@ const InteractiveDemo = ({ variant = "inline" }: { variant?: "inline" | "hero" }
       let from = INTRO[0][0];
       for (const [to, ms] of INTRO.slice(1)) {
         if (elapsed <= ms) {
-          setPos(from + (to - from) * easeInOut(ms === 0 ? 1 : elapsed / ms));
+          setPos(from + (to - from) * easeInOut(elapsed / ms));
           raf = requestAnimationFrame(frame);
           return;
         }
@@ -107,80 +116,65 @@ const InteractiveDemo = ({ variant = "inline" }: { variant?: "inline" | "hero" }
     }
   };
 
+  const tag = "pointer-events-none absolute top-4 sm:top-5 rounded-md px-2.5 py-1 font-body text-xs sm:text-sm font-medium backdrop-blur-md";
+
   return (
-    <figure className="m-0">
+    <div
+      ref={frameRef}
+      className={`relative overflow-hidden bg-card select-none cursor-ew-resize touch-pan-y ${
+        immersive ? "h-full w-full" : "w-full aspect-[3/2] rounded-2xl"
+      }`}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={stopDrag}
+      onPointerCancel={stopDrag}
+    >
+      <img
+        src={pair.after}
+        alt={pair.afterAlt}
+        width={pair.width}
+        height={pair.height}
+        // React 18 only knows the lowercase attribute.
+        {...{ fetchpriority: "high" }}
+        draggable={false}
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+      <img
+        src={pair.before}
+        alt={pair.beforeAlt}
+        width={pair.width}
+        height={pair.height}
+        draggable={false}
+        className="absolute inset-0 h-full w-full object-cover"
+        style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
+      />
+
+      <span className={`${tag} left-4 sm:left-5 bg-white/85 text-foreground`}>Original</span>
+      <span className={`${tag} right-4 sm:right-5 bg-black/60 text-white`}>{pair.afterLabel}</span>
+
       <div
-        ref={frameRef}
-        className={`relative w-full overflow-hidden bg-card select-none cursor-ew-resize touch-pan-y ${
-          hero
-            ? "aspect-[4/3] sm:aspect-[16/9] rounded-2xl shadow-[0_40px_80px_-40px_hsl(200_10%_8%/0.45)]"
-            : "aspect-[3/2] rounded-xl border border-border shadow-soft"
-        }`}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={stopDrag}
-        onPointerCancel={stopDrag}
+        role="slider"
+        tabIndex={0}
+        aria-label="Compare the original photo with the edited one"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(pos)}
+        aria-valuetext={`${Math.round(pos)}% showing the original photo`}
+        onKeyDown={onKeyDown}
+        className="group absolute inset-y-0 -translate-x-1/2 w-10 flex justify-center focus-visible:outline-none"
+        style={{ left: `${pos}%` }}
       >
-        <img
-          src={PAIR.after}
-          alt="The same living room staged with a sectional sofa, rug, coffee table and art"
-          width={PAIR.width}
-          height={PAIR.height}
-          // React 18 only knows the lowercase attribute.
-          {...{ fetchpriority: "high" }}
-          draggable={false}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <img
-          src={PAIR.before}
-          alt="An empty living room with wood floors and large windows"
-          width={PAIR.width}
-          height={PAIR.height}
-          draggable={false}
-          className="absolute inset-0 h-full w-full object-cover"
-          style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
-        />
-
+        <span className="h-full w-[2px] bg-white/95 shadow-[0_0_0_1px_hsl(var(--foreground)/0.12)]" />
         <span
-          className={`pointer-events-none absolute rounded-md font-body font-medium backdrop-blur-md ${
-            hero ? "left-4 bottom-4 sm:left-6 sm:bottom-6 bg-white/85 px-3 py-1.5 text-sm text-foreground" : "left-3 top-3 bg-background/90 px-2 py-1 text-xs text-foreground"
-          }`}
+          className="absolute -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-white text-foreground shadow-[0_6px_20px_-6px_hsl(var(--foreground)/0.5)] group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:ring-offset-2"
+          style={{ top: `${handleTop}%` }}
         >
-          {hero ? (<><span className="sm:hidden">Before</span><span className="hidden sm:inline">Before: vacant</span></>) : "Before"}
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+            <path d="M5.5 3.5 1.5 8l4 4.5M10.5 3.5l4 4.5-4 4.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </span>
-        <span
-          className={`pointer-events-none absolute rounded-md font-body font-medium backdrop-blur-md ${
-            hero ? "right-4 bottom-4 sm:right-6 sm:bottom-6 bg-foreground/80 px-3 py-1.5 text-sm text-background" : "right-3 top-3 bg-accent px-2 py-1 text-xs text-accent-foreground"
-          }`}
-        >
-          {hero ? (<><span className="sm:hidden">After</span><span className="hidden sm:inline">After: staged, Modern</span></>) : "After"}
-        </span>
-
-        <div
-          role="slider"
-          tabIndex={0}
-          aria-label="Compare before and after"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(pos)}
-          aria-valuetext={`${Math.round(pos)}% showing the original photo`}
-          onKeyDown={onKeyDown}
-          className="group absolute inset-y-0 -translate-x-1/2 w-10 flex justify-center focus-visible:outline-none"
-          style={{ left: `${pos}%` }}
-        >
-          <span className="h-full w-0.5 bg-background shadow-[0_0_0_1px_hsl(var(--foreground)/0.15)]" />
-          <span className="absolute top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-foreground shadow-soft group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:ring-offset-2">
-            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
-              <path d="M5.5 3.5 1.5 8l4 4.5M10.5 3.5l4 4.5-4 4.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
-        </div>
       </div>
-      <figcaption className={`mt-3 flex items-center justify-between gap-4 font-body text-sm text-muted-foreground ${hero ? "sr-only" : ""}`}>
-        <span>{PAIR.caption}</span>
-        <span className="hidden sm:inline">Drag to compare</span>
-      </figcaption>
-    </figure>
+    </div>
   );
 };
 

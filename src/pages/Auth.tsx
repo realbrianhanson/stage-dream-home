@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useGoogleAuthEnabled } from "@/hooks/useGoogleAuthEnabled";
 import { toast } from "sonner";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Logo from "@/components/Logo";
-import afterImg from "@/assets/after-staged.jpg";
+import afterImg from "@/assets/pair-living-after.jpg";
 import { getPlan } from "@/config/pricing";
 import { Loader2, Eye, EyeOff, AlertCircle, MailCheck } from "lucide-react";
 
@@ -58,6 +59,7 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const googleEnabled = useGoogleAuthEnabled();
   const [formError, setFormError] = useState<{ kind: SignInErrorKind; text: string } | null>(null);
   const [sentEmail, setSentEmail] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -216,21 +218,27 @@ const Auth = () => {
                   {isLogin ? "Pick up where you left off." : `The free plan includes ${getPlan("free").quotaLabel}. No card needed.`}
                 </p>
 
-                <button
-                  type="button"
-                  onClick={handleGoogle}
-                  disabled={googleLoading}
-                  className="mt-8 w-full h-11 rounded-md border border-border bg-background text-sm font-medium flex items-center justify-center gap-3 hover:bg-card transition-colors disabled:opacity-60"
-                >
-                  {googleLoading ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <GoogleIcon />}
-                  Continue with Google
-                </button>
+                {googleEnabled ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleGoogle}
+                      disabled={googleLoading}
+                      className="mt-8 w-full h-11 rounded-md border border-border bg-background text-sm font-medium flex items-center justify-center gap-3 hover:bg-card transition-colors disabled:opacity-60"
+                    >
+                      {googleLoading ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <GoogleIcon />}
+                      Continue with Google
+                    </button>
 
-                <div className="flex items-center gap-3 my-6" aria-hidden>
-                  <div className="h-px bg-border flex-1" />
-                  <span className="text-xs text-muted-foreground">or with email</span>
-                  <div className="h-px bg-border flex-1" />
-                </div>
+                    <div className="flex items-center gap-3 my-6" aria-hidden>
+                      <div className="h-px bg-border flex-1" />
+                      <span className="text-xs text-muted-foreground">or with email</span>
+                      <div className="h-px bg-border flex-1" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="mt-8" />
+                )}
 
                 {formError && (
                   <div role="alert" className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 p-3 flex items-start gap-2">
@@ -360,7 +368,7 @@ const Auth = () => {
       </div>
 
       <div className="relative hidden lg:block overflow-hidden">
-        <img src={afterImg} alt="A living room staged with RealVision" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={afterImg} alt="A living room staged with RealVision in a Modern style" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" aria-hidden />
         <div className="absolute inset-x-0 bottom-0 p-12 text-white">
           <p className="font-display text-4xl leading-tight tracking-[-0.02em] max-w-md">Show buyers the home it could be.</p>

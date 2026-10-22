@@ -11,6 +11,7 @@ import { useRoomDetection } from "@/hooks/useRoomDetection";
 import BatchStaging from "@/components/BatchStaging";
 import ToolPicker from "@/components/studio/ToolPicker";
 import StudioOptions, { MAX_INSTRUCTIONS, type StudioState } from "@/components/studio/StudioOptions";
+import SampleRooms from "@/components/studio/SampleRooms";
 
 // Admin-only: pick the image model to A/B results. "Auto" uses the server's chain.
 const ADMIN_MODELS = [
@@ -302,6 +303,7 @@ const RoomUploader = ({
             onExit={() => setBatchFiles(null)}
           />
         ) : !image ? (
+          <>
           <div
             role="button"
             tabIndex={0}
@@ -336,6 +338,8 @@ const RoomUploader = ({
               }}
             />
           </div>
+          <SampleRooms onPick={async (file) => { await handleFiles([file]); }} />
+          </>
         ) : (
           <div className="grid lg:grid-cols-[minmax(0,1fr)_400px] gap-6 lg:gap-10 items-start">
             <div className="lg:sticky lg:top-24">
