@@ -97,14 +97,14 @@ const InteractiveDemo = ({ variant = "inline" }: { variant?: "inline" | "hero" }
             hero ? "left-4 bottom-4 sm:left-6 sm:bottom-6 bg-white/85 px-3 py-1.5 text-sm text-foreground" : "left-3 top-3 bg-background/90 px-2 py-1 text-xs text-foreground"
           }`}
         >
-          {hero ? "Before: vacant" : "Before"}
+          {hero ? (<><span className="sm:hidden">Before</span><span className="hidden sm:inline">Before: vacant</span></>) : "Before"}
         </span>
         <span
           className={`pointer-events-none absolute rounded-md font-body font-medium backdrop-blur-md ${
             hero ? "right-4 bottom-4 sm:right-6 sm:bottom-6 bg-foreground/80 px-3 py-1.5 text-sm text-background" : "right-3 top-3 bg-accent px-2 py-1 text-xs text-accent-foreground"
           }`}
         >
-          {hero ? "After: staged, Modern" : "After"}
+          {hero ? (<><span className="sm:hidden">After</span><span className="hidden sm:inline">After: staged, Modern</span></>) : "After"}
         </span>
 
         <div

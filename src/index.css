@@ -145,8 +145,8 @@
 }
 
 @keyframes heroEnter {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: none; }
+  from { transform: translateY(6px); }
+  to { transform: none; }
 }
 
 @keyframes skeletonShimmer {
