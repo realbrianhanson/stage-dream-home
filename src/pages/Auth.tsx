@@ -4,7 +4,7 @@ import { useGoogleAuthEnabled } from "@/hooks/useGoogleAuthEnabled";
 import { toast } from "sonner";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Logo from "@/components/Logo";
-import afterImg from "@/assets/pair-living-after.jpg";
+import afterImg from "@/assets/pair-arched-after.jpg";
 import { getPlan } from "@/config/pricing";
 import { Loader2, Eye, EyeOff, AlertCircle, MailCheck } from "lucide-react";
 
@@ -368,7 +368,7 @@ const Auth = () => {
       </div>
 
       <div className="relative hidden lg:block overflow-hidden">
-        <img src={afterImg} alt="A living room staged with RealVision in a Modern style" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={afterImg} alt="A living room with an arched window, staged with RealVision in a Modern style" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" aria-hidden />
         <div className="absolute inset-x-0 bottom-0 p-12 text-white">
           <p className="font-display text-4xl leading-tight tracking-[-0.02em] max-w-md">Show buyers the home it could be.</p>

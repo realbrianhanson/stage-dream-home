@@ -230,36 +230,8 @@ const Gallery = () => {
 
   const handleDelete = async (id: string) => {
     setDeleting(true);
-    const staging = stagings.find((s) => s.id === id);
-
-    if (staging) {
-      const extractPath = (url: string) => {
-        const match = url.match(/\/storage\/v1\/object\/public\/stagings\/(.+)$/);
-        return match?.[1] ?? null;
-      };
-      const origPath = extractPath(staging.original_image_url);
-      const stagedPath = extractPath(staging.staged_image_url);
-
-      // Only delete the ORIGINAL file if no other staging row (across ALL pages)
-      // references the same URL — multi-style comparisons share one original.
-      const { count: siblingCount } = await supabase
-        .from("stagings")
-        .select("id", { count: "exact", head: true })
-        .eq("original_image_url", staging.original_image_url)
-        .neq("id", id);
-      const originalIsShared = (siblingCount ?? 0) > 0;
-
-      const filesToRemove: string[] = [];
-      if (stagedPath) filesToRemove.push(stagedPath);
-      if (origPath && !originalIsShared) filesToRemove.push(origPath);
-
-      if (filesToRemove.length > 0) {
-        const { error: storageError } = await supabase.storage.from("stagings").remove(filesToRemove);
-        if (storageError) console.error("Storage cleanup failed:", storageError);
-      }
-    }
-
-    const { error } = await supabase.from("stagings").delete().eq("id", id);
+    // The server removes the row and its files, including the private master.
+    const { error } = await supabase.functions.invoke("delete-staging", { body: { id } });
     if (error) {
       console.error("Delete staging failed:", error);
       toast.error("Couldn't delete the photo. Please try again.");

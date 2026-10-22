@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.detect-room]
 verify_jwt = false
+
+[functions.delete-staging]
+verify_jwt = false

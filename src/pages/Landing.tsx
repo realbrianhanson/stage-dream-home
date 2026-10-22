@@ -1,19 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import MarketingNav from "@/components/MarketingNav";
 import MarketingFooter from "@/components/MarketingFooter";
-import InteractiveDemo, { type DemoPair } from "@/components/InteractiveDemo";
+import InteractiveDemo from "@/components/InteractiveDemo";
 import { PRICING_PLANS, ANNUAL_DISCOUNT_LABEL, priceLabel, type BillingPeriod } from "@/config/pricing";
-import { TOOLS } from "@/config/tools";
+import { TOOLS, type ToolId } from "@/config/tools";
+import { HERO_EXAMPLES, TOOL_EXAMPLES } from "@/config/showcase";
 import { STYLES } from "@/config/catalogs";
 import { useAuth } from "@/hooks/useAuth";
 import closingRoom from "@/assets/landing-hero.jpg";
-import livingBefore from "@/assets/pair-living-before.jpg";
-import livingAfter from "@/assets/pair-living-after.jpg";
-import livingAlt from "@/assets/pair-living-staged-alt.jpg";
+import archedBefore from "@/assets/pair-arched-before.jpg";
+import archedAlt from "@/assets/pair-arched-alt.jpg";
 import bedroomBefore from "@/assets/pair-bedroom-before.jpg";
-import bedroomRecolor from "@/assets/pair-bedroom-recolor.jpg";
 import bedroomStaged from "@/assets/pair-bedroom-staged.jpg";
 import kitchenBefore from "@/assets/pair-kitchen-before.jpg";
 import kitchenAfter from "@/assets/pair-kitchen-after.jpg";
@@ -48,43 +47,6 @@ const FAQS = [
 
 const HERO_FACTS = ["12 interior styles", "7 photo tools", "About a minute per photo", "MLS-ready exports"];
 
-// Real RealVision results on our sample photos, aligned to the originals.
-const HERO_PAIRS: Array<DemoPair & { id: string; tab: string }> = [
-  {
-    id: "living",
-    tab: "Furnish a living room",
-    before: livingBefore,
-    after: livingAfter,
-    width: 1920,
-    height: 1280,
-    beforeAlt: "An empty living room with wood floors and tall windows",
-    afterAlt: "The same living room staged with a white sofa, leather lounge chairs, a glass coffee table and a large rug",
-    afterLabel: "Staged, Modern",
-  },
-  {
-    id: "walls",
-    tab: "Repaint the walls",
-    before: bedroomBefore,
-    after: bedroomRecolor,
-    width: 1600,
-    height: 1280,
-    beforeAlt: "An empty bedroom with brown walls and dark wood floors",
-    afterAlt: "The same bedroom with the walls repainted warm white",
-    afterLabel: "Walls in warm white",
-  },
-  {
-    id: "kitchen",
-    tab: "Style a kitchen",
-    before: kitchenBefore,
-    after: kitchenAfter,
-    width: 1600,
-    height: 1280,
-    beforeAlt: "An empty kitchen with oak cabinets and a white quartz island",
-    afterAlt: "The same kitchen styled with four bar stools, a runner rug and countertop decor",
-    afterLabel: "Staged, Modern",
-  },
-];
-
 const container = "max-w-[1240px] mx-auto";
 const section = "px-4 sm:px-6 py-24 md:py-36 scroll-mt-16";
 const h2 = "font-display font-normal text-4xl md:text-5xl lg:text-[3.5rem] leading-[1.04] tracking-[-0.025em]";
@@ -106,7 +68,7 @@ const useHashScroll = () => {
 
 const Hero = ({ startHref }: { startHref: string }) => {
   const [active, setActive] = useState(0);
-  const pair = HERO_PAIRS[active];
+  const { pair } = HERO_EXAMPLES[active];
   return (
     <section>
       <div className="relative">
@@ -134,9 +96,9 @@ const Hero = ({ startHref }: { startHref: string }) => {
                 </Link>
               </div>
               <div role="group" aria-label="Example result" className="mt-8 flex flex-wrap gap-x-5 gap-y-2 border-t border-border pt-5">
-                {HERO_PAIRS.map((p, i) => (
+                {HERO_EXAMPLES.map((ex, i) => (
                   <button
-                    key={p.id}
+                    key={ex.pair.id}
                     type="button"
                     aria-pressed={i === active}
                     onClick={() => setActive(i)}
@@ -146,7 +108,7 @@ const Hero = ({ startHref }: { startHref: string }) => {
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    {p.tab}
+                    {ex.tab}
                   </button>
                 ))}
               </div>
@@ -168,42 +130,78 @@ const Hero = ({ startHref }: { startHref: string }) => {
   );
 };
 
-/** The seven tools as a typographic index, the way a brochure lists services. */
-const ToolsIndex = ({ startHref }: { startHref: string }) => (
-  <section id="tools" className={`${section} border-t border-border`}>
-    <div className={`${container} grid gap-12 lg:grid-cols-12`}>
-      <div className="lg:col-span-5">
-        <div className="lg:sticky lg:top-28">
-          <h2 className={h2}>Every edit a listing photo needs.</h2>
-          <p className="mt-6 font-body text-lg leading-relaxed text-muted-foreground max-w-md">
-            Furnish an empty room, clear out a furnished one, or fix the exterior shot before it goes live. Every edit
-            keeps the room's walls, windows and floors exactly as they are.
-          </p>
-          <Link
-            to={startHref}
-            className={`mt-8 inline-block font-body text-sm font-medium text-foreground underline decoration-border underline-offset-[6px] hover:decoration-foreground transition-colors rounded-sm ${focusRing}`}
-          >
-            Open the studio
-          </Link>
-        </div>
-      </div>
+/**
+ * The seven tools as a typographic index, the way a brochure lists services.
+ * Choosing a tool shows its real before/after beside the list.
+ */
+const ToolsIndex = ({ startHref }: { startHref: string }) => {
+  const [tool, setTool] = useState<ToolId>("stage");
+  const example = TOOL_EXAMPLES[tool];
+  const previewRef = useRef<HTMLDivElement>(null);
 
-      <ul className="lg:col-span-7 border-b border-border">
-        {TOOLS.map((tool) => (
-          <li key={tool.id} className="grid grid-cols-[1fr_auto] gap-x-6 gap-y-2 border-t border-border py-7 md:py-8">
-            <h3 className="font-display text-[1.75rem] md:text-[2.125rem] leading-tight tracking-[-0.02em] text-foreground">
-              {TOOL_TITLES[tool.id] ?? tool.label}
-            </h3>
-            <span className="row-span-2 self-start pt-2 font-body text-sm text-muted-foreground">
-              {tool.exterior ? "Exterior" : "Interior"}
-            </span>
-            <p className="font-body text-base text-muted-foreground">{tool.blurb}.</p>
-          </li>
-        ))}
-      </ul>
-    </div>
-  </section>
-);
+  const choose = (id: ToolId) => {
+    setTool(id);
+    // On small screens the preview sits above the list; bring it into view.
+    if (window.matchMedia("(max-width: 1023px)").matches) {
+      previewRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+  return (
+    <section id="tools" className={`${section} border-t border-border`}>
+      <div className={`${container} grid gap-12 lg:grid-cols-12`}>
+        <div className="lg:col-span-6">
+          <div className="lg:sticky lg:top-24">
+            <h2 className={h2}>Every edit a listing photo needs.</h2>
+            <p className="mt-6 font-body text-lg leading-relaxed text-muted-foreground max-w-md">
+              Furnish an empty room, clear out a furnished one, or fix the exterior shot before it goes live. Every edit
+              keeps the room's walls, windows and floors exactly as they are.
+            </p>
+            <div ref={previewRef} className="mt-8 scroll-mt-24">
+              <InteractiveDemo key={example.id} pair={example} />
+              <p className="mt-3 font-body text-sm text-muted-foreground" aria-live="polite">
+                A real RealVision result: {example.afterLabel}. Drag to compare.
+              </p>
+            </div>
+            <Link
+              to={startHref}
+              className={`mt-6 inline-block font-body text-sm font-medium text-foreground underline decoration-border underline-offset-[6px] hover:decoration-foreground transition-colors rounded-sm ${focusRing}`}
+            >
+              Try it on your photo
+            </Link>
+          </div>
+        </div>
+
+        <ul className="lg:col-span-6 border-b border-border">
+          {TOOLS.map((t) => {
+            const on = t.id === tool;
+            return (
+              <li key={t.id} className="border-t border-border">
+                <button
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => choose(t.id)}
+                  className={`group grid w-full grid-cols-[1fr_auto] gap-x-6 gap-y-2 py-7 md:py-8 text-left rounded-sm ${focusRing}`}
+                >
+                  <span
+                    className={`font-display text-[1.75rem] md:text-[2.125rem] leading-tight tracking-[-0.02em] transition-colors ${
+                      on ? "text-foreground" : "text-foreground/55 group-hover:text-foreground"
+                    }`}
+                  >
+                    {TOOL_TITLES[t.id] ?? t.label}
+                  </span>
+                  <span className="row-span-2 self-start pt-2 font-body text-sm text-muted-foreground">
+                    {t.exterior ? "Exterior" : "Interior"}
+                  </span>
+                  <span className="font-body text-base text-muted-foreground">{t.blurb}.</span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </section>
+  );
+};
 
 /** A finished result with its original photo inset, so every claim shows its source. */
 const GalleryShot = ({
@@ -251,11 +249,11 @@ const StyleGallery = () => (
       <div className="grid gap-4 lg:grid-cols-12">
         <GalleryShot
           className="lg:col-span-8"
-          src={livingAlt}
-          original={livingBefore}
+          src={archedAlt}
+          original={archedBefore}
           width={1920}
           height={1280}
-          alt="A living room staged in a Modern style with cream lounge chairs, a walnut coffee table and an ottoman"
+          alt="A living room with an arched window staged in a Modern style with a cream sofa, swivel chairs and a round coffee table"
           caption="Living room, Modern"
           aspect="aspect-[16/10]"
         />
