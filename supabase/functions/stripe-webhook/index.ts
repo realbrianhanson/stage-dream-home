@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" });
+  const stripe = new Stripe(stripeKey);
   const sig = req.headers.get("stripe-signature");
   const raw = await req.text();
 
