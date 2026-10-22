@@ -63,9 +63,9 @@ Deno.serve(async (req) => {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (err: any) {
+  } catch (err) {
     console.error("customer-portal error:", err);
-    return new Response(JSON.stringify({ error: err?.message ?? "unknown_error" }), {
+    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "unknown_error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

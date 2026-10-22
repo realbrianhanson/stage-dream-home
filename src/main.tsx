@@ -5,11 +5,11 @@ import { reportClientError } from "./lib/errorReporter";
 
 if (typeof window !== "undefined") {
   window.addEventListener("unhandledrejection", (event) => {
-    const reason: any = event.reason;
+    const reason: unknown = event.reason;
     const message =
-      (reason && (reason.message || (typeof reason === "string" ? reason : null))) ||
+      (reason instanceof Error ? reason.message : typeof reason === "string" ? reason : null) ||
       "Unhandled promise rejection";
-    const stack = reason && reason.stack ? String(reason.stack) : null;
+    const stack = reason instanceof Error && reason.stack ? reason.stack : null;
     void reportClientError({ message, stack });
   });
 }

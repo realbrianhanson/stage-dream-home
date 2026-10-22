@@ -5,9 +5,9 @@ import type { PlanId, BillingPeriod } from "@/config/pricing";
 const BILLING_NOT_CONFIGURED_MSG =
   "Billing is almost ready — we're finalizing our payment setup. Please check back shortly.";
 
-const isBillingNotConfigured = (payload: any, error: any) => {
-  if (payload?.error === "billing_not_configured") return true;
-  const status = error?.context?.status;
+const isBillingNotConfigured = (payload: unknown, error: unknown) => {
+  if ((payload as { error?: string } | null)?.error === "billing_not_configured") return true;
+  const status = (error as { context?: { status?: number } } | null)?.context?.status;
   if (status === 501 || status === 503) return true;
   return false;
 };
@@ -33,9 +33,9 @@ export async function startCheckout(planId: PlanId, period: BillingPeriod) {
       return;
     }
     window.location.href = data.url as string;
-  } catch (err: any) {
+  } catch (err) {
     // Graceful fallback: if function exists but errored trying to read the key, still show friendly msg
-    const msg = String(err?.message || "");
+    const msg = err instanceof Error ? err.message : "";
     if (msg.includes("billing_not_configured") || msg.includes("not configured")) {
       toast.info(BILLING_NOT_CONFIGURED_MSG);
       return;
@@ -58,7 +58,7 @@ export async function openCustomerPortal() {
       return;
     }
     window.location.href = data.url as string;
-  } catch (err: any) {
+  } catch (err) {
     console.error("Portal error:", err);
     toast.info(BILLING_NOT_CONFIGURED_MSG);
   }
