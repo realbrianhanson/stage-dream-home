@@ -4,11 +4,11 @@
 
 @layer base {
   :root {
-    /* Paper white, graphite ink, one survey-green accent. */
+    /* Gallery white, ink, one deep evergreen accent. */
     --background: 0 0% 100%;
-    --foreground: 210 14% 10%;
+    --foreground: 200 10% 8%;
 
-    --card: 120 8% 97%;
+    --card: 60 6% 97%;
     --card-foreground: 210 14% 10%;
 
     --popover: 0 0% 100%;
@@ -21,18 +21,18 @@
     --secondary-foreground: 210 14% 10%;
 
     --muted: 120 6% 95%;
-    --muted-foreground: 210 7% 38%;
+    --muted-foreground: 200 5% 30%;
 
-    --accent: 160 53% 24%;
+    --accent: 158 42% 22%;
     --accent-foreground: 0 0% 100%;
     --accent-soft: 152 30% 94%;
 
     --destructive: 0 68% 46%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 120 5% 88%;
-    --input: 120 5% 84%;
-    --ring: 160 53% 30%;
+    --border: 60 4% 88%;
+    --input: 60 3% 80%;
+    --ring: 158 42% 30%;
 
     --radius: 0.625rem;
 
@@ -46,7 +46,7 @@
     --shadow-dramatic: 0 2px 4px hsl(210 14% 10% / 0.06), 0 24px 60px -20px hsl(210 14% 10% / 0.28);
     --shadow-glow-gold: 0 0 0 1px hsl(160 53% 24% / 0.12);
 
-    --font-display: 'Geist', system-ui, sans-serif;
+    --font-display: 'Newsreader', Georgia, serif;
     --font-body: 'Geist', system-ui, sans-serif;
 
     --sidebar-background: 0 0% 98%;
@@ -114,9 +114,18 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  /* Editorial serif for page and section titles; UI headings use the sans. */
+  h1, h2 {
     font-family: var(--font-display);
-    letter-spacing: -0.025em;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    font-optical-sizing: auto;
+    text-wrap: balance;
+  }
+
+  h3, h4, h5, h6 {
+    font-family: var(--font-body);
+    letter-spacing: -0.01em;
     text-wrap: balance;
   }
 
@@ -154,15 +163,15 @@
     background: var(--gradient-gold);
   }
 
-  /* Primary action fill (name kept from the old gold theme). */
+  /* Primary action: ink, like a gallery or a brokerage (legacy class name). */
   .gold-gradient-animated {
-    background: hsl(var(--accent));
-    color: hsl(var(--accent-foreground));
+    background: hsl(var(--foreground));
+    color: hsl(var(--background));
     transition: background-color 0.15s ease;
   }
 
   .gold-gradient-animated:hover {
-    background: hsl(160 53% 19%);
+    background: hsl(200 10% 22%);
   }
 
   .shadow-soft {

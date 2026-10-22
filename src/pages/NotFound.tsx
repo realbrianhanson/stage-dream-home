@@ -22,7 +22,7 @@ const NotFound = () => {
       <main className="flex-1 flex items-center px-4 sm:px-6 py-20">
         <div className="max-w-6xl w-full mx-auto">
           <p className="font-body text-sm font-medium text-accent mb-3 tabular-nums">404</p>
-          <h1 className="font-display text-4xl md:text-5xl font-semibold tracking-tight leading-[1.08]">Page not found</h1>
+          <h1 className="font-display text-4xl md:text-5xl font-normal tracking-[-0.02em] leading-[1.08]">Page not found</h1>
           <p className="mt-4 max-w-md font-body text-lg text-muted-foreground">
             There's nothing at <span className="font-mono text-base text-foreground break-all">{location.pathname}</span>. The
             link may be old or mistyped.

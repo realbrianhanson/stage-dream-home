@@ -73,9 +73,9 @@ const FAQS = [
 ];
 
 const sectionClass = "px-4 sm:px-6 py-20 md:py-28 scroll-mt-16";
-const headingClass = "font-display text-3xl md:text-4xl font-semibold tracking-tight text-foreground";
+const headingClass = "font-display font-normal text-4xl md:text-5xl tracking-[-0.025em] leading-[1.05] text-foreground";
 const primaryBtn =
-  "gold-gradient-animated inline-flex items-center justify-center font-body text-sm font-medium text-accent-foreground px-5 py-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+  "gold-gradient-animated inline-flex items-center justify-center font-body text-sm font-medium text-accent-foreground px-6 py-3.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 const secondaryBtn =
   "inline-flex items-center justify-center font-body text-sm font-medium text-foreground px-5 py-3 rounded-md border border-border bg-background hover:bg-card transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
@@ -91,38 +91,54 @@ const useHashScroll = () => {
   }, [hash]);
 };
 
+const HERO_FACTS = ["12 interior styles", "7 photo tools", "About a minute per photo", "MLS-ready exports"];
+
 const Hero = ({ startHref }: { startHref: string }) => {
   return (
-    <section className="px-4 sm:px-6 pt-12 pb-20 md:pt-20 md:pb-28">
-      <div className="max-w-6xl mx-auto grid gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-center">
-        <div className="hero-enter">
-          <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight text-foreground leading-[1.08] text-balance">
-            Stage an empty listing photo in about a minute
+    <section className="px-4 sm:px-6 pt-14 pb-16 md:pt-24 md:pb-24">
+      <div className="max-w-[1240px] mx-auto">
+        <div className="hero-enter grid gap-8 lg:grid-cols-12 lg:items-end">
+          <h1 className="lg:col-span-8 font-display font-normal text-[2.75rem] leading-[1.02] sm:text-6xl md:text-7xl lg:text-[5.5rem] tracking-[-0.03em] text-foreground">
+            Show buyers the home it could be.
           </h1>
-          <p className="mt-5 font-body text-lg text-muted-foreground leading-relaxed max-w-md">
-            Upload a room, pick a style, and download a staged photo that's ready for the MLS, with the original kept
-            alongside it.
-          </p>
-          <div className="mt-8 flex flex-col sm:flex-row gap-3">
-            <Link to={startHref} className={primaryBtn}>
-              Stage a room free
-            </Link>
-            <Link to="/pricing" className={secondaryBtn}>
-              See pricing
-            </Link>
+          <div className="lg:col-span-4 lg:pb-3">
+            <p className="font-body text-lg leading-relaxed text-muted-foreground max-w-md">
+              Virtual staging and photo edits for listing agents and photographers. Upload a room, choose a style, and
+              have an MLS-ready image in about a minute.
+            </p>
+            <div className="mt-7 flex flex-col sm:flex-row gap-3">
+              <Link to={startHref} className={primaryBtn}>
+                Stage a room free
+              </Link>
+              <Link to="/pricing" className={secondaryBtn}>
+                See pricing
+              </Link>
+            </div>
+            <p className="mt-4 font-body text-sm text-muted-foreground">{FREE_QUOTA} free. No credit card needed.</p>
           </div>
-          <p className="mt-4 font-body text-sm text-muted-foreground">
-            {FREE_QUOTA} free. No credit card needed.
-          </p>
         </div>
-        <InteractiveDemo />
+
+        <div className="mt-12 md:mt-16">
+          <InteractiveDemo variant="hero" />
+        </div>
+
+        <ul className="mt-8 grid grid-cols-2 md:grid-cols-4 border-t border-border">
+          {HERO_FACTS.map((fact, i) => (
+            <li
+              key={fact}
+              className={`pt-5 pb-1 font-body text-sm text-foreground ${i % 2 === 1 ? "pl-4 md:pl-6" : ""} ${i >= 2 ? "md:pl-6" : ""} md:border-l md:first:border-l-0 md:first:pl-0 border-border`}
+            >
+              {fact}
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );
 };
 
 const StagingCard = () => (
-  <article className="rounded-xl border border-border bg-card overflow-hidden lg:col-span-3">
+  <article className="rounded-2xl border border-border bg-card overflow-hidden lg:col-span-3">
     <div className="grid lg:grid-cols-2">
       <div className="grid grid-cols-2 gap-px bg-border lg:min-h-[340px]">
         <figure className="relative m-0 bg-background">
@@ -136,7 +152,7 @@ const StagingCard = () => (
       </div>
       <div className="p-6 md:p-10 flex flex-col justify-center">
         <Sofa className="w-6 h-6 text-accent" aria-hidden />
-        <h3 className="mt-4 font-display text-2xl font-semibold tracking-tight">Add furniture</h3>
+        <h3 className="mt-4 font-display text-3xl font-normal tracking-[-0.02em]">Add furniture</h3>
         <p className="mt-2 font-body text-muted-foreground leading-relaxed">
           Furnish an empty room to scale, in the style that suits the buyer. Generate a few options and keep the one you
           like, or compare styles side by side.
@@ -154,7 +170,7 @@ const ToolsSection = () => {
   const otherTools = TOOLS.filter((t) => t.id !== "stage");
   return (
     <section id="tools" className={`${sectionClass} border-t border-border`}>
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-[1240px] mx-auto">
         <div className="max-w-2xl mb-12">
           <SectionEyebrow label="What you can do" />
           <h2 className={headingClass}>Seven edits for listing photos</h2>
@@ -168,14 +184,14 @@ const ToolsSection = () => {
           {otherTools.map((tool) => {
             const Icon = TOOL_ICONS[tool.id];
             return (
-              <article key={tool.id} className="rounded-xl border border-border bg-background p-6 md:p-8">
+              <article key={tool.id} className="flex flex-col rounded-2xl border border-border bg-background p-7 md:p-9 min-h-[220px] transition-colors hover:border-foreground/25">
                 <div className="flex items-start justify-between gap-4">
                   <Icon className="w-6 h-6 text-accent" aria-hidden />
                   <span className="rounded-md border border-border px-2 py-0.5 font-body text-xs text-muted-foreground">
                     {tool.exterior ? "Exterior" : "Interior"}
                   </span>
                 </div>
-                <h3 className="mt-6 font-display text-xl font-semibold tracking-tight">
+                <h3 className="mt-auto pt-10 font-display text-2xl font-normal tracking-[-0.02em]">
                   {tool.id === "recolor" ? "Recolor walls, floors, cabinets" : tool.label}
                 </h3>
                 <p className="mt-2 font-body text-muted-foreground">{tool.blurb}.</p>
@@ -185,7 +201,7 @@ const ToolsSection = () => {
         </div>
 
         <div className="mt-16">
-          <h3 className="font-display text-lg font-semibold tracking-tight mb-4">More staged rooms</h3>
+          <h3 className="font-body text-lg font-semibold tracking-tight mb-4">More staged rooms</h3>
           <div className="grid gap-4 sm:grid-cols-3">
             {SHOWCASE.map((item) => (
               <figure key={item.label} className="m-0">
@@ -209,7 +225,7 @@ const ToolsSection = () => {
 
 const StepsSection = () => (
   <section className={`${sectionClass} bg-card border-y border-border`}>
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-[1240px] mx-auto">
       <div className="max-w-2xl mb-12">
         <SectionEyebrow label="How it works" />
         <h2 className={headingClass}>From upload to listing in three steps</h2>
@@ -223,7 +239,7 @@ const StepsSection = () => (
               </span>
               <s.icon className="w-5 h-5 text-muted-foreground" aria-hidden />
             </div>
-            <h3 className="mt-6 font-display text-xl font-semibold tracking-tight">{s.title}</h3>
+            <h3 className="mt-auto pt-10 font-display text-2xl font-normal tracking-[-0.02em]">{s.title}</h3>
             <p className="mt-2 font-body text-muted-foreground leading-relaxed">{s.desc}</p>
           </li>
         ))}
@@ -234,7 +250,7 @@ const StepsSection = () => (
 
 const HonestySection = () => (
   <section className={sectionClass}>
-    <div className="max-w-6xl mx-auto grid gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+    <div className="max-w-[1240px] mx-auto grid gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       <div>
         <SectionEyebrow label="Built for MLS rules" />
         <h2 className={headingClass}>Edited photos that are honest about it</h2>
@@ -248,7 +264,7 @@ const HonestySection = () => (
           <li key={h.title} className="flex gap-4 p-6">
             <h.icon className="w-5 h-5 mt-0.5 shrink-0 text-accent" aria-hidden />
             <div>
-              <h3 className="font-display text-base font-semibold">{h.title}</h3>
+              <h3 className="font-body text-base font-semibold">{h.title}</h3>
               <p className="mt-1 font-body text-muted-foreground leading-relaxed">{h.desc}</p>
             </div>
           </li>
@@ -262,7 +278,7 @@ const PricingSummary = () => {
   const [period, setPeriod] = useState<BillingPeriod>("monthly");
   return (
     <section id="pricing" className={`${sectionClass} bg-card border-y border-border`}>
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-[1240px] mx-auto">
         <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-10">
           <div className="max-w-2xl">
             <SectionEyebrow label="Pricing" />
@@ -292,13 +308,13 @@ const PricingSummary = () => {
               className={`rounded-xl border bg-background p-6 md:p-8 ${plan.highlight ? "border-accent ring-1 ring-accent" : "border-border"}`}
             >
               <div className="flex items-center justify-between gap-3">
-                <h3 className="font-display text-lg font-semibold">{plan.name}</h3>
+                <h3 className="font-body text-lg font-semibold">{plan.name}</h3>
                 {plan.highlight && (
                   <span className="rounded-md bg-accent-soft px-2 py-0.5 font-body text-xs font-medium text-accent">Most popular</span>
                 )}
               </div>
               <p className="mt-4 flex items-baseline gap-1">
-                <span className="font-display text-4xl font-semibold tracking-tight tabular-nums">{priceLabel(plan, period)}</span>
+                <span className="font-display text-4xl font-normal tracking-[-0.02em] tabular-nums">{priceLabel(plan, period)}</span>
                 {plan.monthly > 0 && <span className="font-body text-sm text-muted-foreground">/mo</span>}
               </p>
               <p className="mt-1 font-body text-sm font-medium text-foreground tabular-nums">{plan.quotaLabel}</p>
@@ -317,7 +333,7 @@ const PricingSummary = () => {
 
 const FaqSection = () => (
   <section className={sectionClass}>
-    <div className="max-w-6xl mx-auto grid gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+    <div className="max-w-[1240px] mx-auto grid gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       <div>
         <SectionEyebrow label="FAQ" />
         <h2 className={headingClass}>Questions agents ask</h2>
@@ -345,7 +361,7 @@ const FaqSection = () => (
 
 const ClosingCta = ({ startHref }: { startHref: string }) => (
   <section className="px-4 sm:px-6 pb-20 md:pb-28">
-    <div className="max-w-6xl mx-auto rounded-xl border border-border bg-card p-8 md:p-12 flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+    <div className="max-w-[1240px] mx-auto rounded-xl border border-border bg-card p-8 md:p-12 flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
       <div className="max-w-xl">
         <h2 className={headingClass}>Try it on your next listing</h2>
         <ul className="mt-4 flex flex-col gap-2 font-body text-muted-foreground">

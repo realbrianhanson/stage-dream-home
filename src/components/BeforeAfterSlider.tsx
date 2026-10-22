@@ -279,7 +279,7 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
       <div className="max-w-5xl mx-auto">
         <div className="flex flex-wrap items-end justify-between gap-3 mb-5">
           <div className="min-w-0">
-            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">{heading}</h2>
+            <h2 className="text-2xl sm:text-3xl font-normal tracking-[-0.02em]">{heading}</h2>
             <p className="mt-1 text-sm text-muted-foreground">Drag the handle, or focus it and use the arrow keys, to compare.</p>
           </div>
           {onReset && (

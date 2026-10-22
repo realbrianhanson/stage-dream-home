@@ -95,8 +95,8 @@ const CompareCell = ({ value, highlight }: { value: Cell; highlight: boolean }) 
 
 const CompareTable = () => (
   <section className="px-4 sm:px-6 py-20 border-t border-border">
-    <div className="max-w-6xl mx-auto">
-      <h2 className="font-display text-2xl md:text-3xl font-semibold tracking-tight mb-8">Compare plans</h2>
+    <div className="max-w-[1240px] mx-auto">
+      <h2 className="font-display text-2xl md:text-3xl font-normal tracking-[-0.02em] mb-8">Compare plans</h2>
       <div className="rounded-xl border border-border overflow-x-auto">
         <table className="w-full min-w-[600px] border-collapse">
           <caption className="sr-only">Features included in each plan</caption>
@@ -133,9 +133,9 @@ const CompareTable = () => (
 
 const FaqSection = () => (
   <section className="px-4 sm:px-6 py-20 border-t border-border">
-    <div className="max-w-6xl mx-auto grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+    <div className="max-w-[1240px] mx-auto grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       <div>
-        <h2 className="font-display text-2xl md:text-3xl font-semibold tracking-tight">Billing questions</h2>
+        <h2 className="font-display text-2xl md:text-3xl font-normal tracking-[-0.02em]">Billing questions</h2>
         <p className="mt-3 font-body text-muted-foreground">
           Something else?{" "}
           <a href="mailto:support@realvision.ai" className="text-accent underline-offset-4 hover:underline">
@@ -191,9 +191,9 @@ const Pricing = () => {
 
       <main>
         <section className="px-4 sm:px-6 pt-16 pb-12 md:pt-24">
-          <div className="max-w-6xl mx-auto flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-[1240px] mx-auto flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
-              <h1 className="font-display text-4xl md:text-5xl font-semibold tracking-tight leading-[1.08]">Pricing</h1>
+              <h1 className="font-display text-4xl md:text-5xl font-normal tracking-[-0.02em] leading-[1.08]">Pricing</h1>
               <p className="mt-4 font-body text-lg text-muted-foreground">
                 Start free. Pay monthly or yearly when you need more stagings and clean, high-resolution downloads.
               </p>
@@ -205,7 +205,7 @@ const Pricing = () => {
         </section>
 
         <section className="px-4 sm:px-6 pb-20" aria-label="Plans">
-          <div className="max-w-6xl mx-auto grid gap-4 md:grid-cols-3 items-stretch">
+          <div className="max-w-[1240px] mx-auto grid gap-4 md:grid-cols-3 items-stretch">
             {PRICING_PLANS.map((plan) => {
               const showYearly = billing === "annual" && plan.monthly > 0;
               return (
@@ -216,7 +216,7 @@ const Pricing = () => {
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3 min-h-[24px]">
-                    <h2 className="font-display text-lg font-semibold">{plan.name}</h2>
+                    <h2 className="font-body text-lg font-semibold">{plan.name}</h2>
                     {plan.highlight && (
                       <span className="rounded-md bg-accent-soft px-2 py-0.5 font-body text-xs font-medium text-accent">
                         Most popular
@@ -226,7 +226,7 @@ const Pricing = () => {
                   <p className="mt-2 font-body text-sm text-muted-foreground">{plan.blurb}</p>
 
                   <p className="mt-6 flex items-baseline gap-1">
-                    <span className="font-display text-4xl font-semibold tracking-tight tabular-nums">{priceLabel(plan, billing)}</span>
+                    <span className="font-display text-4xl font-normal tracking-[-0.02em] tabular-nums">{priceLabel(plan, billing)}</span>
                     {plan.monthly > 0 && <span className="font-body text-sm text-muted-foreground">/mo</span>}
                   </p>
                   <p className="mt-1 h-5 font-body text-xs text-muted-foreground tabular-nums">{showYearly ? yearlyTotal(plan) : ""}</p>
@@ -255,7 +255,7 @@ const Pricing = () => {
               );
             })}
           </div>
-          <p className="max-w-6xl mx-auto mt-6 font-body text-sm text-muted-foreground">
+          <p className="max-w-[1240px] mx-auto mt-6 font-body text-sm text-muted-foreground">
             Prices in US dollars. Annual prices are shown per month.
           </p>
         </section>

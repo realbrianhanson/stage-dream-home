@@ -287,7 +287,7 @@ const RoomUploader = ({
     <section id="upload-section" className="py-16 sm:py-20 px-4 sm:px-6 scroll-mt-16">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">Stage a photo</h2>
+          <h2 className="text-3xl sm:text-4xl font-normal tracking-[-0.02em]">Stage a photo</h2>
           <p className="mt-2 text-muted-foreground max-w-xl">
             Drop in a listing photo, choose what to do with it, and get a finished image back in about a minute.
           </p>

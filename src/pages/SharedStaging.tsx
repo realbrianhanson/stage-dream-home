@@ -76,7 +76,7 @@ const SharedStagingPage = () => {
   if (notFound || !staging) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center">
-        <h1 className="mb-2 text-2xl font-semibold tracking-tight">This link isn't available</h1>
+        <h1 className="mb-2 text-2xl font-normal tracking-[-0.02em]">This link isn't available</h1>
         <p className="mb-6 max-w-md text-muted-foreground">
           The person who shared it may have turned it off. Ask them for a new link.
         </p>
@@ -113,7 +113,7 @@ const SharedStagingPage = () => {
           <span className="inline-block rounded-sm border border-border bg-card px-1.5 py-0.5 text-xs font-medium">
             {label}
           </span>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+          <h1 className="mt-3 text-3xl font-normal tracking-[-0.02em] sm:text-4xl">
             {staging.property_address || <span className="capitalize">{staging.room_type}</span>}
           </h1>
           <p className="mt-2 text-muted-foreground">
@@ -137,7 +137,7 @@ const SharedStagingPage = () => {
       <section className="border-t border-border bg-card px-4 py-12 sm:px-6">
         <div className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h2 className="text-lg font-semibold tracking-tight">Stage your own listings</h2>
+            <h2 className="font-body text-lg font-semibold tracking-tight">Stage your own listings</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Upload an empty room and get a staged photo in about a minute.
               {freeQuota ? ` Try ${freeQuota} stagings a month free.` : ""}

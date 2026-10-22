@@ -374,7 +374,7 @@ const Gallery = () => {
         <div className="mx-auto max-w-6xl">
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">My stagings</h1>
+              <h1 className="text-2xl font-normal tracking-[-0.02em] sm:text-3xl">My stagings</h1>
               <p className="mt-1 text-muted-foreground">
                 {loading
                   ? "Loading your photos…"
@@ -411,7 +411,7 @@ const Gallery = () => {
               <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-background">
                 <ImagePlus className="h-5 w-5 text-muted-foreground" aria-hidden />
               </div>
-              <h2 className="text-lg font-semibold tracking-tight">Stage your first photo</h2>
+              <h2 className="font-body text-lg font-semibold tracking-tight">Stage your first photo</h2>
               <p className="mx-auto mt-1.5 max-w-sm text-muted-foreground">
                 Upload a photo of an empty room and get it staged in about a minute. Every result is saved here.
               </p>
@@ -442,7 +442,7 @@ const Gallery = () => {
                             aria-hidden
                           />
                           <span className="min-w-0">
-                            <h2 className="break-words text-lg font-semibold tracking-tight group-hover:text-accent">
+                            <h2 className="font-body break-words text-lg font-semibold tracking-tight group-hover:text-accent">
                               {groupName === UNLABELED ? "No property name" : groupName}
                             </h2>
                             <span className="text-sm tabular-nums text-muted-foreground">
@@ -502,7 +502,7 @@ const Gallery = () => {
 
               {groupKeys.length === 0 && debouncedSearch && (
                 <div className="rounded-xl border border-dashed border-border px-6 py-16 text-center">
-                  <h2 className="text-lg font-semibold tracking-tight">No properties match "{debouncedSearch}"</h2>
+                  <h2 className="font-body text-lg font-semibold tracking-tight">No properties match "{debouncedSearch}"</h2>
                   <p className="mt-1.5 text-sm text-muted-foreground">
                     Check the spelling, or clear the search to see everything.
                   </p>

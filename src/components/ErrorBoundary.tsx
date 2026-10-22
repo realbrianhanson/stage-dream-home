@@ -40,7 +40,7 @@ class ErrorBoundary extends Component<Props, State> {
       <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md rounded-xl border border-border bg-background p-6 sm:p-8">
           <AlertTriangle className="w-5 h-5 text-destructive mb-4" aria-hidden />
-          <h1 className="text-xl font-semibold tracking-tight">This page hit an error</h1>
+          <h1 className="text-xl font-normal tracking-[-0.02em]">This page hit an error</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Something broke while showing this screen. Your saved stagings are safe. Try again, or reload the page if it keeps happening.
           </p>

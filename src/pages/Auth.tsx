@@ -181,7 +181,7 @@ const Auth = () => {
             {sentEmail ? (
               <div>
                 <MailCheck className="w-6 h-6 text-accent mb-4" aria-hidden />
-                <h1 className="text-2xl font-semibold tracking-tight">Check your email</h1>
+                <h1 className="text-2xl font-normal tracking-[-0.02em]">Check your email</h1>
                 <p className="mt-2 text-muted-foreground">
                   We sent a confirmation link to <span className="text-foreground font-medium break-all">{sentEmail}</span>. Open it to finish creating your account.
                 </p>
@@ -211,7 +211,7 @@ const Auth = () => {
               </div>
             ) : (
               <>
-                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{isLogin ? "Sign in" : "Create your account"}</h1>
+                <h1 className="text-2xl sm:text-3xl font-normal tracking-[-0.02em]">{isLogin ? "Sign in" : "Create your account"}</h1>
                 <p className="mt-2 text-muted-foreground">
                   {isLogin ? "Pick up where you left off." : `The free plan includes ${getPlan("free").quotaLabel}. No card needed.`}
                 </p>
@@ -359,12 +359,13 @@ const Auth = () => {
         </p>
       </div>
 
-      <div className="hidden lg:flex flex-col justify-center gap-5 bg-card border-l border-border p-12">
-        <img src={afterImg} alt="A living room staged with RealVision" className="w-full rounded-xl border border-border shadow-soft object-cover aspect-[4/3]" />
-        <div className="max-w-md">
-          <p className="text-lg font-semibold tracking-tight">Stage an empty room in about a minute</p>
-          <p className="mt-1 text-muted-foreground">
-            Upload a listing photo, pick a style, and download a staged image sized for MLS.
+      <div className="relative hidden lg:block overflow-hidden">
+        <img src={afterImg} alt="A living room staged with RealVision" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" aria-hidden />
+        <div className="absolute inset-x-0 bottom-0 p-12 text-white">
+          <p className="font-display text-4xl leading-tight tracking-[-0.02em] max-w-md">Show buyers the home it could be.</p>
+          <p className="mt-3 max-w-md text-white/85">
+            Upload a listing photo, pick a style, and download an MLS-ready image in about a minute.
           </p>
         </div>
       </div>

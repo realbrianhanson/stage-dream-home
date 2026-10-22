@@ -14,7 +14,7 @@ export default {
       },
     },
     fontFamily: {
-      display: ['Geist', 'system-ui', 'sans-serif'],
+      display: ['Newsreader', 'Georgia', 'serif'],
       body: ['Geist', 'system-ui', 'sans-serif'],
     },
     extend: {

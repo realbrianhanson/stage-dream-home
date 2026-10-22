@@ -2,7 +2,7 @@ import LegalPage from "@/components/LegalPage";
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <section>
-    <h2 className="font-display text-xl font-semibold tracking-tight text-foreground mb-3">{title}</h2>
+    <h2 className="font-display text-xl font-normal tracking-[-0.02em] text-foreground mb-3">{title}</h2>
     <div className="space-y-3">{children}</div>
   </section>
 );

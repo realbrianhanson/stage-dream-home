@@ -166,7 +166,7 @@ const ListingPage = () => {
   if (notFound || !data) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center">
-        <h1 className="mb-2 text-2xl font-semibold tracking-tight">This listing page isn't available</h1>
+        <h1 className="mb-2 text-2xl font-normal tracking-[-0.02em]">This listing page isn't available</h1>
         <p className="mb-6 max-w-md text-muted-foreground">
           The agent may have turned off the link. Ask them for a new one.
         </p>
@@ -190,7 +190,7 @@ const ListingPage = () => {
 
       <main className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 sm:pt-12">
         <div className="mb-8 max-w-3xl">
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{data.property_address}</h1>
+          <h1 className="text-3xl font-normal tracking-[-0.02em] sm:text-4xl">{data.property_address}</h1>
           <p className="mt-2 text-muted-foreground">
             <span className="tabular-nums">{stagings.length}</span> photo{stagings.length !== 1 ? "s" : ""}. Select a
             photo to compare it with the original.
@@ -254,7 +254,7 @@ const ListingPage = () => {
       <section className="border-t border-border bg-card px-4 py-12 sm:px-6">
         <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h2 className="text-lg font-semibold tracking-tight">Are you an agent? Stage your own listings</h2>
+            <h2 className="font-body text-lg font-semibold tracking-tight">Are you an agent? Stage your own listings</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Stage an empty room in about a minute.
               {freeQuota ? ` Try ${freeQuota} stagings a month free.` : ""}

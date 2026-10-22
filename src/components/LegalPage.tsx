@@ -17,7 +17,7 @@ const LegalPage = ({ eyebrow, title, updated, children }: LegalPageProps) => (
       <article className="max-w-2xl mx-auto pt-16 pb-20 md:pt-24 md:pb-28">
         <header className="mb-12 border-b border-border pb-8">
           <p className="font-body text-sm font-medium text-accent mb-3">{eyebrow}</p>
-          <h1 className="font-display text-4xl md:text-5xl font-semibold tracking-tight leading-[1.08] text-foreground">{title}</h1>
+          <h1 className="font-display text-4xl md:text-5xl font-normal tracking-[-0.02em] leading-[1.08] text-foreground">{title}</h1>
           <p className="mt-4 font-body text-sm text-muted-foreground">Last updated {updated}</p>
         </header>
 

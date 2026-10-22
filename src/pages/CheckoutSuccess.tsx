@@ -27,7 +27,7 @@ const CheckoutSuccess = () => {
       <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-20">
         <div className="max-w-md w-full rounded-xl border border-border bg-card p-8 md:p-10">
           <CircleCheck className="w-8 h-8 text-accent" aria-hidden />
-          <h1 className="mt-6 font-display text-3xl font-semibold tracking-tight">Your plan is active</h1>
+          <h1 className="mt-6 font-display text-3xl font-normal tracking-[-0.02em]">Your plan is active</h1>
           <p className="mt-3 font-body text-muted-foreground leading-relaxed">
             Thanks for subscribing. Your new monthly limit will show in the app within a minute. If it doesn't, refresh
             the page.

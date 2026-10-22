@@ -28,7 +28,7 @@ const MarketingNav = () => {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
-      <nav aria-label="Main" className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <nav aria-label="Main" className="max-w-[1240px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         <Link to="/" className={`shrink-0 rounded-md ${focusRing}`} aria-label="RealVision home">
           <Logo />
         </Link>
@@ -66,7 +66,7 @@ const MarketingNav = () => {
 
       {open && (
         <div id="marketing-mobile-menu" className="md:hidden border-t border-border bg-background">
-          <div className="max-w-6xl mx-auto px-4 pt-1 pb-4 flex flex-col">
+          <div className="max-w-[1240px] mx-auto px-4 pt-1 pb-4 flex flex-col">
             {NAV_LINKS.map((l) => (
               <Link key={l.to} to={l.to} onClick={() => setOpen(false)} className={mobileLinkClass}>
                 {l.label}

@@ -19,7 +19,8 @@ const clamp = (n: number) => Math.min(100, Math.max(0, n));
  * Drag (or use the arrow keys) to compare a vacant photo with its staged
  * version. Lightweight on purpose: the full results viewer lives in the app.
  */
-const InteractiveDemo = () => {
+const InteractiveDemo = ({ variant = "inline" }: { variant?: "inline" | "hero" }) => {
+  const hero = variant === "hero";
   const [pos, setPos] = useState(50);
   const frameRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
@@ -61,7 +62,11 @@ const InteractiveDemo = () => {
     <figure className="m-0">
       <div
         ref={frameRef}
-        className="relative w-full aspect-[3/2] overflow-hidden rounded-xl border border-border bg-card shadow-soft select-none cursor-ew-resize touch-pan-y"
+        className={`relative w-full overflow-hidden bg-card select-none cursor-ew-resize touch-pan-y ${
+          hero
+            ? "aspect-[4/3] sm:aspect-[16/9] rounded-2xl shadow-[0_40px_80px_-40px_hsl(200_10%_8%/0.45)]"
+            : "aspect-[3/2] rounded-xl border border-border shadow-soft"
+        }`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={stopDrag}
@@ -87,11 +92,19 @@ const InteractiveDemo = () => {
           style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
         />
 
-        <span className="pointer-events-none absolute left-3 top-3 rounded-md bg-background/90 px-2 py-1 font-body text-xs font-medium text-foreground">
-          Before
+        <span
+          className={`pointer-events-none absolute rounded-md font-body font-medium backdrop-blur-md ${
+            hero ? "left-4 bottom-4 sm:left-6 sm:bottom-6 bg-white/85 px-3 py-1.5 text-sm text-foreground" : "left-3 top-3 bg-background/90 px-2 py-1 text-xs text-foreground"
+          }`}
+        >
+          {hero ? "Before: vacant" : "Before"}
         </span>
-        <span className="pointer-events-none absolute right-3 top-3 rounded-md bg-accent px-2 py-1 font-body text-xs font-medium text-accent-foreground">
-          After
+        <span
+          className={`pointer-events-none absolute rounded-md font-body font-medium backdrop-blur-md ${
+            hero ? "right-4 bottom-4 sm:right-6 sm:bottom-6 bg-foreground/80 px-3 py-1.5 text-sm text-background" : "right-3 top-3 bg-accent px-2 py-1 text-xs text-accent-foreground"
+          }`}
+        >
+          {hero ? "After: staged, Modern" : "After"}
         </span>
 
         <div
@@ -114,7 +127,7 @@ const InteractiveDemo = () => {
           </span>
         </div>
       </div>
-      <figcaption className="mt-3 flex items-center justify-between gap-4 font-body text-sm text-muted-foreground">
+      <figcaption className={`mt-3 flex items-center justify-between gap-4 font-body text-sm text-muted-foreground ${hero ? "sr-only" : ""}`}>
         <span>{PAIR.caption}</span>
         <span className="hidden sm:inline">Drag to compare</span>
       </figcaption>

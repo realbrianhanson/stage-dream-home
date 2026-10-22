@@ -6,7 +6,7 @@ const footerLink =
 
 const MarketingFooter = () => (
   <footer className="border-t border-border bg-background">
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+    <div className="max-w-[1240px] mx-auto px-4 sm:px-6 py-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
       <div className="flex flex-col gap-2">
         <Logo />
         <p className="font-body text-sm text-muted-foreground">
@@ -21,7 +21,7 @@ const MarketingFooter = () => (
       </nav>
     </div>
     <div className="border-t border-border">
-      <p className="max-w-6xl mx-auto px-4 sm:px-6 py-4 font-body text-xs text-muted-foreground tabular-nums">
+      <p className="max-w-[1240px] mx-auto px-4 sm:px-6 py-4 font-body text-xs text-muted-foreground tabular-nums">
         © {new Date().getFullYear()} RealVision
       </p>
     </div>

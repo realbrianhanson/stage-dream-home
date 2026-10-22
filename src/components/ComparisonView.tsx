@@ -110,7 +110,7 @@ const ComparisonView = ({ original, results, pendingStyles = [], onReset, isWate
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
           <div className="min-w-0">
-            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-normal tracking-[-0.02em]">
               {working ? `Staging ${noun} ${Math.min(results.length + 1, total)} of ${total}` : `${doneCount} ${noun}${doneCount === 1 ? "" : "s"} ready`}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">

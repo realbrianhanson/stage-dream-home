@@ -14,7 +14,7 @@ const CheckoutCancel = () => (
     </header>
     <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-20">
       <div className="max-w-md w-full rounded-xl border border-border bg-card p-8 md:p-10">
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Checkout cancelled</h1>
+        <h1 className="font-display text-3xl font-normal tracking-[-0.02em]">Checkout cancelled</h1>
         <p className="mt-3 font-body text-muted-foreground leading-relaxed">
           You weren't charged. Your account stays on its current plan, and you can upgrade whenever you're ready.
         </p>
