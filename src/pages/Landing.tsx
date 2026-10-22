@@ -47,7 +47,9 @@ const FAQS = [
 
 const HERO_FACTS = ["12 interior styles", "7 photo tools", "About a minute per photo", "MLS-ready exports"];
 
-const container = "max-w-[1240px] mx-auto";
+// Sections pad outside the container, so 1192px of content lines up with the
+// nav, which pads inside its 1240px.
+const container = "max-w-[1192px] mx-auto";
 const section = "px-4 sm:px-6 py-24 md:py-36 scroll-mt-16";
 const h2 = "font-display font-normal text-4xl md:text-5xl lg:text-[3.5rem] leading-[1.04] tracking-[-0.025em]";
 const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
@@ -71,48 +73,46 @@ const Hero = ({ startHref }: { startHref: string }) => {
   const { pair } = HERO_EXAMPLES[active];
   return (
     <section>
-      <div className="relative">
-        <div className="relative h-[82vw] max-h-[620px] sm:h-[min(84vh,880px)] sm:max-h-none sm:min-h-[560px]">
+      {/* Split hero: copy on the left, the before/after edge to edge on the
+          right. Nothing sits on top of the comparison at any width. */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,11fr)_minmax(0,13fr)] xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] 2xl:grid-cols-2 lg:min-h-[min(calc(100vh-4rem),880px)]">
+        <div className="relative h-[82vw] max-h-[620px] sm:h-[62vw] lg:order-2 lg:h-auto lg:max-h-none lg:min-h-[560px]">
           {/* Remount per pair so each one replays the reveal. */}
-          <InteractiveDemo key={pair.id} pair={pair} variant="immersive" intro handleTop={24} />
+          <InteractiveDemo key={pair.id} pair={pair} variant="immersive" intro />
         </div>
 
-        <div className="lg:absolute lg:inset-x-0 lg:bottom-0 lg:pointer-events-none">
-          <div className="max-w-[1240px] mx-auto lg:px-6">
-            <div className="hero-enter lg:pointer-events-auto bg-background px-4 sm:px-6 pt-9 pb-4 lg:-ml-10 lg:max-w-[620px] lg:rounded-tr-2xl lg:px-10 lg:pt-11 lg:pb-10">
-              <h1 className="font-display font-normal text-[2.6rem] leading-[1.02] sm:text-6xl lg:text-[4.25rem] tracking-[-0.03em] text-foreground">
-                Show buyers the home it could be.
-              </h1>
-              <p className="mt-5 font-body text-lg leading-relaxed text-muted-foreground max-w-md">
-                Virtual staging and photo edits for listing agents and photographers. Upload a room, choose a style, and
-                have an MLS-ready image in about a minute.
-              </p>
-              <div className="mt-7 flex flex-col sm:flex-row gap-3">
-                <Link to={startHref} className={primaryBtn}>
-                  Stage a room free
-                </Link>
-                <Link to="/pricing" className={secondaryBtn}>
-                  See pricing
-                </Link>
-              </div>
-              <div role="group" aria-label="Example result" className="mt-8 flex flex-wrap gap-x-5 gap-y-2 border-t border-border pt-5">
-                {HERO_EXAMPLES.map((ex, i) => (
-                  <button
-                    key={ex.pair.id}
-                    type="button"
-                    aria-pressed={i === active}
-                    onClick={() => setActive(i)}
-                    className={`font-body text-sm transition-colors rounded-sm ${focusRing} ${
-                      i === active
-                        ? "text-foreground underline decoration-foreground underline-offset-[7px]"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {ex.tab}
-                  </button>
-                ))}
-              </div>
-            </div>
+        <div className="hero-enter lg:order-1 flex flex-col justify-center px-4 sm:px-6 pt-9 pb-4 lg:py-16 lg:pr-12 xl:pr-16 lg:pl-[max(1.5rem,calc((100vw-1240px)/2+1.5rem))]">
+          <h1 className="font-display font-normal text-[2.6rem] leading-[1.02] sm:text-6xl lg:text-[3.5rem] xl:text-[4.25rem] tracking-[-0.03em] text-foreground">
+            Show buyers the home it could be.
+          </h1>
+          <p className="mt-5 font-body text-lg leading-relaxed text-muted-foreground max-w-md">
+            Virtual staging and photo edits for listing agents and photographers. Upload a room, choose a style, and have
+            an MLS-ready image in about a minute.
+          </p>
+          <div className="mt-7 flex flex-col sm:flex-row gap-3">
+            <Link to={startHref} className={primaryBtn}>
+              Stage a room free
+            </Link>
+            <Link to="/pricing" className={secondaryBtn}>
+              See pricing
+            </Link>
+          </div>
+          <div role="group" aria-label="Example result" className="mt-8 flex flex-wrap gap-x-5 gap-y-2 border-t border-border pt-5">
+            {HERO_EXAMPLES.map((ex, i) => (
+              <button
+                key={ex.pair.id}
+                type="button"
+                aria-pressed={i === active}
+                onClick={() => setActive(i)}
+                className={`font-body text-sm transition-colors rounded-sm ${focusRing} ${
+                  i === active
+                    ? "text-foreground underline decoration-foreground underline-offset-[7px]"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {ex.tab}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -435,7 +435,7 @@ const Closing = ({ startHref }: { startHref: string }) => (
       className="absolute inset-0 -z-10 h-full w-full object-cover"
     />
     <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/80 via-black/55 to-black/20" aria-hidden />
-    <div className={`${container} px-4 sm:px-6 py-28 md:py-44`}>
+    <div className="max-w-[1240px] mx-auto px-4 sm:px-6 py-28 md:py-44">
       <h2 className="font-display font-normal text-5xl md:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.03em] text-white max-w-2xl">
         Stage your next listing tonight.
       </h2>
