@@ -51,3 +51,26 @@ describe("ownedStoragePath", () => {
     expect(ownedStoragePath(`https://evil.com/storage/v1/object/public/stagings/u1/x.jpg`, base, uid)).toBeNull();
   });
 });
+
+describe("photo tools", () => {
+  it("declutter keeps furniture", () => {
+    expect(buildPrompt({ mode: "declutter", roomType: "Kitchen", style: "Modern" })).toMatch(/KEEP all furniture/);
+  });
+  it("dusk never invents light fixtures", () => {
+    expect(buildPrompt({ mode: "dusk", roomType: "Outdoor / Patio", style: "Modern" })).toMatch(/Do not add light fixtures/);
+  });
+  it("recolor changes only the named surface", () => {
+    const p = buildPrompt({ mode: "recolor", roomType: "Kitchen", style: "Modern", recolorTarget: "cabinets", finish: "sage green shaker" });
+    expect(p).toMatch(/cabinet fronts/);
+    expect(p).toMatch(/sage green shaker/);
+    expect(p).toMatch(/Do not change anything other than the cabinet fronts/);
+  });
+  it("requires a finish for recolor and drops the MLS label for declutter", () => {
+    expect(parseStageBody({ image: "data:image/png;base64,AA", mode: "recolor" })).toMatchObject({ ok: false, code: "empty_finish" });
+    const d = parseStageBody({ image: "data:image/png;base64,AA", mode: "declutter", mls_disclosure: true });
+    expect(d.ok && d.value.wantsMlsLabel).toBe(false);
+  });
+  it("refining an empty-room photo doesn't call it staged", () => {
+    expect(buildPrompt({ mode: "refine", roomType: "Kitchen", style: "Modern", refineInstruction: "x", sourceKind: "remove" })).toMatch(/empty room/);
+  });
+});

@@ -1,25 +1,16 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Upload, Image as ImageIcon, X, Loader2, Lock, ToggleLeft, ToggleRight, ChevronDown, ChevronUp, StopCircle } from "lucide-react";
+import { Upload, Loader2, Lock, RotateCcw, ScanSearch } from "lucide-react";
 import { toast } from "sonner";
-import { stageRoom, uploadOriginal, StagingError } from "@/lib/stagingApi";
-import BatchStaging from "@/components/BatchStaging";
-
-import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-
-const INSTRUCTION_CHIPS = [
-  "Pet-friendly furniture",
-  "Family-oriented",
-  "Warm earth tones",
-  "Bright and airy",
-  "Home office area",
-  "Large area rug",
-  "Statement lighting",
-  "Indoor plants",
-];
-
-const MAX_INSTRUCTIONS = 300;
+import { stageRoom, uploadOriginal, StagingError, type StageParams } from "@/lib/stagingApi";
+import { prepareImage } from "@/lib/prepareImage";
+import { getPalettesForStyle } from "@/config/catalogs";
+import { toolInfo, type ToolId } from "@/config/tools";
+import { useAuth } from "@/hooks/useAuth";
+import { useRoomDetection } from "@/hooks/useRoomDetection";
+import BatchStaging from "@/components/BatchStaging";
+import ToolPicker from "@/components/studio/ToolPicker";
+import StudioOptions, { MAX_INSTRUCTIONS, type StudioState } from "@/components/studio/StudioOptions";
 
 // Admin-only: pick the image model to A/B results. "Auto" uses the server's chain.
 const ADMIN_MODELS = [
@@ -31,18 +22,9 @@ const ADMIN_MODELS = [
   { value: "google/gemini-2.5-flash-image", label: "Gemini 2.5 Flash Image (old)" },
 ];
 
-import { ROOM_TYPES, STYLES, getPalettesForStyle } from "@/config/catalogs";
-
-const ASPECT_RATIOS = [
-  { value: "", label: "Match Photo" },
-  { value: "16:9", label: "Wide 16:9" },
-  { value: "4:3", label: "Standard 4:3" },
-  { value: "3:4", label: "Portrait 3:4" },
-  { value: "1:1", label: "Square 1:1" },
-];
-
 export interface StagingMeta {
   stagingId: string;
+  tool?: ToolId;
   roomType: string;
   style: string;
   propertyName: string;
@@ -60,7 +42,6 @@ export interface StagingResult {
 
 interface RoomUploaderProps {
   onResult: (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean, meta?: StagingMeta) => void;
-  onMultiResult: (original: string, results: StagingResult[], isWatermarked?: boolean) => void;
   onMultiStart: (original: string, pendingStyles: string[]) => void;
   onMultiProgress: (result: StagingResult, remainingStyles: string[]) => void;
   initialImage?: string | null;
@@ -77,7 +58,6 @@ interface RoomUploaderProps {
 
 const RoomUploader = ({
   onResult,
-  onMultiResult,
   onMultiStart,
   onMultiProgress,
   initialImage,
@@ -93,232 +73,173 @@ const RoomUploader = ({
 }: RoomUploaderProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [image, setImage] = useState<string | null>(initialImage || null);
-  const [mode, setMode] = useState<"stage" | "remove">("stage");
-  const [mlsDisclosure, setMlsDisclosure] = useState(false);
-  const [roomType, setRoomType] = useState(initialRoomType || "Living Room");
-  const [style, setStyle] = useState(initialStyle || "Modern");
-  const [selectedStyles, setSelectedStyles] = useState<string[]>([initialStyle || "Modern"]);
-  const [compareMode, setCompareMode] = useState(false);
-  const [propertyName, setPropertyName] = useState("");
-  const [customInstructions, setCustomInstructions] = useState(initialCustomInstructions || "");
-  const [aspectRatio, setAspectRatio] = useState("");
-  const [palette, setPalette] = useState(initialPalette || "");
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [adminModel, setAdminModel] = useState("");
+  const isFree = !usage || usage.plan === "free";
   const isAdmin = usage?.plan === "admin";
+
+  const [image, setImage] = useState<string | null>(initialImage || null);
+  const [originalUrl, setOriginalUrl] = useState<string | null>(initialImage?.startsWith("http") ? initialImage : null);
+  const uploadRef = useRef<Promise<string> | null>(null);
+  const [batchFiles, setBatchFiles] = useState<File[] | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressText, setProgressText] = useState("");
-  const [dragOver, setDragOver] = useState(false);
-  const [batchFiles, setBatchFiles] = useState<File[] | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cancelledRef = useRef(false);
+  const touchedRef = useRef({ tool: false, room: false });
 
-  const handleFiles = useCallback(
-    (files: File[]) => {
-      const imgs = files.filter((f) => f.type.startsWith("image/"));
-      if (imgs.length === 0) {
-        toast.error("Please upload image files");
-        return;
-      }
-      if (imgs.length >= 2) {
-        setBatchFiles(imgs);
-      } else {
-        handleFile(imgs[0]);
-      }
-    },
-    // handleFile is defined above and stable via useCallback
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
-
-  useEffect(() => {
-    if (initialImage) setImage(initialImage);
-    if (initialRoomType) setRoomType(initialRoomType);
-    if (initialStyle) {
-      setStyle(initialStyle);
-      setSelectedStyles([initialStyle]);
-    }
-    if (initialCustomInstructions) {
-      setCustomInstructions(initialCustomInstructions);
-      setShowAdvanced(true);
-    }
-    if (initialPalette) {
-      setPalette(initialPalette);
-      setShowAdvanced(true);
-    }
-  }, [initialImage, initialRoomType, initialStyle, initialCustomInstructions, initialPalette]);
-
-  // If the user changes style, clear the palette unless it belongs to the new style.
-  useEffect(() => {
-    if (palette && !getPalettesForStyle(style).includes(palette)) {
-      setPalette("");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [style]);
-
-  const handleFile = useCallback((file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please upload an image file");
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("Image must be under 10MB");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      // Downscale long edge to 2048px, encode JPEG 0.85, so uploads are fast.
-      const img = new Image();
-      img.onload = () => {
-        const MAX_EDGE = 2048;
-        const longEdge = Math.max(img.naturalWidth, img.naturalHeight);
-        if (longEdge <= MAX_EDGE) {
-          setImage(dataUrl);
-          return;
-        }
-        const scale = MAX_EDGE / longEdge;
-        const w = Math.round(img.naturalWidth * scale);
-        const h = Math.round(img.naturalHeight * scale);
-        const canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          setImage(dataUrl);
-          return;
-        }
-        ctx.drawImage(img, 0, 0, w, h);
-        setImage(canvas.toDataURL("image/jpeg", 0.85));
-      };
-      img.onerror = () => setImage(dataUrl);
-      img.src = dataUrl;
-    };
-    reader.readAsDataURL(file);
+  const [state, setState] = useState<StudioState>({
+    tool: "stage",
+    roomType: initialRoomType || "Living Room",
+    style: initialStyle || "Modern",
+    compare: false,
+    compareStyles: [initialStyle || "Modern"],
+    variations: 1,
+    recolorTarget: "walls",
+    finish: "",
+    aspectRatio: "",
+    propertyName: "",
+    mlsDisclosure: false,
+    instructions: initialCustomInstructions || "",
+    palette: initialPalette || "",
+    model: "",
+  });
+  const set = useCallback(<K extends keyof StudioState>(key: K, value: StudioState[K]) => {
+    if (key === "tool") touchedRef.current.tool = true;
+    if (key === "roomType") touchedRef.current.room = true;
+    setState((s) => {
+      const next = { ...s, [key]: value };
+      // A palette only makes sense for the style it belongs to.
+      if (key === "style" && next.palette && !getPalettesForStyle(String(value)).includes(next.palette)) next.palette = "";
+      return next;
+    });
   }, []);
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setDragOver(false);
-      const files = Array.from(e.dataTransfer.files);
-      if (files.length > 0) handleFiles(files);
+  const { detection, detecting } = useRoomDetection(originalUrl);
+
+  // Pre-fill from detection unless the user already chose.
+  useEffect(() => {
+    if (!detection) return;
+    setState((s) => ({
+      ...s,
+      roomType: !touchedRef.current.room && detection.roomType ? detection.roomType : s.roomType,
+      tool: !touchedRef.current.tool ? detection.suggestedTool : s.tool,
+    }));
+  }, [detection]);
+
+  useEffect(() => {
+    if (!initialImage) return;
+    setImage(initialImage);
+    if (initialImage.startsWith("http")) setOriginalUrl(initialImage);
+  }, [initialImage]);
+
+  const startUpload = useCallback(
+    (dataUrl: string) => {
+      if (!user) return;
+      const p = uploadOriginal(user.id, dataUrl);
+      uploadRef.current = p;
+      p.then((url) => {
+        if (uploadRef.current === p) setOriginalUrl(url);
+      }).catch((err) => console.error("Original upload failed:", err));
     },
-    [handleFiles]
+    [user],
   );
 
-  const maxCompareStyles = usage && usage.plan !== "free" ? 6 : 3;
+  const handleFiles = useCallback(
+    async (files: File[]) => {
+      const imgs = files.filter((f) => f.type.startsWith("image/"));
+      if (imgs.length === 0) return toast.error("Please choose photos (JPG, PNG or WebP).");
+      if (imgs.length >= 2) return setBatchFiles(imgs.slice(0, 15));
+      try {
+        const dataUrl = await prepareImage(imgs[0]);
+        touchedRef.current = { tool: false, room: false };
+        setOriginalUrl(null);
+        setImage(dataUrl);
+        startUpload(dataUrl);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "That photo couldn't be opened.");
+      }
+    },
+    [startUpload],
+  );
 
-  const toggleStyleSelection = (s: string) => {
-    setSelectedStyles((prev) => {
-      if (prev.includes(s)) {
-        return prev.length > 1 ? prev.filter((x) => x !== s) : prev;
-      }
-      if (prev.length >= maxCompareStyles) {
-        toast.error(`Maximum ${maxCompareStyles} styles for comparison`);
-        return prev;
-      }
-      return [...prev, s];
-    });
+  const resetPhoto = () => {
+    uploadRef.current = null;
+    setImage(null);
+    setOriginalUrl(null);
   };
 
-  const handleCancel = () => {
-    cancelledRef.current = true;
-    toast.info("Cancelling remaining styles...");
+  const ensureOriginal = async (): Promise<string> => {
+    if (originalUrl) return originalUrl;
+    if (uploadRef.current) return uploadRef.current;
+    if (!user || !image) throw new Error("Please sign in again.");
+    return uploadOriginal(user.id, image);
   };
+
+  const tool = toolInfo(state.tool);
+  const isStage = state.tool === "stage";
+  const compareRun = isStage && state.compare && state.compareStyles.length > 1;
+  const runCount = compareRun ? state.compareStyles.length : isStage && !isFree ? state.variations : 1;
+  const maxCompare = isFree ? 3 : 6;
+  const limitReached = !!usage && !canStage;
+  const notEnough = runCount > remainingStagings;
 
   const handleStage = async () => {
     if (!image || !user) return;
-
-    const isRemove = mode === "remove";
-    const stylesToStage = isRemove ? [style] : compareMode ? selectedStyles : [style];
-    const count = stylesToStage.length;
-
-    if (!canStage) {
-      toast.error(usage?.plan === "free" ? "You've reached your free staging limit this month." : "You've used all of this month's stagings.");
-      return;
-    }
+    if (state.tool === "recolor" && !state.finish.trim()) return toast.error("Describe the new color or material.");
+    if (notEnough) return toast.error(`That needs ${runCount} stagings and you have ${remainingStagings} left this month.`);
 
     setIsProcessing(true);
     cancelledRef.current = false;
-    const instructions = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
-    const common = {
-      roomType,
-      customInstructions: instructions,
-      aspectRatio: aspectRatio || undefined,
-      mlsDisclosure: !isRemove && mlsDisclosure,
-      propertyName: propertyName.trim() || undefined,
-      model: isAdmin ? adminModel || undefined : undefined,
+    const instructions = state.instructions.trim().slice(0, MAX_INSTRUCTIONS);
+    const base: Omit<StageParams, "style"> = {
+      mode: state.tool,
+      roomType: tool.exterior ? "Outdoor / Patio" : state.roomType,
+      customInstructions: isStage ? instructions : undefined,
+      aspectRatio: isStage ? state.aspectRatio || undefined : undefined,
+      mlsDisclosure: state.mlsDisclosure && tool.disclose,
+      propertyName: state.propertyName.trim() || undefined,
+      recolorTarget: state.recolorTarget,
+      finish: state.finish.trim(),
+      model: isAdmin ? state.model || undefined : undefined,
     };
 
     try {
-      setProgressText("Uploading your photo...");
-      const originalUrl = await uploadOriginal(user.id, image);
+      setProgressText("Uploading your photo…");
+      const url = await ensureOriginal();
 
-      if (count === 1) {
-        setProgressText(isRemove ? "Removing furniture from your room..." : "Staging your room with AI...");
-        const paletteForRun = !isRemove && palette ? palette : "";
-        const result = await stageRoom({
-          ...common,
-          originalUrl,
-          mode: isRemove ? "remove" : "stage",
-          style: stylesToStage[0],
-          palette: paletteForRun,
-        });
-        const row = result.stagings[0];
-        const meta = {
-          stagingId: row.id,
-          roomType,
-          style: row.style,
-          propertyName: propertyName.trim(),
-          customInstructions: instructions,
-          palette: paletteForRun,
-        };
-        onResult(originalUrl, row.staged_image_url, result.isWatermarked, !isRemove && mlsDisclosure, meta);
-        toast.success(isRemove ? "Furniture removed" : "Room staged");
+      if (compareRun) {
+        await runCompare(url, base);
         return;
       }
 
-      // Compare styles: results stream in one at a time.
-      onMultiStart(originalUrl, [...stylesToStage]);
-      const completed: StagingResult[] = [];
-      for (let i = 0; i < stylesToStage.length; i++) {
-        if (cancelledRef.current) {
-          toast.info(`Stopped after ${completed.length} of ${count} styles`);
-          break;
-        }
-        const currentStyle = stylesToStage[i];
-        const remaining = stylesToStage.slice(i + 1);
-        setProgressText(`Staging ${i + 1} of ${count} · ${currentStyle}`);
-        const comparePalette = palette && getPalettesForStyle(currentStyle).includes(palette) ? palette : "";
-        try {
-          const result = await stageRoom({ ...common, originalUrl, mode: "stage", style: currentStyle, palette: comparePalette });
-          const row = result.stagings[0];
-          const item: StagingResult = {
-            style: currentStyle,
-            stagedImageUrl: row.staged_image_url,
-            stagingId: row.id,
-            isWatermarked: result.isWatermarked,
-            mlsDisclosure,
-          };
-          completed.push(item);
-          onMultiProgress(item, cancelledRef.current ? [] : remaining);
-        } catch (err) {
-          if (err instanceof StagingError && err.isQuota) {
-            toast.info(`Limit reached after ${completed.length} style${completed.length === 1 ? "" : "s"}.`);
-            onMultiProgress({ style: currentStyle, stagedImageUrl: "", isWatermarked: false }, []);
-            break;
-          }
-          console.error(`Style "${currentStyle}" failed:`, err);
-          toast.error(`${currentStyle}: ${err instanceof Error ? err.message : "failed"}`);
-          onMultiProgress({ style: currentStyle, stagedImageUrl: "", isWatermarked: false }, cancelledRef.current ? [] : remaining);
-        }
+      setProgressText(progressFor(state.tool, runCount));
+      const result = await stageRoom({ ...base, originalUrl: url, style: state.style, palette: isStage ? state.palette : undefined, variations: runCount });
+
+      if (result.stagings.length > 1) {
+        const labels = result.stagings.map((_, i) => `Option ${i + 1}`);
+        onMultiStart(url, labels);
+        result.stagings.forEach((row, i) =>
+          onMultiProgress(
+            { style: labels[i], stagedImageUrl: row.staged_image_url, stagingId: row.id, isWatermarked: result.isWatermarked, mlsDisclosure: row.mls_disclosure },
+            [],
+          ),
+        );
+      } else {
+        const row = result.stagings[0];
+        onResult(url, row.staged_image_url, result.isWatermarked, row.mls_disclosure, {
+          stagingId: row.id,
+          tool: state.tool,
+          roomType: row.room_type,
+          style: row.style,
+          propertyName: state.propertyName.trim(),
+          customInstructions: instructions,
+          palette: isStage ? state.palette : "",
+        });
       }
-      if (completed.length > 0 && !cancelledRef.current) toast.success(`Staged in ${completed.length} styles`);
+      toast.success(doneMessage(state.tool, result.stagings.length));
     } catch (err) {
       console.error("Staging error:", err);
-      toast.error(err instanceof Error ? err.message : "Failed to stage room. Please try again.");
+      toast.error(err instanceof Error ? err.message : "That didn't work. Please try again.");
     } finally {
       await onStagingComplete();
       setIsProcessing(false);
@@ -327,486 +248,209 @@ const RoomUploader = ({
     }
   };
 
-  const limitReached = !!usage && !canStage;
-  const isFreePlan = !usage || usage.plan === "free";
-  const activeStyleCount = compareMode ? selectedStyles.length : 1;
+  const runCompare = async (url: string, base: Omit<StageParams, "style">) => {
+    const styles = state.compareStyles;
+    onMultiStart(url, [...styles]);
+    let done = 0;
+    for (let i = 0; i < styles.length; i++) {
+      if (cancelledRef.current) {
+        toast.info(`Stopped after ${done} of ${styles.length} styles`);
+        onMultiProgress({ style: styles[i], stagedImageUrl: "" }, []);
+        break;
+      }
+      const style = styles[i];
+      const remaining = styles.slice(i + 1);
+      setProgressText(`Staging ${i + 1} of ${styles.length}: ${style}`);
+      const palette = state.palette && getPalettesForStyle(style).includes(state.palette) ? state.palette : "";
+      try {
+        const result = await stageRoom({ ...base, originalUrl: url, mode: "stage", style, palette });
+        const row = result.stagings[0];
+        onMultiProgress({ style, stagedImageUrl: row.staged_image_url, stagingId: row.id, isWatermarked: result.isWatermarked, mlsDisclosure: row.mls_disclosure }, cancelledRef.current ? [] : remaining);
+        done++;
+      } catch (err) {
+        const quota = err instanceof StagingError && err.isQuota;
+        toast.error(quota ? "You've used this month's stagings." : `${style}: ${err instanceof Error ? err.message : "failed"}`);
+        onMultiProgress({ style, stagedImageUrl: "" }, quota ? [] : remaining);
+        if (quota) break;
+      }
+    }
+    if (done > 0 && !cancelledRef.current) toast.success(`Staged in ${done} styles`);
+  };
+
+  const buttonLabel = compareRun
+    ? `Stage in ${state.compareStyles.length} styles`
+    : runCount > 1
+      ? `Generate ${runCount} options`
+      : actionLabel(state.tool);
 
   return (
-    <section id="upload-section" className="py-24 px-6">
-      <div className="max-w-4xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <p className="text-accent font-body text-sm tracking-[0.3em] uppercase mb-4">
-            Get Started
+    <section id="upload-section" className="py-16 sm:py-20 px-4 sm:px-6 scroll-mt-16">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">Stage a photo</h2>
+          <p className="mt-2 text-muted-foreground max-w-xl">
+            Drop in a listing photo, choose what to do with it, and get a finished image back in about a minute.
           </p>
-          <h2 className="font-display text-4xl md:text-5xl font-medium mb-4">
-            Upload Your Room
-          </h2>
-          <p className="font-body text-muted-foreground max-w-lg mx-auto">
-            Drop a photo of your vacant room and choose your preferred style.
-            Our AI will do the rest.
-          </p>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.1 }}
-        >
-          <AnimatePresence mode="wait">
-            {batchFiles ? (
-              <motion.div
-                key="batch"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-              >
-                <BatchStaging
-                  initialFiles={batchFiles}
-                  usage={usage}
-                  remainingStagings={remainingStagings}
-                  onStagingComplete={onStagingComplete}
-                  onExit={() => setBatchFiles(null)}
-                />
-              </motion.div>
-            ) : !image ? (
-              <motion.div
-                key="dropzone"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragOver(true);
-                }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className={`border border-dashed rounded-2xl p-16 text-center cursor-pointer transition-all duration-300 ${
-                  dragOver
-                    ? "border-accent/40 bg-accent/[0.04]"
-                    : "border-white/[0.08] hover:border-accent/30 bg-white/[0.02] backdrop-blur-sm"
-                }`}
-              >
-                <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="font-display text-xl mb-2">
-                  Drop your room photo here
+        {batchFiles ? (
+          <BatchStaging
+            initialFiles={batchFiles}
+            usage={usage}
+            remainingStagings={remainingStagings}
+            onStagingComplete={onStagingComplete}
+            onExit={() => setBatchFiles(null)}
+          />
+        ) : !image ? (
+          <div
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && fileInputRef.current?.click()}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              handleFiles(Array.from(e.dataTransfer.files));
+            }}
+            onClick={() => fileInputRef.current?.click()}
+            className={`rounded-xl border-2 border-dashed px-6 py-16 sm:py-24 text-center cursor-pointer transition-colors ${
+              dragOver ? "border-accent bg-accent-soft" : "border-border bg-card hover:border-foreground/30"
+            }`}
+          >
+            <Upload className="w-8 h-8 mx-auto mb-4 text-muted-foreground" aria-hidden />
+            <p className="text-lg font-medium">Drop a room photo here, or click to choose</p>
+            <p className="mt-1.5 text-sm text-muted-foreground">JPG, PNG or WebP up to 15 MB. Drop up to 15 photos to stage a whole listing.</p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                handleFiles(Array.from(e.target.files || []));
+                e.currentTarget.value = "";
+              }}
+            />
+          </div>
+        ) : (
+          <div className="grid lg:grid-cols-[minmax(0,1fr)_400px] gap-6 lg:gap-10 items-start">
+            <div className="lg:sticky lg:top-24">
+              <div className="relative rounded-xl overflow-hidden border border-border bg-card">
+                <img src={image} alt="Your photo" className="w-full max-h-[70vh] object-contain bg-muted" />
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3 text-sm">
+                <p className="text-muted-foreground flex items-center gap-1.5 min-w-0">
+                  <ScanSearch className="w-4 h-4 shrink-0" aria-hidden />
+                  <span className="truncate">{detectionText(detecting, detection)}</span>
                 </p>
-                <p className="font-body text-sm text-muted-foreground">
-                  or click to browse · JPG, PNG up to 10MB · drop up to 15 to stage as a batch
-                </p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files || []);
-                    if (files.length > 0) handleFiles(files);
-                    // Reset so re-picking the same file works
-                    e.currentTarget.value = "";
-                  }}
-                />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="preview"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <div className="relative rounded-2xl overflow-hidden shadow-elevated mb-8">
-                  <img
-                    src={image}
-                    alt="Uploaded vacant room"
-                    className="w-full h-80 object-cover"
-                  />
-                  <button
-                    onClick={() => setImage(null)}
-                    className="absolute top-4 right-4 bg-foreground/60 hover:bg-foreground/80 text-primary-foreground rounded-full p-2 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
+                <button type="button" onClick={resetPhoto} className="shrink-0 inline-flex items-center gap-1.5 font-medium text-foreground hover:text-accent">
+                  <RotateCcw className="w-4 h-4" aria-hidden />
+                  Use another photo
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border bg-background p-5 sm:p-6 space-y-6">
+              <ToolPicker value={state.tool} onChange={(t) => set("tool", t)} suggested={detection?.suggestedTool ?? null} />
+              <div className="border-t border-border" />
+              <StudioOptions state={state} set={set} isFree={isFree} isAdmin={isAdmin} maxCompare={maxCompare} adminModels={ADMIN_MODELS} />
+
+              {limitReached ? (
+                <div className="rounded-lg bg-card border border-border p-5 text-center">
+                  <Lock className="w-5 h-5 mx-auto mb-2 text-muted-foreground" aria-hidden />
+                  <p className="font-medium">
+                    {isFree ? `You've used your ${freeLimit} free stagings this month` : "You've used this month's stagings"}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1 mb-4">
+                    {isFree ? "Upgrade for hundreds a month, with no watermark." : "Your count resets 30 days after your cycle started."}
+                  </p>
+                  <button onClick={() => navigate("/pricing")} className="gold-gradient-animated h-10 px-5 rounded-md text-sm font-medium">
+                    See plans
                   </button>
-                  <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-foreground/60 text-primary-foreground rounded-lg px-3 py-1.5 text-sm font-body">
-                    <ImageIcon className="w-4 h-4" />
-                    Original Photo
-                  </div>
                 </div>
-
-                {/* Property name input */}
-                <div className="mb-8">
-                  <label className="font-body text-sm font-medium text-muted-foreground block mb-2">
-                    Property Name (optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={propertyName}
-                    onChange={(e) => setPropertyName(e.target.value)}
-                    placeholder="e.g., 123 Oak Street or Lakeside Condo"
-                    className="w-full font-body text-sm bg-white/[0.02] border border-white/[0.08] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all placeholder:text-muted-foreground/50"
-                  />
-                </div>
-
-                {/* Mode toggle: Stage vs Remove */}
-                <div className="mb-8">
-                  <label className="font-body text-sm font-medium text-muted-foreground block mb-3">
-                    What do you want to do?
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => setMode("stage")}
-                      className={`text-left p-4 rounded-xl border transition-all ${
-                        mode === "stage"
-                          ? "border-accent/40 bg-accent/[0.08]"
-                          : "border-border hover:border-accent/30"
-                      }`}
-                    >
-                      <p className={`font-display text-base font-medium mb-1 ${mode === "stage" ? "text-accent" : ""}`}>
-                        Add Furniture
-                      </p>
-                      <p className="font-body text-xs text-muted-foreground leading-snug">
-                        Stage an empty room with beautiful furniture & decor
-                      </p>
-                    </button>
+              ) : (
+                <div className="space-y-2.5 sticky bottom-0 -mx-5 sm:-mx-6 -mb-5 sm:-mb-6 px-5 sm:px-6 pb-5 sm:pb-6 pt-4 bg-background/95 backdrop-blur border-t border-border rounded-b-xl">
+                  <button
+                    onClick={handleStage}
+                    disabled={isProcessing}
+                    className="gold-gradient-animated w-full h-12 rounded-md font-medium disabled:opacity-70 inline-flex items-center justify-center gap-2"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
+                        {progressText || "Working…"}
+                      </>
+                    ) : (
+                      buttonLabel
+                    )}
+                  </button>
+                  {isProcessing && compareRun && (
                     <button
                       onClick={() => {
-                        setMode("remove");
-                        setCompareMode(false);
+                        cancelledRef.current = true;
                       }}
-                      className={`text-left p-4 rounded-xl border transition-all ${
-                        mode === "remove"
-                          ? "border-accent/40 bg-accent/[0.08]"
-                          : "border-border hover:border-accent/30"
-                      }`}
+                      className="w-full h-10 rounded-md border border-border text-sm text-muted-foreground hover:text-destructive hover:border-destructive/40"
                     >
-                      <p className={`font-display text-base font-medium mb-1 ${mode === "remove" ? "text-accent" : ""}`}>
-                        Remove Furniture
-                      </p>
-                      <p className="font-body text-xs text-muted-foreground leading-snug">
-                        De-stage a furnished room — show it empty
-                      </p>
+                      Stop after this style
                     </button>
-                  </div>
-                </div>
-
-                {/* MLS disclosure toggle (stage mode only) */}
-                {mode === "stage" && (
-                  <div className="mb-8 flex items-start justify-between gap-4 p-4 rounded-xl border border-border">
-                    <div className="min-w-0">
-                      <p className="font-body text-sm font-medium">MLS disclosure label</p>
-                      <p className="font-body text-xs text-muted-foreground leading-snug mt-0.5">
-                        Adds a subtle "Virtually Staged" label required by many MLS boards.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={mlsDisclosure}
-                      aria-label="Toggle MLS disclosure label"
-                      onClick={() => setMlsDisclosure((v) => !v)}
-                      className={`relative shrink-0 w-10 h-6 rounded-full transition-colors ${
-                        mlsDisclosure ? "bg-accent" : "bg-border"
-                      }`}
-                    >
-                      <span
-                        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-background shadow-sm transition-transform ${
-                          mlsDisclosure ? "translate-x-4" : "translate-x-0"
-                        }`}
-                      />
-                    </button>
-                  </div>
-                )}
-
-
-                {/* Options */}
-                <div className={`grid ${mode === "stage" ? "md:grid-cols-2" : "grid-cols-1"} gap-8 mb-6`}>
-                  <div>
-                    <label className="font-body text-sm font-medium text-muted-foreground block mb-3">
-                      Room Type
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {ROOM_TYPES.map((type) => (
-                        <button
-                          key={type}
-                          onClick={() => setRoomType(type)}
-                          className={`font-body text-sm px-4 py-2 rounded-lg border transition-all ${
-                            roomType === type
-                              ? "border-accent/30 bg-accent/[0.08] text-accent"
-                              : "border-border text-muted-foreground hover:border-accent/40"
-                          }`}
-                        >
-                          {type}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {mode === "stage" && (
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <label className="font-body text-sm font-medium text-muted-foreground">
-                          Design Style
-                        </label>
-                        <button
-                          onClick={() => {
-                            setCompareMode(!compareMode);
-                            if (!compareMode) {
-                              setSelectedStyles([style]);
-                            }
-                          }}
-                          className="flex items-center gap-1.5 font-body text-xs text-muted-foreground hover:text-accent transition-colors"
-                        >
-                          {compareMode ? (
-                            <ToggleRight className="w-4 h-4 text-accent" />
-                          ) : (
-                            <ToggleLeft className="w-4 h-4" />
-                          )}
-                          Compare styles
-                        </button>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {STYLES.map((s) => {
-                          const isSelected = compareMode
-                            ? selectedStyles.includes(s)
-                            : style === s;
-                          return (
-                            <button
-                              key={s}
-                              onClick={() => {
-                                if (compareMode) {
-                                  toggleStyleSelection(s);
-                                } else {
-                                  setStyle(s);
-                                }
-                              }}
-                              className={`font-body text-sm px-4 py-2 rounded-lg border transition-all ${
-                                isSelected
-                                  ? "border-accent/30 bg-accent/[0.08] text-accent"
-                                  : "border-border text-muted-foreground hover:border-accent/40"
-                              }`}
-                            >
-                              {s}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      {compareMode && (
-                        <p className="font-body text-[11px] text-muted-foreground/60 mt-2">
-                          Select 2–{maxCompareStyles} styles · Each counts as one staging
-                        </p>
-                      )}
-                    </div>
                   )}
+                  <p className={`text-xs text-center ${notEnough ? "text-destructive" : "text-muted-foreground"}`}>
+                    {isAdmin
+                      ? "Admin: unlimited"
+                      : `Uses ${runCount} staging${runCount === 1 ? "" : "s"} · ${remainingStagings} left this month`}
+                    {isFree ? " · Free results carry a watermark" : ""}
+                  </p>
                 </div>
-
-                {/* Output Aspect Ratio */}
-                <div className="mb-6">
-                  <label className="font-body text-sm font-medium text-muted-foreground block mb-3">
-                    Output Shape
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {ASPECT_RATIOS.map((ar) => (
-                      <button
-                        key={ar.value}
-                        onClick={() => setAspectRatio(ar.value)}
-                        className={`font-body text-sm px-4 py-2 rounded-lg border transition-all ${
-                          aspectRatio === ar.value
-                            ? "border-accent/30 bg-accent/[0.08] text-accent"
-                            : "border-border text-muted-foreground hover:border-accent/40"
-                        }`}
-                      >
-                        {ar.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Advanced Options */}
-                <div className="mb-6">
-                  <button
-                    onClick={() => setShowAdvanced(!showAdvanced)}
-                    className="flex items-center gap-1.5 font-body text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Advanced Options
-                    {showAdvanced ? (
-                      <ChevronUp className="w-3.5 h-3.5" />
-                    ) : (
-                      <ChevronDown className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-
-                  <AnimatePresence>
-                    {showAdvanced && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="mt-4">
-                          <label className="font-body text-sm font-medium text-muted-foreground block mb-2">
-                            Custom Instructions (optional)
-                          </label>
-                          <textarea
-                            value={customInstructions}
-                            onChange={(e) => {
-                              if (e.target.value.length <= MAX_INSTRUCTIONS) {
-                                setCustomInstructions(e.target.value);
-                              }
-                            }}
-                            placeholder="e.g., Add a fireplace, use warm earth tones, include a large area rug, keep it pet-friendly with durable furniture..."
-                            rows={3}
-                            className="w-full font-body text-sm bg-white/[0.02] border border-white/[0.06] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all placeholder:text-muted-foreground/50 resize-none"
-                          />
-                          <div className="flex items-center justify-between mt-1.5">
-                            <div className="flex flex-wrap gap-1.5">
-                              {INSTRUCTION_CHIPS.map((chip) => (
-                                <button
-                                  key={chip}
-                                  onClick={() => {
-                                    const separator = customInstructions.trim() ? ", " : "";
-                                    const newVal = customInstructions.trim() + separator + chip;
-                                    if (newVal.length <= MAX_INSTRUCTIONS) {
-                                      setCustomInstructions(newVal);
-                                    }
-                                  }}
-                                  className="border border-white/[0.06] hover:border-accent/25 px-3 py-1.5 rounded-full text-xs font-body text-muted-foreground hover:text-accent transition-all"
-                                >
-                                  {chip}
-                                </button>
-                              ))}
-                            </div>
-                            <span className={`font-body text-[11px] flex-shrink-0 ml-3 ${customInstructions.length > MAX_INSTRUCTIONS * 0.9 ? "text-destructive" : "text-muted-foreground/50"}`}>
-                              {customInstructions.length}/{MAX_INSTRUCTIONS}
-                            </span>
-                          </div>
-                        </div>
-
-                        {isAdmin && (
-                          <div className="mt-5">
-                            <label className="font-body text-sm font-medium text-muted-foreground block mb-2">
-                              Image model <span className="text-accent">· admin</span>
-                            </label>
-                            <select
-                              value={adminModel}
-                              onChange={(e) => setAdminModel(e.target.value)}
-                              className="w-full font-body text-sm bg-card border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all"
-                            >
-                              {ADMIN_MODELS.map((m) => (
-                                <option key={m.value} value={m.value}>{m.label}</option>
-                              ))}
-                            </select>
-                            <p className="font-body text-[11px] text-muted-foreground mt-1.5">
-                              Only you see this. Each result records which model made it.
-                            </p>
-                          </div>
-                        )}
-
-                        {mode === "stage" && !compareMode && (
-                          <div className="mt-5">
-                            <label className="font-body text-sm font-medium text-muted-foreground block mb-2">
-                              Coordinated palette (optional)
-                            </label>
-                            <select
-                              value={palette}
-                              onChange={(e) => setPalette(e.target.value)}
-                              className="w-full font-body text-sm bg-white/[0.02] border border-white/[0.06] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all appearance-none"
-                            >
-                              <option value="">Let AI decide</option>
-                              {getPalettesForStyle(style).map((p) => (
-                                <option key={p} value={p}>{p}</option>
-                              ))}
-                            </select>
-                            <p className="font-body text-[11px] text-muted-foreground/60 mt-1.5">
-                              Locks wood tones, textiles, and metal finishes for consistency across a listing.
-                            </p>
-                          </div>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                {/* Limit reached or stage button */}
-                <div className="mt-10">
-                  {limitReached ? (
-                    <div className="text-center py-6 border border-white/[0.06] rounded-2xl bg-white/[0.02]">
-                      <Lock className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
-                      <p className="font-display text-lg font-medium mb-1">
-                        {isFreePlan
-                          ? `You've used all ${freeLimit} free stagings this month`
-                          : "You've used all of this month's stagings"}
-                      </p>
-                      <p className="font-body text-sm text-muted-foreground mb-5">
-                        {isFreePlan
-                          ? "Upgrade for hundreds of stagings a month, with no watermark"
-                          : "Your count resets 30 days after your cycle started. Need more? Move up a plan."}
-                      </p>
-                      <button
-                        onClick={() => navigate("/pricing")}
-                        className="inline-block gold-gradient-animated text-accent-foreground font-body font-semibold text-sm px-8 py-3 rounded-lg hover:opacity-90 transition-opacity"
-                      >
-                        {isFreePlan ? "See plans" : "Compare plans"}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={handleStage}
-                        disabled={isProcessing}
-                        className="w-full gold-gradient-animated text-accent-foreground font-body font-semibold text-base py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity disabled:opacity-60"
-                      >
-                        {isProcessing ? (
-                          <span className="flex items-center justify-center gap-3">
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            {progressText || "Staging your room with AI..."}
-                          </span>
-                        ) : mode === "remove" ? (
-                          "Remove Furniture"
-                        ) : compareMode && selectedStyles.length > 1 ? (
-                          `Stage in ${selectedStyles.length} Styles`
-                        ) : (
-                          "Stage This Room"
-                        )}
-                      </motion.button>
-
-                      {/* Cancel button during multi-style processing */}
-                      {isProcessing && compareMode && selectedStyles.length > 1 && (
-                        <motion.button
-                          initial={{ opacity: 0, y: -5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          onClick={handleCancel}
-                          disabled={cancelledRef.current}
-                          className="w-full border border-border font-body text-sm py-3 rounded-lg text-muted-foreground hover:border-destructive/30 hover:text-destructive transition-colors flex items-center justify-center gap-2"
-                        >
-                          <StopCircle className="w-4 h-4" />
-                          Cancel Remaining Styles
-                        </motion.button>
-                      )}
-
-                      {/* Time estimate for multi-style */}
-                      {compareMode && selectedStyles.length > 1 && !isProcessing && (
-                        <p className="font-body text-xs text-muted-foreground/50 text-center">
-                          Comparing {selectedStyles.length} styles takes about {selectedStyles.length * 10}–{selectedStyles.length * 15} seconds total
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
 };
+
+function detectionText(detecting: boolean, d: ReturnType<typeof useRoomDetection>["detection"]): string {
+  if (detecting) return "Looking at your photo…";
+  if (!d) return "Choose a tool and options on the right";
+  if (d.exterior) return "Looks like an exterior shot";
+  const room = d.roomType ? d.roomType.toLowerCase() : "room";
+  if (d.furnished === "empty") return `Looks like an empty ${room}`;
+  if (d.furnished === "furnished") return `Looks like a furnished ${room}`;
+  return `Looks like a ${room}`;
+}
+
+function actionLabel(tool: ToolId): string {
+  switch (tool) {
+    case "stage":
+      return "Stage this room";
+    case "remove":
+      return "Remove furniture";
+    case "declutter":
+      return "Declutter photo";
+    case "recolor":
+      return "Preview new finish";
+    case "dusk":
+      return "Make it dusk";
+    case "sky":
+      return "Replace the sky";
+    case "lawn":
+      return "Refresh the lawn";
+  }
+}
+
+function progressFor(tool: ToolId, n: number): string {
+  if (n > 1) return `Generating ${n} options…`;
+  return tool === "stage" ? "Staging your room…" : `${actionLabel(tool)}…`;
+}
+
+function doneMessage(tool: ToolId, n: number): string {
+  if (n > 1) return `${n} options ready`;
+  return tool === "stage" ? "Room staged" : "Done";
+}
 
 export default RoomUploader;

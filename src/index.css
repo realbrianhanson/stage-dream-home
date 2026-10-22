@@ -4,48 +4,50 @@
 
 @layer base {
   :root {
-    --background: 40 33% 97%;
-    --foreground: 220 20% 14%;
+    /* Paper white, graphite ink, one survey-green accent. */
+    --background: 0 0% 100%;
+    --foreground: 210 14% 10%;
 
-    --card: 40 30% 95%;
-    --card-foreground: 220 20% 14%;
+    --card: 120 8% 97%;
+    --card-foreground: 210 14% 10%;
 
-    --popover: 40 33% 97%;
-    --popover-foreground: 220 20% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 14% 10%;
 
-    --primary: 220 20% 14%;
-    --primary-foreground: 40 33% 97%;
+    --primary: 210 14% 10%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 40 20% 90%;
-    --secondary-foreground: 220 20% 14%;
+    --secondary: 120 6% 94%;
+    --secondary-foreground: 210 14% 10%;
 
-    --muted: 40 15% 92%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 120 6% 95%;
+    --muted-foreground: 210 7% 38%;
 
-    --accent: 38 60% 55%;
-    --accent-foreground: 220 20% 14%;
+    --accent: 160 53% 24%;
+    --accent-foreground: 0 0% 100%;
+    --accent-soft: 152 30% 94%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 68% 46%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 40 15% 87%;
-    --input: 40 15% 87%;
-    --ring: 38 60% 55%;
+    --border: 120 5% 88%;
+    --input: 120 5% 84%;
+    --ring: 160 53% 30%;
 
-    --radius: 0.75rem;
+    --radius: 0.625rem;
 
     --sage: 150 10% 62%;
     --sage-foreground: 150 15% 20%;
 
-    --gradient-hero: linear-gradient(135deg, hsl(40 33% 97%), hsl(40 20% 90%));
-    --gradient-gold: linear-gradient(135deg, hsl(38 55% 45%), hsl(38 65% 52%), hsl(40 70% 62%), hsl(38 65% 52%), hsl(38 55% 45%));
-    --shadow-soft: 0 4px 24px -4px hsl(220 20% 14% / 0.08);
-    --shadow-elevated: 0 12px 40px -8px hsl(220 20% 14% / 0.12);
-    --shadow-dramatic: 0 25px 60px -12px hsl(220 20% 14% / 0.25);
-    --shadow-glow-gold: 0 0 30px hsl(38 60% 55% / 0.08);
+    --gradient-hero: linear-gradient(180deg, hsl(0 0% 100%), hsl(120 8% 97%));
+    --gradient-gold: hsl(160 53% 24%);
+    --shadow-soft: 0 1px 2px hsl(210 14% 10% / 0.05), 0 4px 16px -6px hsl(210 14% 10% / 0.08);
+    --shadow-elevated: 0 1px 2px hsl(210 14% 10% / 0.06), 0 12px 32px -12px hsl(210 14% 10% / 0.16);
+    --shadow-dramatic: 0 2px 4px hsl(210 14% 10% / 0.06), 0 24px 60px -20px hsl(210 14% 10% / 0.28);
+    --shadow-glow-gold: 0 0 0 1px hsl(160 53% 24% / 0.12);
 
-    --font-display: 'Cormorant Garamond', Georgia, serif;
-    --font-body: 'DM Sans', system-ui, sans-serif;
+    --font-display: 'Geist', system-ui, sans-serif;
+    --font-body: 'Geist', system-ui, sans-serif;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -114,7 +116,12 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 }
 
@@ -124,8 +131,8 @@
 }
 
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 20px hsl(38 60% 55% / 0.1); }
-  50% { box-shadow: 0 0 40px hsl(38 60% 55% / 0.18); }
+  0%, 100% { box-shadow: 0 0 0 0 hsl(160 53% 24% / 0.12); }
+  50% { box-shadow: 0 0 0 6px hsl(160 53% 24% / 0.06); }
 }
 
 @keyframes skeletonShimmer {
@@ -142,14 +149,15 @@
     background: var(--gradient-gold);
   }
 
+  /* Primary action fill (name kept from the old gold theme). */
   .gold-gradient-animated {
-    background: var(--gradient-gold);
-    background-size: 200% 100%;
-    transition: all 0.3s ease;
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    transition: background-color 0.15s ease;
   }
 
   .gold-gradient-animated:hover {
-    animation: shimmer 2s ease-in-out infinite;
+    background: hsl(160 53% 19%);
   }
 
   .shadow-soft {
@@ -187,7 +195,7 @@
     content: '';
     position: absolute;
     inset: 8px;
-    border: 1px solid hsl(38 60% 55% / 0.18);
+    border: 1px solid hsl(0 0% 100% / 0.35);
     border-radius: inherit;
     pointer-events: none;
     z-index: 1;
@@ -210,10 +218,10 @@
     transform: translateY(0.5px) scale(0.995);
   }
 
-  /* Refined gold focus ring for keyboard users */
+  /* Focus ring for keyboard users */
   :focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 3px hsl(38 60% 55% / 0.55);
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring) / 0.6);
     border-radius: 4px;
     transition: box-shadow 0.15s ease;
   }

@@ -7,10 +7,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useUsage } from "@/hooks/useUsage";
 import { stageRoom } from "@/lib/stagingApi";
+import type { ToolId } from "@/config/tools";
 
 export interface RefineContext {
   /** Saved staging behind `after`; refines edit its clean master. */
   stagingId?: string | null;
+  /** Tool that made `after`; regenerate re-runs the same tool. */
+  tool?: ToolId;
   roomType: string;
   style: string;
   propertyName?: string | null;
@@ -155,7 +158,7 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
   const stripRefinedSuffix = (s: string) => s.replace(/\s*\(refined\)\s*$/i, "");
 
   const runStaging = async (opts: {
-    mode: "stage" | "refine";
+    mode: ToolId | "refine";
     refineInstruction?: string;
     versionLabel: string;
   }) => {
@@ -175,7 +178,7 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
       const result = await stageRoom({
         mode: opts.mode,
         parentId: opts.mode === "refine" ? currentVersion.stagingId ?? undefined : undefined,
-        originalUrl: opts.mode === "stage" ? before : undefined,
+        originalUrl: opts.mode !== "refine" ? before : undefined,
         roomType: refineContext.roomType,
         style: stripRefinedSuffix(refineContext.style),
         refineInstruction: opts.refineInstruction,
@@ -221,9 +224,15 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
   const handleRegenerate = () => {
     if (!refineContext) return;
     const base = stripRefinedSuffix(refineContext.style);
+    // Re-run whatever made this image; legacy rows only know their style.
+    const tool: ToolId = refineContext.tool ?? (base === "Removed" ? "remove" : "stage");
+    if (tool === "recolor") {
+      toast.info("Run a new recolor from the studio to try another finish.");
+      return;
+    }
     runStaging({
-      mode: "stage",
-      versionLabel: `${base} · regen`,
+      mode: tool,
+      versionLabel: `${base} · new take`,
     });
   };
 

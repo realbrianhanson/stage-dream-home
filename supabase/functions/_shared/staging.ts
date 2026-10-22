@@ -1,8 +1,9 @@
 // Pure request/quota helpers for stage-room. No Deno or network imports so
 // vitest can cover them from src/test.
 import { isKnownRoomType, isKnownStyle } from "./catalog.ts";
+import { TOOL_IDS, isRecolorTarget, type RecolorTarget } from "./tools.ts";
 
-export const MODES = ["stage", "remove", "refine"] as const;
+export const MODES = [...TOOL_IDS, "refine"] as const;
 export type StageMode = (typeof MODES)[number];
 
 export interface StageRequest {
@@ -23,6 +24,8 @@ export interface StageRequest {
   propertyName: string;
   variations: number;
   model: string | null;
+  recolorTarget: RecolorTarget;
+  finish: string;
 }
 
 export type ParseResult =
@@ -34,6 +37,7 @@ export const MAX_REFINE = 240;
 export const MAX_PALETTE = 200;
 export const MAX_PROPERTY = 160;
 export const MAX_VARIATIONS = 4;
+export const MAX_FINISH = 80;
 export const VALID_RATIOS = ["16:9", "4:3", "3:4", "1:1"] as const;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -67,6 +71,10 @@ export function parseStageBody(body: unknown): ParseResult {
   if (mode === "refine" && !refineInstruction) {
     return { ok: false, code: "empty_refine", message: "Please describe what to change." };
   }
+  const finish = clip(b.finish, MAX_FINISH);
+  if (mode === "recolor" && !finish) {
+    return { ok: false, code: "empty_finish", message: "Describe the new color or material." };
+  }
 
   const ratio = typeof b.aspectRatio === "string" ? b.aspectRatio : "";
   const aspectRatio = (VALID_RATIOS as readonly string[]).includes(ratio) ? ratio : null;
@@ -88,10 +96,13 @@ export function parseStageBody(body: unknown): ParseResult {
       refineInstruction,
       palette: clip(b.palette, MAX_PALETTE),
       aspectRatio,
-      wantsMlsLabel: b.mls_disclosure === true && mode !== "remove",
+      // Removal and declutter show the real room; everything else is a virtual change.
+      wantsMlsLabel: b.mls_disclosure === true && mode !== "remove" && mode !== "declutter",
       propertyName: clip(b.propertyName, MAX_PROPERTY),
       variations: Math.min(MAX_VARIATIONS, Math.max(1, n)),
       model: typeof b.model === "string" ? b.model.slice(0, 80) : null,
+      recolorTarget: isRecolorTarget(b.recolorTarget) ? b.recolorTarget : "walls",
+      finish,
     },
   };
 }

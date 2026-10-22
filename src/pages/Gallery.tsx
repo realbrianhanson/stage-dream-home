@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Trash2, X, Upload, ArrowLeft, LogOut, Download, RefreshCw, Search, ChevronDown, ChevronRight, Share2, User, Home } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { StagingRow } from "@/lib/stagingApi";
+import { exportListingZip } from "@/lib/exportListing";
 import { useAuth } from "@/hooks/useAuth";
 import { useUsage } from "@/hooks/useUsage";
 import { toast } from "sonner";
@@ -126,26 +127,17 @@ const Gallery = () => {
     });
   };
 
-  const handleBulkDownload = async (groupStagings: Staging[]) => {
-    toast.info(`Downloading ${groupStagings.length} image${groupStagings.length > 1 ? "s" : ""}...`);
-    for (const staging of groupStagings) {
-      try {
-        const res = await fetch(staging.staged_image_url);
-        if (!res.ok) throw new Error("Fetch failed");
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        const ext = blob.type.includes("png") ? "png" : "jpg";
-        link.download = `${staging.room_type}-${staging.style}-${staging.id.slice(0, 8)}.${ext}`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      } catch (err) {
-        console.error("Bulk download item failed:", err);
-      }
-      await new Promise((r) => setTimeout(r, 400));
+  const handleBulkDownload = async (groupName: string, groupStagings: Staging[]) => {
+    const id = toast.loading(`Preparing ${groupStagings.length} photo${groupStagings.length === 1 ? "" : "s"}…`);
+    try {
+      const { failed } = await exportListingZip(groupName, groupStagings, (done, total) =>
+        toast.loading(`Adding photos ${done} of ${total}…`, { id }),
+      );
+      if (failed.length > 0) toast.warning(`Downloaded, but ${failed.length} photo${failed.length === 1 ? "" : "s"} couldn't be added.`, { id });
+      else toast.success("Listing photos downloaded", { id });
+    } catch (err) {
+      console.error("Export failed:", err);
+      toast.error("Couldn't build the download. Please try again.", { id });
     }
   };
 
@@ -364,11 +356,11 @@ const Gallery = () => {
                             </button>
                           )}
                           <button
-                            onClick={() => handleBulkDownload(groupStagings)}
+                            onClick={() => handleBulkDownload(groupName, groupStagings)}
                             className="font-body text-xs text-muted-foreground hover:text-accent border border-white/[0.06] hover:border-accent/30 rounded-lg px-3 py-1.5 flex items-center gap-1.5 transition-all"
                           >
                             <Download className="w-3 h-3" />
-                            Download All
+                            Download for MLS
                           </button>
                         </div>
                       </div>

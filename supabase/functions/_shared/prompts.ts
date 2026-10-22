@@ -8,7 +8,11 @@ export interface PromptInput {
   customInstructions?: string;
   refineInstruction?: string;
   palette?: string;
-  editTarget?: string;
+  /** Recolor: what to change and to what. */
+  recolorTarget?: string;
+  finish?: string;
+  /** Kind of the staging being refined, when refining. */
+  sourceKind?: string | null;
 }
 
 // Rules every edit shares. These keep results honest for MLS: the room the
@@ -52,8 +56,52 @@ ${PRESERVE}
 
 The result must look like a real photo of the same empty room.`;
 
+    case "declutter":
+      return `Edit this photo of a ${room}: declutter it the way a listing photographer's assistant would before a shoot.
+Remove personal items and clutter: papers, mail, toiletries, toys, pet items, cords, magnets and notes, small appliances on counters, laundry, shoes, excess decor and anything on the floor that isn't furniture.
+KEEP all furniture, rugs, curtains, art and lamps exactly where and as they are. Surfaces should look clean, styled and lived-in, not empty.
+
+${PRESERVE}
+
+The result must look like a real photo of the same room on photo day.`;
+
+    case "dusk":
+      return `Turn this daytime real estate photo into a twilight ("day to dusk") photo, as a professional real estate photographer would.
+- Sky: a natural deep-blue to warm-amber dusk gradient with a few soft clouds.
+- Turn on the home's existing lights: windows glow warm, existing exterior and landscape fixtures are lit, with soft realistic light spill.
+- Overall exposure slightly darker and cooler outside, warm and inviting where light falls.
+- Do not add light fixtures, windows or features that aren't already in the photo.
+
+${PRESERVE}`;
+
+    case "sky":
+      return `Replace the sky in this real estate photo with a clear, natural blue sky with a few soft white clouds.
+Match the new sky's light to the scene: gently brighten and warm the exterior so it looks like a sunny day, with consistent shadows.
+Mask carefully around rooflines, trees, wires and leaves so there are no halos or fringes. Change nothing below the skyline.
+
+${PRESERVE}`;
+
+    case "lawn":
+      return `Enhance the landscaping in this exterior real estate photo the way a photo editor would for a listing:
+- Make existing lawn areas look healthy, even and green with natural variation, and neatly edged.
+- Tidy existing garden beds with fresh dark mulch and remove weeds, leaves and debris.
+- Do not add trees, shrubs, flowers, pools, hardscape or structures that aren't already there, and don't change the house.
+
+${PRESERVE}`;
+
+    case "recolor": {
+      const target = p.recolorTarget ?? "walls";
+      const what =
+        target === "floors" ? "the flooring" : target === "cabinets" ? "the cabinet fronts and doors" : "the painted wall surfaces";
+      return `Edit this real estate photo to preview a renovation: change ${what} to: "${p.finish}".
+Change ONLY ${what}. Keep every other surface, the furniture, decor, trim, ceiling, counters, fixtures and lighting exactly as they are.
+Apply the new finish realistically: correct perspective, texture, sheen, and the same light and shadows that fall on it now.
+
+${PRESERVE.replace("Do not add, remove, resize or repair any permanent feature, and do not hide defects.", `Do not change anything other than ${what}.`)}`;
+    }
+
     case "refine":
-      return `This is a virtually staged real estate photo. Apply ONLY this change: "${p.refineInstruction}".
+      return `This is ${p.sourceKind === "remove" ? "a real estate photo of an empty room" : "a virtually staged real estate photo"}. Apply ONLY this change: "${p.refineInstruction}".
 Everything else stays identical: the same furniture, decor, layout, colors and materials, unless the change explicitly names them.
 
 ${PRESERVE}

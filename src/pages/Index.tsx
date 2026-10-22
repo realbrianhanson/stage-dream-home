@@ -90,11 +90,7 @@ const Index = () => {
     setStagingCount((prev) => prev + 1);
   }, []);
 
-  const handleMultiResult = (original: string, results: StagingResult[], isWatermarked?: boolean) => {
-    setResult({ type: "multi", original, results, pendingStyles: [], isWatermarked });
-    setStagingCount((prev) => prev + results.length);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -180,6 +176,7 @@ const Index = () => {
             mlsDisclosure={result.mlsDisclosure}
             refineContext={result.meta ? {
               stagingId: result.meta.stagingId,
+              tool: result.meta.tool,
               roomType: result.meta.roomType,
               style: result.meta.style,
               propertyName: result.meta.propertyName,
@@ -201,7 +198,6 @@ const Index = () => {
           <HeroSection onGetStarted={scrollToUpload} />
           <RoomUploader
             onResult={handleResult}
-            onMultiResult={handleMultiResult}
             onMultiStart={handleMultiStart}
             onMultiProgress={handleMultiProgress}
             initialImage={reStageState?.reStageImage}

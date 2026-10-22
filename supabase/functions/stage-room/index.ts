@@ -2,7 +2,8 @@ import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { Image, decode } from "https://deno.land/x/imagescript@1.2.17/mod.ts";
 import { ownedStoragePath, parseStageBody, reserveFailure, type StageRequest } from "../_shared/staging.ts";
 import { buildPrompt } from "../_shared/prompts.ts";
-import { imageDimensions } from "../_shared/sizing.ts";
+import { toolStyleLabel } from "../_shared/tools.ts";
+import { imageDimensions, sniffMime } from "../_shared/sizing.ts";
 import {
   DEFAULT_CHAIN,
   FAST_CHAIN,
@@ -21,6 +22,7 @@ const corsHeaders = {
 
 const GENERIC_ERROR = "Something went wrong staging your room. Please try again.";
 const PUBLIC_BUCKET = "stagings";
+const MAX_SOURCE_BYTES = 15 * 1024 * 1024;
 const MASTER_BUCKET = "staging-masters";
 
 const json = (status: number, body: unknown) =>
@@ -40,7 +42,7 @@ async function loadFont(): Promise<Uint8Array | null> {
   ];
   for (const url of sources) {
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: AbortSignal.timeout(5_000) });
       if (!res.ok) continue;
       cachedFont = new Uint8Array(await res.arrayBuffer());
       return cachedFont;
@@ -71,10 +73,17 @@ interface Finish {
  * resolution; if the disclosure or watermark can't be drawn we fail rather
  * than ship an unlabelled image.
  */
-async function finishImage(src: GeneratedImage, opts: Finish): Promise<Uint8Array> {
+interface Finished {
+  bytes: Uint8Array;
+  mime: string;
+  ext: string;
+}
+
+async function finishImage(src: GeneratedImage, opts: Finish): Promise<Finished> {
   const needsPaint = opts.watermark || opts.mlsLabel;
-  const isJpeg = src.mime.includes("jpeg") || src.mime.includes("jpg");
-  if (!needsPaint && isJpeg) return src.bytes;
+  const mime = sniffMime(src.bytes);
+  // Nothing to paint: store the model's file as-is and skip a costly re-encode.
+  if (!needsPaint && mime) return { bytes: src.bytes, mime, ext: mime.split("/")[1].replace("jpeg", "jpg") };
 
   const decoded = await decode(src.bytes);
   if (!(decoded instanceof Image)) throw new Error("Unsupported image format");
@@ -92,7 +101,7 @@ async function finishImage(src: GeneratedImage, opts: Finish): Promise<Uint8Arra
       paintText(img, font, "Staged free with RealVision", Math.max(20, Math.round(img.width * 0.022)), 0xffffffcc, "right", "bottom");
     }
   }
-  return await img.encodeJPEG(90);
+  return { bytes: await img.encodeJPEG(90), mime: "image/jpeg", ext: "jpg" };
 }
 
 // --- Request handling ----------------------------------------------------------
@@ -144,7 +153,9 @@ async function sourceFrom(bytes: Uint8Array, mime: string): Promise<SourceImage>
 async function download(admin: SupabaseClient, bucket: string, path: string) {
   const { data, error } = await admin.storage.from(bucket).download(path);
   if (error || !data) throw new Error(`download_failed: ${bucket}/${path}`);
-  return { bytes: new Uint8Array(await data.arrayBuffer()), mime: data.type || "image/jpeg" };
+  if (data.size > MAX_SOURCE_BYTES) throw new Error("source_too_large");
+  const bytes = new Uint8Array(await data.arrayBuffer());
+  return { bytes, mime: sniffMime(bytes) ?? "image/jpeg" };
 }
 
 /** Load the photo to edit, making sure it belongs to the caller. */
@@ -153,8 +164,10 @@ async function loadSource(r: StageRequest, userId: string, admin: SupabaseClient
     const { data: parent } = await admin.from("stagings").select("*").eq("id", r.parentId).maybeSingle();
     if (!parent || parent.user_id !== userId) return fail(404, "That staging could not be found.", "parent_not_found");
     // Refines start from the clean master so labels and watermarks never stack.
-    const file = parent.master_path
-      ? await download(admin, MASTER_BUCKET, parent.master_path as string)
+    const master = typeof parent.master_path === "string" ? parent.master_path : "";
+    const ownMaster = master.startsWith(`${userId}/`) && !master.includes("..");
+    const file = ownMaster
+      ? await download(admin, MASTER_BUCKET, master)
       : await download(admin, PUBLIC_BUCKET, ownedStoragePath(parent.staged_image_url as string, supabaseUrl, userId) ?? "");
     return { image: await sourceFrom(file.bytes, file.mime), originalUrl: parent.original_image_url as string, parent };
   }
@@ -167,8 +180,16 @@ async function loadSource(r: StageRequest, userId: string, admin: SupabaseClient
   }
 
   // Legacy clients send the photo inline; store it so the staging has an original.
-  const { bytes, mime } = dataUrlToBytes(r.imageData ?? "");
-  if (bytes.length === 0) return fail(400, "Please upload an image to stage", "empty_image");
+  let decoded: { bytes: Uint8Array; mime: string };
+  try {
+    decoded = dataUrlToBytes(r.imageData ?? "");
+  } catch {
+    return fail(400, "That image couldn't be read. Try a JPG or PNG.", "bad_image_data");
+  }
+  const { bytes } = decoded;
+  const mime = sniffMime(bytes);
+  if (!mime) return fail(400, "That image couldn't be read. Try a JPG or PNG.", "bad_image_data");
+  if (bytes.length > MAX_SOURCE_BYTES) return fail(413, "That photo is too large. Please use one under 15 MB.", "source_too_large");
   const ext = mime.includes("png") ? "png" : mime.includes("webp") ? "webp" : "jpg";
   const path = `${userId}/${crypto.randomUUID()}/original.${ext}`;
   const { error } = await admin.storage.from(PUBLIC_BUCKET).upload(path, bytes, { contentType: mime });
@@ -178,7 +199,7 @@ async function loadSource(r: StageRequest, userId: string, admin: SupabaseClient
 }
 
 /** Reserve up to `want` credits; returns how many were granted and the first refusal. */
-async function reserveCredits(client: SupabaseClient, userId: string, want: number) {
+async function reserveCredits(client: SupabaseClient, userId: string, want: number, ctx: Ctx) {
   let granted = 0;
   let refusal: string | null = null;
   for (let i = 0; i < want; i++) {
@@ -195,6 +216,7 @@ async function reserveCredits(client: SupabaseClient, userId: string, want: numb
       break;
     }
     granted++;
+    ctx.reserved = granted;
   }
   return { granted, refusal };
 }
@@ -222,11 +244,12 @@ async function saveImage(image: GeneratedImage, c: SaveCtx): Promise<Record<stri
   const id = crypto.randomUUID();
   const finished = await finishImage(image, { watermark: c.isFree, mlsLabel: r.wantsMlsLabel });
 
-  const masterPath = `${userId}/${id}.${image.mime.includes("png") ? "png" : "jpg"}`;
-  const stagedPath = `${userId}/${id}/staged.jpg`;
+  const masterMime = sniffMime(image.bytes) ?? "image/png";
+  const masterPath = `${userId}/${id}.${masterMime === "image/jpeg" ? "jpg" : masterMime.split("/")[1]}`;
+  const stagedPath = `${userId}/${id}/staged.${finished.ext}`;
   const [m, s] = await Promise.all([
-    admin.storage.from(MASTER_BUCKET).upload(masterPath, image.bytes, { contentType: image.mime }),
-    admin.storage.from(PUBLIC_BUCKET).upload(stagedPath, finished, { contentType: "image/jpeg" }),
+    admin.storage.from(MASTER_BUCKET).upload(masterPath, image.bytes, { contentType: masterMime }),
+    admin.storage.from(PUBLIC_BUCKET).upload(stagedPath, finished.bytes, { contentType: finished.mime }),
   ]);
   if (s.error) throw new Error(`staged_upload_failed: ${s.error.message}`);
   if (m.error) console.error("master upload failed:", m.error);
@@ -240,9 +263,12 @@ async function saveImage(image: GeneratedImage, c: SaveCtx): Promise<Record<stri
       original_image_url: source.originalUrl,
       staged_image_url: admin.storage.from(PUBLIC_BUCKET).getPublicUrl(stagedPath).data.publicUrl,
       room_type: r.roomType,
-      style: r.mode === "refine" ? `${r.style} (refined)` : r.mode === "remove" ? "Removed" : r.style,
+      style:
+        r.mode === "refine"
+          ? `${parent?.kind && parent.kind !== "stage" ? String(parent.style).replace(/\s*\(refined\)$/, "") : r.style} (refined)`
+          : toolStyleLabel(r.mode, r.style, r.recolorTarget),
       property_address: r.propertyName || (parent?.property_address as string | null) || null,
-      custom_instructions: r.mode === "refine" ? r.refineInstruction : r.customInstructions || null,
+      custom_instructions: r.mode === "refine" ? r.refineInstruction : r.mode === "recolor" ? r.finish : r.customInstructions || null,
       aspect_ratio: r.aspectRatio,
       mls_disclosure: r.wantsMlsLabel,
       staging_palette: r.palette || null,
@@ -253,7 +279,14 @@ async function saveImage(image: GeneratedImage, c: SaveCtx): Promise<Record<stri
     })
     .select("*")
     .single();
-  if (error) throw new Error(`staging_insert_failed: ${error.message}`);
+  if (error) {
+    // Don't leave files behind for a row that doesn't exist.
+    await Promise.all([
+      admin.storage.from(PUBLIC_BUCKET).remove([stagedPath]),
+      m.error ? Promise.resolve() : admin.storage.from(MASTER_BUCKET).remove([masterPath]),
+    ]);
+    throw new Error(`staging_insert_failed: ${error.message}`);
+  }
   return row;
 }
 
@@ -285,23 +318,31 @@ async function handle(req: Request, ctx: Ctx, admin: SupabaseClient): Promise<Ou
   ctx.plan = plan;
   const isFree = plan === "free";
 
-  const source = await loadSource(r, user.id, admin, supabaseUrl);
-  if ("response" in source) return source;
+  // Labels are painted in CPU-bound code; keep painted runs small so we stay
+  // inside the edge CPU budget. Free runs are always a single image.
+  const paints = isFree || r.wantsMlsLabel;
+  const want = isFree ? 1 : paints ? Math.min(r.variations, 2) : r.variations;
 
-  const { granted, refusal } = await reserveCredits(userClient, user.id, r.variations);
-  ctx.reserved = granted;
+  const { granted, refusal } = await reserveCredits(userClient, user.id, want, ctx);
   if (granted === 0) {
     const { status, message } = reserveFailure(refusal ?? "no_usage", plan);
     return fail(status, message, refusal ?? "no_usage");
   }
 
+  // Loaded after reserving so the rate limit covers it; failures refund.
+  const source = await loadSource(r, user.id, admin, supabaseUrl);
+  if ("response" in source) return source;
+
   const prompt = buildPrompt({
     mode: r.mode,
+    sourceKind: (source.parent?.kind as string | undefined) ?? null,
     roomType: r.roomType,
     style: r.style,
     customInstructions: r.customInstructions,
     refineInstruction: r.refineInstruction,
     palette: r.palette,
+    recolorTarget: r.recolorTarget,
+    finish: r.finish,
   });
 
   let generated;
@@ -310,7 +351,7 @@ async function handle(req: Request, ctx: Ctx, admin: SupabaseClient): Promise<Ou
       apiKey,
       prompt,
       image: source.image,
-      aspectRatio: r.mode === "refine" ? null : r.aspectRatio,
+      aspectRatio: r.mode === "stage" ? r.aspectRatio : null,
       n: granted,
       hd: !isFree,
     });

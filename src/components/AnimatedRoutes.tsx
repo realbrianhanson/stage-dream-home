@@ -16,6 +16,8 @@ const Terms = lazy(() => import("@/pages/Terms"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const CheckoutSuccess = lazy(() => import("@/pages/CheckoutSuccess"));
 const CheckoutCancel = lazy(() => import("@/pages/CheckoutCancel"));
+// Dev-only UI review page; Vite drops it from production builds.
+const DevStudio = import.meta.env.DEV ? lazy(() => import("@/pages/DevStudio")) : null;
 
 const RouteFallback = () => (
   <div className="min-h-screen bg-background grain-overlay flex flex-col items-center justify-center gap-5">
@@ -53,6 +55,7 @@ const AnimatedRoutes = () => {
           <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
           <Route path="/billing/success" element={<PageTransition><CheckoutSuccess /></PageTransition>} />
           <Route path="/billing/cancel" element={<PageTransition><CheckoutCancel /></PageTransition>} />
+          {DevStudio && <Route path="/__studio" element={<DevStudio />} />}
           <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
         </Routes>
       </AnimatePresence>

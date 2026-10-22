@@ -2,9 +2,11 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { uploadStagingImage } from "@/lib/uploadStagingImage";
 
+import type { ToolId, RecolorTarget } from "@/config/tools";
+
 export type StagingRow = Tables<"stagings">;
 
-export type StageMode = "stage" | "remove" | "refine";
+export type StageMode = ToolId | "refine";
 
 export interface StageParams {
   /** Public URL of an original already in the user's folder. */
@@ -23,6 +25,8 @@ export interface StageParams {
   variations?: number;
   /** Admin-only model override. */
   model?: string;
+  recolorTarget?: RecolorTarget;
+  finish?: string;
 }
 
 export interface StageResult {
@@ -84,6 +88,8 @@ export async function stageRoom(params: StageParams): Promise<StageResult> {
       propertyName: params.propertyName || undefined,
       variations: params.variations ?? 1,
       model: params.model || undefined,
+      recolorTarget: params.mode === "recolor" ? params.recolorTarget : undefined,
+      finish: params.mode === "recolor" ? params.finish : undefined,
     },
   });
   if (error) throw await readError(error);

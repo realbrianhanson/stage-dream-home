@@ -13,8 +13,8 @@ export default {
       },
     },
     fontFamily: {
-      display: ['Cormorant Garamond', 'Georgia', 'serif'],
-      body: ['DM Sans', 'system-ui', 'sans-serif'],
+      display: ['Geist', 'system-ui', 'sans-serif'],
+      body: ['Geist', 'system-ui', 'sans-serif'],
     },
     extend: {
       colors: {
@@ -42,6 +42,7 @@ export default {
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
+          soft: "hsl(var(--accent-soft))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",

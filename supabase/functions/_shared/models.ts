@@ -1,6 +1,6 @@
 // Image-model calls through the Lovable AI gateway, with a fallback chain so a
 // retired or misbehaving model degrades to the next one instead of failing.
-import { gptImageSize, geminiAspect } from "./sizing.ts";
+import { gptImageSize, geminiAspect, sniffMime } from "./sizing.ts";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1";
 
@@ -68,15 +68,13 @@ function bytesToB64(bytes: Uint8Array): string {
 }
 
 async function fromUrlOrB64(item: { b64_json?: string; url?: string }): Promise<GeneratedImage> {
-  if (item.b64_json) return { bytes: b64ToBytes(item.b64_json), mime: "image/jpeg" };
-  if (item.url?.startsWith("data:")) {
-    const [head, b64] = item.url.split(",");
-    return { bytes: b64ToBytes(b64), mime: head.match(/:(.*?);/)?.[1] ?? "image/png" };
-  }
+  const typed = (bytes: Uint8Array): GeneratedImage => ({ bytes, mime: sniffMime(bytes) ?? "image/png" });
+  if (item.b64_json) return typed(b64ToBytes(item.b64_json));
+  if (item.url?.startsWith("data:")) return typed(b64ToBytes(item.url.split(",")[1] ?? ""));
   if (item.url) {
-    const r = await fetch(item.url);
+    const r = await fetch(item.url, { signal: AbortSignal.timeout(20_000) });
     if (!r.ok) throw new GatewayError(502, "image_url_fetch_failed");
-    return { bytes: new Uint8Array(await r.arrayBuffer()), mime: r.headers.get("content-type") ?? "image/png" };
+    return typed(new Uint8Array(await r.arrayBuffer()));
   }
   throw new GatewayError(502, "no_image_in_response");
 }
@@ -148,12 +146,17 @@ async function geminiOnce(model: string, a: GenerateArgs, withConfig: boolean): 
 
 async function geminiEdit(model: string, a: GenerateArgs): Promise<GeneratedImage[]> {
   const withConfig = !model.includes("2.5-flash");
-  return Promise.all(Array.from({ length: a.n }, () => geminiOnce(model, a, withConfig)));
+  // Keep every variation that worked; only fail if none did.
+  const settled = await Promise.allSettled(Array.from({ length: a.n }, () => geminiOnce(model, a, withConfig)));
+  const images = settled.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+  if (images.length === 0) throw (settled[0] as PromiseRejectedResult).reason;
+  return images;
 }
 
-// Edge functions get ~150s of wall clock. Leave room for saving the result.
-const TOTAL_BUDGET_MS = 135_000;
-const PER_MODEL_MS = 100_000;
+// Edge functions get ~150s of wall clock. Leave plenty for saving the result
+// and refunding credits, which a killed isolate would never reach.
+const TOTAL_BUDGET_MS = 110_000;
+const PER_MODEL_MS = 80_000;
 const MIN_ATTEMPT_MS = 20_000;
 
 /** Try each model in turn until one returns images, within the time budget. */
