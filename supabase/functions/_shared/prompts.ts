@@ -29,6 +29,16 @@ const REALISM = `REALISM:
 - Photorealistic materials and textures. No warped lines, floating objects, duplicated items, text, logos, watermarks, people or pets.
 - The result must look like a professionally photographed, professionally staged home, indistinguishable from a real photo.`;
 
+// A staged room has to make sense to walk through. A one-line "keep doorways
+// clear" in REALISM wasn't enough: models parked sofas and side tables in
+// front of archways.
+const LAYOUT = `LAYOUT (plan it the way a professional stager walks the room):
+- First find every doorway, archway, cased opening, hallway and staircase in the photo. Keep each one completely clear: no furniture, side table, lamp or plant stands in front of it, inside it or across its trim from this camera angle.
+- Leave a walking path at least 3 feet (90 cm) wide from each opening into the room and between furniture groups.
+- Place sofas, beds, consoles and cabinets against solid wall or float them in open floor space, sized so they stop well short of any opening. Never let a piece, its side table or its lamp sit in front of an opening.
+- Don't block windows with tall pieces.
+- Fewer, well-scaled pieces beat a crowded room: if something can't fit without blocking an opening or a path, leave it out.`;
+
 /** User text goes in a fenced block that can steer taste but not override the rules. */
 const clientNotes = (text: string | undefined) =>
   text
@@ -112,6 +122,8 @@ ${REALISM}`;
       return `Virtually stage this photo of an empty ${room} for a real estate listing in a ${style} style${styleGuide ? ` (${styleGuide})` : ""}.
 Furnish it the way a top professional stager would: ${roomGuide}.${palette}
 Arrange pieces so the room reads as spacious, inviting and livable, with a clear focal point.
+
+${LAYOUT}
 
 ${PRESERVE}
 
