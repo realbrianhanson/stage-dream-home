@@ -280,6 +280,8 @@ export type Database = {
         Returns: {
           created_at: string
           id: string
+          kind: string
+          mls_disclosure: boolean
           original_image_url: string
           property_address: string
           room_type: string
