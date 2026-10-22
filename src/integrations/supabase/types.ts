@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
@@ -82,6 +82,7 @@ export type Database = {
           id: string
           kind: string
           mls_disclosure: boolean
+          model: string | null
           plan: string | null
           room_type: string | null
           style: string | null
@@ -95,6 +96,7 @@ export type Database = {
           id?: string
           kind: string
           mls_disclosure?: boolean
+          model?: string | null
           plan?: string | null
           room_type?: string | null
           style?: string | null
@@ -108,6 +110,7 @@ export type Database = {
           id?: string
           kind?: string
           mls_disclosure?: boolean
+          model?: string | null
           plan?: string | null
           room_type?: string | null
           style?: string | null
@@ -198,15 +201,23 @@ export type Database = {
           style?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stagings_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "stagings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       usage: {
         Row: {
           created_at: string
           id: string
+          is_admin: boolean
           month_reset_at: string | null
           onboarding_complete: boolean
-          is_admin: boolean
           plan: string
           rl_window_count: number
           rl_window_start: string
@@ -218,9 +229,9 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_admin?: boolean
           month_reset_at?: string | null
           onboarding_complete?: boolean
-          is_admin?: boolean
           plan?: string
           rl_window_count?: number
           rl_window_start?: string
@@ -232,9 +243,9 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_admin?: boolean
           month_reset_at?: string | null
           onboarding_complete?: boolean
-          is_admin?: boolean
           plan?: string
           rl_window_count?: number
           rl_window_start?: string
@@ -264,8 +275,6 @@ export type Database = {
           stagings: Json
         }[]
       }
-      plan_monthly_limit: { Args: { p_plan: string }; Returns: number }
-      reserve_staging: { Args: never; Returns: string }
       get_shared_staging: {
         Args: { p_token: string }
         Returns: {
@@ -278,6 +287,8 @@ export type Database = {
           style: string
         }[]
       }
+      plan_monthly_limit: { Args: { p_plan: string }; Returns: number }
+      reserve_staging: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
