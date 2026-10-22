@@ -8,6 +8,7 @@ import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
 import { PRICING_PLANS } from "@/config/pricing";
+import { thumbUrl } from "@/lib/imageUrl";
 
 interface Agent {
   display_name?: string | null;
@@ -223,7 +224,7 @@ const ListingPage = () => {
                     >
                       <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-border">
                         <ProgressiveImage
-                          src={s.staged_image_url}
+                          src={thumbUrl(s.staged_image_url)}
                           alt={`${s.room_type}, ${s.style}`}
                           wrapperClassName="absolute inset-0"
                           className="transition-transform duration-500 ease-out group-hover:scale-[1.02] motion-reduce:transition-none"

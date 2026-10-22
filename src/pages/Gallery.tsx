@@ -30,6 +30,7 @@ import ListingShareDialog from "@/components/ListingShareDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
 import { isToolId } from "@/config/tools";
+import { thumbUrl } from "@/lib/imageUrl";
 
 type Staging = StagingRow;
 
@@ -82,7 +83,7 @@ const StagingCard = ({ staging, onOpen, onShare, onReStage, onDelete }: StagingC
       >
         <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-border bg-muted">
           <ProgressiveImage
-            src={staging.staged_image_url}
+            src={thumbUrl(staging.staged_image_url)}
             alt={label}
             wrapperClassName="absolute inset-0"
             className="transition-transform duration-500 ease-out group-hover:scale-[1.02] motion-reduce:transition-none"
