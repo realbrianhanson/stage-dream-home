@@ -2,17 +2,17 @@ import LegalPage from "@/components/LegalPage";
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <section>
-    <h2 className="font-display text-2xl sm:text-3xl font-medium text-foreground mb-4">{title}</h2>
-    <div className="space-y-3 text-[15px]">{children}</div>
+    <h2 className="font-display text-xl font-semibold tracking-tight text-foreground mb-3">{title}</h2>
+    <div className="space-y-3">{children}</div>
   </section>
 );
 
 const Terms = () => {
   return (
     <LegalPage eyebrow="Legal" title="Terms of Service" updated="April 2026">
-      <p className="text-[15px] text-muted-foreground italic">
-        By using RealVision, you agree to the following terms. Please read them carefully —
-        they govern your relationship with our service.
+      <p className="text-lg text-muted-foreground">
+        By using RealVision, you agree to these terms. They govern your use of the service,
+        so please read them carefully.
       </p>
 
       <Section title="The Service">
@@ -32,7 +32,7 @@ const Terms = () => {
 
       <Section title="Acceptable Use">
         <p>You agree not to:</p>
-        <ul className="list-disc list-outside pl-5 space-y-2 marker:text-accent">
+        <ul className="list-disc list-outside pl-5 space-y-2 marker:text-muted-foreground">
           <li>Upload images you do not have rights to use.</li>
           <li>Use the service to generate misleading, fraudulent, or deceptive content.</li>
           <li>Attempt to reverse-engineer, scrape, or abuse our infrastructure.</li>
@@ -91,7 +91,7 @@ const Terms = () => {
       <Section title="Contact">
         <p>
           For any questions regarding these Terms, reach out to{" "}
-          <a href="mailto:support@realvision.ai" className="text-accent hover:underline">
+          <a href="mailto:support@realvision.ai" className="text-accent underline-offset-4 hover:underline">
             support@realvision.ai
           </a>
           .

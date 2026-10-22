@@ -135,6 +135,11 @@
   50% { box-shadow: 0 0 0 6px hsl(160 53% 24% / 0.06); }
 }
 
+@keyframes heroEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
 @keyframes skeletonShimmer {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
@@ -207,6 +212,11 @@
     inset: 0;
     pointer-events: none;
     background: radial-gradient(ellipse at center, transparent 50%, hsl(220 20% 8% / 0.45) 100%);
+  }
+
+  /* The landing page's one entrance moment. */
+  .hero-enter {
+    animation: heroEnter 0.4s ease-out both;
   }
 
   .animate-pulse-glow {

@@ -13,11 +13,11 @@ interface DimensionPreset {
 }
 
 const PRESETS: DimensionPreset[] = [
-  { label: "Original Size", width: null, height: null, description: "No resizing" },
-  { label: "MLS Standard", width: 1024, height: 768, description: "1024 × 768" },
-  { label: "Web Optimized", width: 800, height: 600, description: "800 × 600" },
-  { label: "Social Square", width: 1024, height: 1024, description: "1024 × 1024" },
-  { label: "MLS Print (3000px)", width: null, height: null, longEdge: 3000, description: "High-res, long edge 3000px", paidOnly: true },
+  { label: "Original size", width: null, height: null, description: "Full resolution, no resizing" },
+  { label: "MLS standard", width: 1024, height: 768, description: "1024 × 768, a common MLS size" },
+  { label: "Website", width: 800, height: 600, description: "800 × 600, small and fast" },
+  { label: "Social square", width: 1024, height: 1024, description: "1024 × 1024 for Instagram and Facebook" },
+  { label: "MLS print", width: null, height: null, longEdge: 3000, description: "3000 px on the long edge", paidOnly: true },
 ];
 
 type Format = "jpg" | "png";
@@ -185,14 +185,14 @@ const DownloadWithPresets = ({
       await triggerBlobDownload(blob, `${filename}${dims}${mlsTag}.${format}`);
     } catch (err) {
       console.error("Download failed:", err);
-      toast.error("Failed to prepare download — retrying with original file.");
+      toast.error("Couldn't resize the photo. Downloading the original file instead.");
       try {
         const res = await fetch(imageUrl);
         const blob = await res.blob();
         const mlsTag = mlsDisclosure ? "-virtually-staged" : "";
         await triggerBlobDownload(blob, `${filename}${mlsTag}.${format}`);
       } catch {
-        toast.error("Download failed. Please try again.");
+        toast.error("Download failed. Check your connection and try again.");
       }
     } finally {
       setProcessing(false);
@@ -201,44 +201,52 @@ const DownloadWithPresets = ({
 
   const btnBase =
     variant === "gold"
-      ? "gold-gradient-animated text-accent-foreground font-body font-semibold text-sm px-8 py-3 rounded-lg"
-      : "w-10 h-10 rounded-lg border border-white/[0.06] text-muted-foreground hover:text-accent hover:border-accent/20 flex items-center justify-center transition-colors";
+      ? "gold-gradient-animated h-11 px-5 text-sm font-medium rounded-md"
+      : "h-10 w-10 justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-card hover:text-foreground transition-colors";
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative" ref={menuRef} onKeyDown={(e) => e.key === "Escape" && setOpen(false)}>
       <button
+        type="button"
         onClick={() => setOpen(!open)}
         disabled={processing}
-        className={`${btnBase} flex items-center gap-2`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={variant === "gold" ? undefined : "Download"}
+        className={`${btnBase} inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-60`}
       >
-        <Download className="w-4 h-4" />
+        <Download className="h-4 w-4" />
         {variant === "gold" && (
           <>
-            {processing ? "Processing..." : "Download"}
-            <ChevronDown className="w-3.5 h-3.5 ml-0.5" />
+            {processing ? "Preparing…" : "Download"}
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
           </>
         )}
       </button>
 
       {open && (
-        <div className="absolute bottom-full mb-2 right-0 z-50 min-w-[240px] rounded-xl border border-white/[0.08] bg-background/95 backdrop-blur-lg shadow-dramatic overflow-hidden">
-          {/* Format toggle */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06]">
-            <span className="font-body text-[11px] tracking-wider uppercase text-muted-foreground/70">
-              Format
+        <div
+          role="menu"
+          aria-label="Download size"
+          className="absolute bottom-full right-0 z-50 mb-2 w-[min(17rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-border bg-background shadow-soft"
+        >
+          <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2.5">
+            <span className="text-xs font-medium text-muted-foreground" id="download-format-label">
+              File type
             </span>
-            <div className="flex gap-1">
+            <div role="radiogroup" aria-labelledby="download-format-label" className="flex rounded-md border border-border p-0.5">
               {(["jpg", "png"] as Format[]).map((f) => (
                 <button
                   key={f}
+                  type="button"
+                  role="radio"
+                  aria-checked={format === f}
                   onClick={(e) => {
                     e.stopPropagation();
                     setFormat(f);
                   }}
-                  className={`font-body text-[11px] font-semibold uppercase px-2.5 py-1 rounded-md transition-colors ${
-                    format === f
-                      ? "bg-accent/15 text-accent border border-accent/25"
-                      : "text-muted-foreground/70 border border-transparent hover:text-foreground"
+                  className={`rounded-[5px] px-2.5 py-1 text-xs font-medium uppercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    format === f ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {f}
@@ -247,45 +255,45 @@ const DownloadWithPresets = ({
             </div>
           </div>
 
-          {PRESETS.map((preset) => {
-            const disabled = isPresetDisabled(preset);
-            const lockedForPlan = preset.paidOnly && !isPaid;
-            return (
-              <button
-                key={preset.label}
-                onClick={() => handleDownload(preset)}
-                disabled={disabled}
-                className={`w-full text-left px-4 py-2.5 font-body text-sm transition-colors ${
-                  disabled
-                    ? "text-muted-foreground/30 cursor-not-allowed"
-                    : "text-foreground hover:bg-accent/[0.06] hover:text-accent"
-                }`}
-                title={
-                  lockedForPlan
-                    ? "Available on paid plans"
-                    : disabled
-                    ? "Source image too small for this size"
-                    : undefined
-                }
-              >
-                <span className="flex items-center gap-1.5 font-medium text-xs">
-                  {preset.label}
+          <div className="py-1">
+            {PRESETS.map((preset) => {
+              const disabled = isPresetDisabled(preset);
+              const lockedForPlan = preset.paidOnly && !isPaid;
+              return (
+                <button
+                  key={preset.label}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => handleDownload(preset)}
+                  disabled={disabled}
+                  className={`flex w-full items-start justify-between gap-3 px-3 py-2 text-left transition-colors focus-visible:bg-card focus-visible:outline-none ${
+                    disabled ? "cursor-not-allowed opacity-50" : "hover:bg-card"
+                  }`}
+                  title={
+                    lockedForPlan
+                      ? "Available on paid plans"
+                      : disabled
+                      ? "The source image is smaller than this size"
+                      : undefined
+                  }
+                >
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-foreground">{preset.label}</span>
+                    <span className="block text-xs tabular-nums text-muted-foreground">
+                      {preset.description}
+                      {!lockedForPlan && disabled && ". Source is too small"}
+                    </span>
+                  </span>
                   {lockedForPlan && (
-                    <>
-                      <Lock className="w-3 h-3 text-muted-foreground/40" />
-                      <span className="text-[10px] uppercase tracking-wider text-accent/70 font-semibold">
-                        Pro
-                      </span>
-                    </>
+                    <span className="mt-0.5 inline-flex flex-shrink-0 items-center gap-1 rounded-sm border border-border px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                      <Lock className="h-3 w-3" aria-hidden />
+                      Paid plans
+                    </span>
                   )}
-                </span>
-                <span className={`block text-[11px] ${disabled ? "text-muted-foreground/20" : "text-muted-foreground/60"}`}>
-                  {preset.description}
-                  {!lockedForPlan && disabled && " — source too small"}
-                </span>
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

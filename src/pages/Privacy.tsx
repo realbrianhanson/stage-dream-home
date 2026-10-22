@@ -2,22 +2,21 @@ import LegalPage from "@/components/LegalPage";
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <section>
-    <h2 className="font-display text-2xl sm:text-3xl font-medium text-foreground mb-4">{title}</h2>
-    <div className="space-y-3 text-[15px]">{children}</div>
+    <h2 className="font-display text-xl font-semibold tracking-tight text-foreground mb-3">{title}</h2>
+    <div className="space-y-3">{children}</div>
   </section>
 );
 
 const Privacy = () => {
   return (
     <LegalPage eyebrow="Legal" title="Privacy Policy" updated="April 2026">
-      <p className="text-[15px] text-muted-foreground italic">
-        At RealVision, we treat your data with the same care we put into every staged room.
-        This policy explains what we collect, why we collect it, and how it's protected.
+      <p className="text-lg text-muted-foreground">
+        This policy explains what RealVision collects, why we collect it, and how it's protected.
       </p>
 
       <Section title="Information We Collect">
         <p>We collect only what's necessary to deliver the service:</p>
-        <ul className="list-disc list-outside pl-5 space-y-2 marker:text-accent">
+        <ul className="list-disc list-outside pl-5 space-y-2 marker:text-muted-foreground">
           <li><strong>Account data</strong> — email address and authentication credentials.</li>
           <li><strong>Uploaded images</strong> — room photos you submit for staging.</li>
           <li><strong>Generated stagings</strong> — AI-rendered outputs and associated metadata (room type, style, timestamps).</li>
@@ -52,7 +51,7 @@ const Privacy = () => {
       <Section title="Your Rights">
         <p>
           You may request deletion of your account and associated data at any time by contacting{" "}
-          <a href="mailto:support@realvision.ai" className="text-accent hover:underline">
+          <a href="mailto:support@realvision.ai" className="text-accent underline-offset-4 hover:underline">
             support@realvision.ai
           </a>
           . We will honor verified deletion requests within 30 days.

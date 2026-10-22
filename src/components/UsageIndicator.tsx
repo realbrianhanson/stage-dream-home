@@ -1,4 +1,3 @@
-import { Crown } from "lucide-react";
 import { getPlan } from "@/config/pricing";
 
 interface UsageIndicatorProps {
@@ -19,57 +18,38 @@ const formatResetDate = (monthResetAt?: string | null) => {
 
 const planLabel = (plan: string) => {
   if (plan === "admin") return "Admin";
-  if (plan === "pro") return getPlan("pro").name;
-  if (plan === "studio") return getPlan("studio").name;
+  if (plan === "pro" || plan === "studio") return getPlan(plan).name;
   return getPlan("free").name;
 };
 
+/** Plan name, monthly count and a thin progress bar. */
 const UsageIndicator = ({ plan, used, limit, monthResetAt }: UsageIndicatorProps) => {
-  const isFree = plan === "free";
-  const progress = isFree ? Math.min(used / limit, 1) : 1;
+  const isAdmin = plan === "admin";
+  const progress = isAdmin || limit <= 0 ? 0 : Math.min(used / limit, 1);
+  const nearLimit = !isAdmin && progress >= 0.8;
   const resetLabel = formatResetDate(monthResetAt);
+  const countText = isAdmin ? "Unlimited" : `${used} of ${limit} this month`;
+  const title = resetLabel && !isAdmin ? `${countText}. Resets ${resetLabel}.` : countText;
 
   return (
-    <>
-      {/* Compact pill for mobile (<sm) */}
-      <div className="sm:hidden inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 font-body text-[11px] text-primary-foreground/80">
-        {!isFree && <Crown className="w-3 h-3 text-accent" />}
-        <span className="text-accent/85">{planLabel(plan)}</span>
-        {isFree && (
-          <span className="text-primary-foreground/70">
-            · {used}/{limit}
-          </span>
-        )}
-      </div>
-
-      {/* Full indicator for ≥sm */}
-      <div className="hidden sm:flex items-center gap-3 font-body text-xs text-muted-foreground">
-        <span className="hidden md:inline-flex items-center gap-1.5 text-foreground/70">
-          {!isFree && <Crown className="w-3 h-3 text-accent" />}
-          <span className={isFree ? "" : "text-accent/85"}>{planLabel(plan)}</span>
+    <div className="flex flex-col gap-1 min-w-0 text-xs" title={title}>
+      <p className="flex items-baseline gap-2 whitespace-nowrap">
+        <span className="font-medium text-foreground">{planLabel(plan)}</span>
+        <span className={`tabular-nums ${nearLimit ? "text-destructive" : "text-muted-foreground"}`}>
+          <span className="sm:hidden" aria-hidden>{isAdmin ? "Unlimited" : `${used}/${limit}`}</span>
+          <span className="hidden sm:inline">{countText}</span>
+          <span className="sr-only sm:hidden">{countText}</span>
         </span>
-        {isFree ? (
-          <>
-            <span>
-              {used} of {limit} stagings used
-            </span>
-            <div className="w-20 h-1 rounded-full bg-white/[0.06] overflow-hidden">
-              <div
-                className="h-full rounded-full bg-accent/70 transition-all duration-500"
-                style={{ width: `${progress * 100}%` }}
-              />
-            </div>
-            {resetLabel && (
-              <span className="hidden md:inline text-muted-foreground/70">Resets {resetLabel}</span>
-            )}
-          </>
-        ) : (
-          <span className="text-accent/80">
-            {plan === "admin" ? "Unlimited" : `${used} / ${limit} this month`}
-          </span>
-        )}
-      </div>
-    </>
+      </p>
+      {!isAdmin && (
+        <div className="h-1 w-full min-w-[56px] rounded-sm bg-muted overflow-hidden" aria-hidden>
+          <div
+            className={`h-full transition-[width] duration-500 ${nearLimit ? "bg-destructive" : "bg-accent"}`}
+            style={{ width: `${progress * 100}%` }}
+          />
+        </div>
+      )}
+    </div>
   );
 };
 

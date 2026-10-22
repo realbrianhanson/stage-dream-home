@@ -1,197 +1,124 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import { Sparkles } from "lucide-react";
-import BeforeAfterSlider from "@/components/BeforeAfterSlider";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-
+import { useCallback, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import beforeLiving from "@/assets/before-vacant.jpg";
-import afterLivingModern from "@/assets/after-staged.jpg";
-import beforeBedroom from "@/assets/before-vacant-bedroom.jpg";
-import afterBedroomLuxury from "@/assets/showcase-bedroom.jpg";
-import beforeKitchen from "@/assets/before-vacant-kitchen.jpg";
-import afterKitchenModern from "@/assets/showcase-kitchen.jpg";
+import afterLiving from "@/assets/after-staged.jpg";
 
-type StyleName = "Modern" | "Scandinavian" | "Luxury";
+// The one real pair we ship: the same living room photo, before and after
+// "Add furniture" in the Modern style. Both images are 3:2.
+const PAIR = {
+  before: beforeLiving,
+  after: afterLiving,
+  caption: "Living room, Modern style",
+  width: 1248,
+  height: 832,
+};
 
-interface DemoRoom {
-  id: string;
-  label: string;
-  thumb: string;
-  before: string;
-  // Only styles present here are "unlockable" without sign-in.
-  staged: Partial<Record<StyleName, string>>;
-  defaultStyle: StyleName;
-}
+const KEY_STEP = 5;
+const clamp = (n: number) => Math.min(100, Math.max(0, n));
 
-const ROOMS: DemoRoom[] = [
-  {
-    id: "living",
-    label: "Living Room",
-    thumb: afterLivingModern,
-    before: beforeLiving,
-    staged: { Modern: afterLivingModern },
-    defaultStyle: "Modern",
-  },
-  {
-    id: "bedroom",
-    label: "Bedroom",
-    thumb: afterBedroomLuxury,
-    before: beforeBedroom,
-    staged: { Luxury: afterBedroomLuxury },
-    defaultStyle: "Luxury",
-  },
-  {
-    id: "kitchen",
-    label: "Kitchen",
-    thumb: afterKitchenModern,
-    before: beforeKitchen,
-    staged: { Modern: afterKitchenModern },
-    defaultStyle: "Modern",
-  },
-];
-
-const STYLE_PILLS: StyleName[] = ["Modern", "Scandinavian", "Luxury"];
-
+/**
+ * Drag (or use the arrow keys) to compare a vacant photo with its staged
+ * version. Lightweight on purpose: the full results viewer lives in the app.
+ */
 const InteractiveDemo = () => {
-  const [roomId, setRoomId] = useState(ROOMS[0].id);
-  const room = ROOMS.find((r) => r.id === roomId) ?? ROOMS[0];
-  const [activeStyle, setActiveStyle] = useState<StyleName>(room.defaultStyle);
+  const [pos, setPos] = useState(50);
+  const frameRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
 
-  const currentAfter = room.staged[activeStyle] ?? room.staged[room.defaultStyle]!;
+  const moveTo = useCallback((clientX: number) => {
+    const rect = frameRef.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0) return;
+    setPos(clamp(((clientX - rect.left) / rect.width) * 100));
+  }, []);
 
-  const handleRoomChange = (id: string) => {
-    setRoomId(id);
-    const next = ROOMS.find((r) => r.id === id);
-    if (next) setActiveStyle(next.defaultStyle);
+  const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    dragging.current = true;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    moveTo(e.clientX);
+  };
+  const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
+    if (dragging.current) moveTo(e.clientX);
+  };
+  const stopDrag = () => {
+    dragging.current = false;
+  };
+
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    const next: Record<string, number> = {
+      ArrowLeft: pos - KEY_STEP,
+      ArrowDown: pos - KEY_STEP,
+      ArrowRight: pos + KEY_STEP,
+      ArrowUp: pos + KEY_STEP,
+      Home: 0,
+      End: 100,
+    };
+    if (e.key in next) {
+      e.preventDefault();
+      setPos(clamp(next[e.key]));
+    }
   };
 
   return (
-    <div>
-      {/* Style pills */}
-      <div className="flex items-center justify-center flex-wrap gap-2 mb-5">
-        <span className="text-accent font-body text-[11px] tracking-[0.3em] uppercase mr-2">
-          Try a style
+    <figure className="m-0">
+      <div
+        ref={frameRef}
+        className="relative w-full aspect-[3/2] overflow-hidden rounded-xl border border-border bg-card shadow-soft select-none cursor-ew-resize touch-pan-y"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={stopDrag}
+        onPointerCancel={stopDrag}
+      >
+        <img
+          src={PAIR.after}
+          alt="The same living room staged with a sectional sofa, rug, coffee table and art"
+          width={PAIR.width}
+          height={PAIR.height}
+          // React 18 only knows the lowercase attribute.
+          {...{ fetchpriority: "high" }}
+          draggable={false}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <img
+          src={PAIR.before}
+          alt="An empty living room with wood floors and large windows"
+          width={PAIR.width}
+          height={PAIR.height}
+          draggable={false}
+          className="absolute inset-0 h-full w-full object-cover"
+          style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
+        />
+
+        <span className="pointer-events-none absolute left-3 top-3 rounded-md bg-background/90 px-2 py-1 font-body text-xs font-medium text-foreground">
+          Before
         </span>
-        <TooltipProvider delayDuration={100}>
-          {STYLE_PILLS.map((s) => {
-            const available = !!room.staged[s];
-            const isActive = available && s === activeStyle;
-            const pill = (
-              <button
-                key={s}
-                onClick={() => {
-                  if (available) setActiveStyle(s);
-                }}
-                aria-pressed={isActive}
-                className={`font-body text-sm px-4 py-1.5 rounded-full border transition-all ${
-                  isActive
-                    ? "border-accent/40 bg-accent/[0.10] text-accent"
-                    : available
-                    ? "border-border text-muted-foreground hover:border-accent/40"
-                    : "border-border/60 text-muted-foreground/60 cursor-help"
-                }`}
-              >
-                {s}
-              </button>
-            );
-            if (available) return pill;
-            return (
-              <Tooltip key={s}>
-                <TooltipTrigger asChild>{pill}</TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[220px] text-center">
-                  <p className="font-body text-xs mb-1.5">
-                    Sign up to try 12 styles
-                  </p>
-                  <Link
-                    to="/auth"
-                    className="font-body text-xs text-accent hover:underline inline-flex items-center gap-1"
-                  >
-                    <Sparkles className="w-3 h-3" />
-                    Start free
-                  </Link>
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
-        </TooltipProvider>
-      </div>
+        <span className="pointer-events-none absolute right-3 top-3 rounded-md bg-accent px-2 py-1 font-body text-xs font-medium text-accent-foreground">
+          After
+        </span>
 
-      {/* Slider */}
-      <BeforeAfterSlider
-        key={`${room.id}-${activeStyle}`}
-        before={room.before}
-        after={currentAfter}
-      />
-
-      {/* Room thumbnail tabs */}
-      <div className="mt-6 -mx-6 px-6 overflow-x-auto">
-        <div className="flex items-center justify-start md:justify-center gap-3 min-w-max mx-auto">
-          {ROOMS.map((r) => {
-            const isActive = r.id === room.id;
-            return (
-              <button
-                key={r.id}
-                onClick={() => handleRoomChange(r.id)}
-                aria-pressed={isActive}
-                className={`group flex items-center gap-3 pl-2 pr-4 py-2 rounded-xl border transition-all ${
-                  isActive
-                    ? "border-accent/40 bg-accent/[0.06]"
-                    : "border-border hover:border-accent/30"
-                }`}
-              >
-                <div
-                  className={`w-14 h-14 rounded-lg overflow-hidden border ${
-                    isActive ? "border-accent/40" : "border-border"
-                  }`}
-                >
-                  <img
-                    src={r.thumb}
-                    alt={r.label}
-                    width={112}
-                    height={112}
-                    loading="lazy"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <span
-                  className={`font-body text-sm whitespace-nowrap ${
-                    isActive ? "text-accent" : "text-muted-foreground"
-                  }`}
-                >
-                  {r.label}
-                </span>
-              </button>
-            );
-          })}
+        <div
+          role="slider"
+          tabIndex={0}
+          aria-label="Compare before and after"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(pos)}
+          aria-valuetext={`${Math.round(pos)}% showing the original photo`}
+          onKeyDown={onKeyDown}
+          className="group absolute inset-y-0 -translate-x-1/2 w-10 flex justify-center focus-visible:outline-none"
+          style={{ left: `${pos}%` }}
+        >
+          <span className="h-full w-0.5 bg-background shadow-[0_0_0_1px_hsl(var(--foreground)/0.15)]" />
+          <span className="absolute top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background text-foreground shadow-soft group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:ring-offset-2">
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+              <path d="M5.5 3.5 1.5 8l4 4.5M10.5 3.5l4 4.5-4 4.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
         </div>
       </div>
-
-      {/* Conversion line */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5 }}
-        className="mt-10 flex flex-col items-center gap-4 text-center"
-      >
-        <p className="font-display text-2xl md:text-3xl font-medium">
-          Your listing could look like this in{" "}
-          <span className="italic text-accent">30 seconds</span>
-        </p>
-        <Link
-          to="/auth"
-          className="gold-gradient-animated text-accent-foreground font-body font-semibold text-base px-10 py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity"
-        >
-          Stage 3 Rooms Free
-        </Link>
-      </motion.div>
-    </div>
+      <figcaption className="mt-3 flex items-center justify-between gap-4 font-body text-sm text-muted-foreground">
+        <span>{PAIR.caption}</span>
+        <span className="hidden sm:inline">Drag to compare</span>
+      </figcaption>
+    </figure>
   );
 };
 

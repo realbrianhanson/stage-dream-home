@@ -1,6 +1,5 @@
 import { Suspense, lazy } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import PageTransition from "@/components/PageTransition";
 import Landing from "@/pages/Landing";
@@ -20,14 +19,11 @@ const CheckoutCancel = lazy(() => import("@/pages/CheckoutCancel"));
 const DevStudio = import.meta.env.DEV ? lazy(() => import("@/pages/DevStudio")) : null;
 
 const RouteFallback = () => (
-  <div className="min-h-screen bg-background grain-overlay flex flex-col items-center justify-center gap-5">
-    <div
-      className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"
-      style={{ boxShadow: "0 0 12px hsl(38 60% 55% / 0.6)" }}
-    />
-    <p className="font-body text-[10px] tracking-[0.4em] uppercase text-muted-foreground">
-      Loading
-    </p>
+  <div className="min-h-screen bg-background flex items-center justify-center" role="status" aria-live="polite">
+    <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+      <span className="w-4 h-4 rounded-full border-2 border-border border-t-accent animate-spin" aria-hidden />
+      Loading…
+    </div>
   </div>
 );
 
@@ -42,23 +38,21 @@ const AnimatedRoutes = () => {
   const location = useLocation();
   return (
     <Suspense fallback={<RouteFallback />}>
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
-          <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
-          <Route path="/app" element={<ProtectedRoute><PageTransition><Index /></PageTransition></ProtectedRoute>} />
-          <Route path="/gallery" element={<ProtectedRoute><PageTransition><Gallery /></PageTransition></ProtectedRoute>} />
-          <Route path="/pricing" element={<PageTransition><Pricing /></PageTransition>} />
-          <Route path="/share/:token" element={<PageTransition><SharedStaging /></PageTransition>} />
-          <Route path="/listing/:token" element={<PageTransition><ListingPage /></PageTransition>} />
-          <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
-          <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
-          <Route path="/billing/success" element={<PageTransition><CheckoutSuccess /></PageTransition>} />
-          <Route path="/billing/cancel" element={<PageTransition><CheckoutCancel /></PageTransition>} />
-          {DevStudio && <Route path="/__studio" element={<DevStudio />} />}
-          <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
-        </Routes>
-      </AnimatePresence>
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
+        <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
+        <Route path="/app" element={<ProtectedRoute><PageTransition><Index /></PageTransition></ProtectedRoute>} />
+        <Route path="/gallery" element={<ProtectedRoute><PageTransition><Gallery /></PageTransition></ProtectedRoute>} />
+        <Route path="/pricing" element={<PageTransition><Pricing /></PageTransition>} />
+        <Route path="/share/:token" element={<PageTransition><SharedStaging /></PageTransition>} />
+        <Route path="/listing/:token" element={<PageTransition><ListingPage /></PageTransition>} />
+        <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
+        <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
+        <Route path="/billing/success" element={<PageTransition><CheckoutSuccess /></PageTransition>} />
+        <Route path="/billing/cancel" element={<PageTransition><CheckoutCancel /></PageTransition>} />
+        {DevStudio && <Route path="/__studio" element={<DevStudio />} />}
+        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+      </Routes>
     </Suspense>
   );
 };

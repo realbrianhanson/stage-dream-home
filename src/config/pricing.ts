@@ -37,6 +37,7 @@ export const PRICING_PLANS: PricingPlan[] = [
       "Every tool: staging, removal, declutter, dusk, sky, lawn, recolor",
       "All 12 design styles",
       "Compare up to 3 styles",
+      "MLS export and listing pages",
       "Standard resolution with a watermark",
     ],
     highlight: false,

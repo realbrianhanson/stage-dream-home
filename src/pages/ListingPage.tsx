@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Sparkles, Mail, Phone, User, X } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { Mail, Phone, User, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import Logo from "@/components/Logo";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
+import { PRICING_PLANS } from "@/config/pricing";
 
 interface Agent {
   display_name?: string | null;
@@ -24,6 +25,8 @@ interface ListingStaging {
   style: string;
   created_at: string;
   mls_disclosure?: boolean;
+  /** Not returned by get_listing_page yet; inferred from style when missing. */
+  kind?: string | null;
 }
 
 interface ListingPageData {
@@ -33,65 +36,86 @@ interface ListingPageData {
   stagings: ListingStaging[];
 }
 
-const AgentCard = ({ agent, tone = "light" }: { agent: Agent; tone?: "light" | "dark" }) => {
-  const hasAny =
-    agent.display_name || agent.brokerage || agent.phone || agent.email || agent.headshot_url;
-  if (!hasAny) return null;
+const FOCUS_RING = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+const EDIT_STYLE_LABELS = ["removed", "declutter", "day to dusk", "blue sky", "refresh lawn"];
+const freeQuota = PRICING_PLANS.find((p) => p.id === "free")?.monthlyQuota;
 
-  const bg = tone === "dark" ? "bg-foreground/[0.03]" : "bg-card/50";
+/** "Virtually staged" for furniture staging (and refines of it), "Virtually edited" for other tools. */
+const disclosureLabel = (kind: string | null | undefined, style: string) => {
+  if (kind) return kind === "stage" || kind === "refine" ? "Virtually staged" : "Virtually edited";
+  const s = style.toLowerCase();
+  const isEdit = s.startsWith("recolor") || EDIT_STYLE_LABELS.some((label) => s.startsWith(label));
+  return isEdit ? "Virtually edited" : "Virtually staged";
+};
 
-  return (
-    <div className={`rounded-2xl border border-border ${bg} p-5 sm:p-6 flex items-center gap-5 backdrop-blur-sm`}>
-      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border border-accent/30 bg-muted flex items-center justify-center flex-shrink-0">
+const hasAgentInfo = (agent: Agent) =>
+  !!(agent.display_name || agent.brokerage || agent.phone || agent.email || agent.headshot_url);
+
+const AgentCard = ({ agent }: { agent: Agent }) => (
+  <div className="rounded-xl border border-border bg-card p-5">
+    <div className="flex items-center gap-4">
+      <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-background">
         {agent.headshot_url ? (
           <img
             src={agent.headshot_url}
-            alt={agent.display_name || "Agent"}
-            className="w-full h-full object-cover"
+            alt={agent.display_name || "Listing agent"}
+            className="h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
           />
         ) : (
-          <User className="w-7 h-7 text-muted-foreground" />
+          <User className="h-6 w-6 text-muted-foreground" aria-hidden />
         )}
       </div>
-      <div className="min-w-0 flex-1">
-        {agent.display_name && (
-          <p className="font-display text-lg sm:text-xl font-medium leading-tight">
-            {agent.display_name}
-          </p>
-        )}
-        {agent.brokerage && (
-          <p className="font-body text-xs sm:text-sm text-muted-foreground mt-0.5">
-            {agent.brokerage}
-          </p>
-        )}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
-          {agent.phone && (
-            <a
-              href={`tel:${agent.phone.replace(/\s+/g, "")}`}
-              className="font-body text-xs sm:text-sm text-foreground/80 hover:text-accent transition-colors inline-flex items-center gap-1.5"
-            >
-              <Phone className="w-3 h-3" />
-              {agent.phone}
-            </a>
-          )}
-          {agent.email && (
-            <a
-              href={`mailto:${agent.email}`}
-              className="font-body text-xs sm:text-sm text-foreground/80 hover:text-accent transition-colors inline-flex items-center gap-1.5"
-            >
-              <Mail className="w-3 h-3" />
-              {agent.email}
-            </a>
-          )}
-        </div>
+      <div className="min-w-0">
+        <p className="text-xs text-muted-foreground">Listing agent</p>
+        {agent.display_name && <p className="truncate text-base font-semibold tracking-tight">{agent.display_name}</p>}
+        {agent.brokerage && <p className="truncate text-sm text-muted-foreground">{agent.brokerage}</p>}
       </div>
     </div>
-  );
-};
+    {(agent.phone || agent.email) && (
+      <div className="mt-4 grid gap-2">
+        {agent.phone && (
+          <a
+            href={`tel:${agent.phone.replace(/\s+/g, "")}`}
+            className={`gold-gradient-animated inline-flex h-10 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium tabular-nums ${FOCUS_RING}`}
+          >
+            <Phone className="h-4 w-4" aria-hidden />
+            Call {agent.phone}
+          </a>
+        )}
+        {agent.email && (
+          <a
+            href={`mailto:${agent.email}`}
+            className={`inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-md border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-card ${FOCUS_RING}`}
+          >
+            <Mail className="h-4 w-4 flex-shrink-0" aria-hidden />
+            <span className="truncate">Email {agent.email}</span>
+          </a>
+        )}
+      </div>
+    )}
+  </div>
+);
+
+const PageHeader = () => (
+  <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+      <Link to="/" className={`rounded-md ${FOCUS_RING}`} aria-label="RealVision home">
+        <Logo />
+      </Link>
+      <Link
+        to="/auth"
+        className={`inline-flex h-9 items-center rounded-md border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-card ${FOCUS_RING}`}
+      >
+        Try RealVision
+      </Link>
+    </div>
+  </header>
+);
 
 const ListingPage = () => {
   const { token } = useParams<{ token: string }>();
-  const navigate = useNavigate();
   const [data, setData] = useState<ListingPageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -100,15 +124,13 @@ const ListingPage = () => {
   useEffect(() => {
     if (!token) return;
     (async () => {
-      const { data: rows, error } = await supabase.rpc(
-        "get_listing_page" as any,
-        { p_token: token } as any
-      );
+      const { data: rows, error } = await supabase.rpc("get_listing_page", { p_token: token });
       const row = Array.isArray(rows) ? rows[0] : null;
       if (error || !row) {
+        if (error) console.error("Load listing page failed:", error);
         setNotFound(true);
       } else {
-        setData(row as ListingPageData);
+        setData(row as unknown as ListingPageData);
       }
       setLoading(false);
     })();
@@ -116,22 +138,24 @@ const ListingPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background grain-overlay">
-        <div className="border-b border-border/40 px-6 py-4">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <Skeleton className="h-7 w-40" />
-            <Skeleton className="h-9 w-28 rounded-lg" />
+      <div className="min-h-screen bg-background">
+        <div className="border-b border-border">
+          <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+            <Skeleton className="h-7 w-36" />
+            <Skeleton className="h-9 w-28" />
           </div>
         </div>
-        <div className="max-w-6xl mx-auto px-6 py-16 space-y-8">
-          <div className="text-center space-y-3">
-            <Skeleton className="h-3 w-24 mx-auto rounded-full" />
-            <Skeleton className="h-10 md:h-14 w-2/3 mx-auto" />
+        <div className="mx-auto max-w-6xl space-y-8 px-4 py-10 sm:px-6">
+          <div className="space-y-3">
+            <Skeleton className="h-9 w-2/3" />
+            <Skeleton className="h-4 w-40" />
           </div>
-          <Skeleton className="h-28 w-full rounded-2xl" />
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[0, 1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="aspect-[4/3] w-full rounded-2xl" />
+          <div className="grid gap-6 sm:grid-cols-2">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="aspect-[4/3] w-full rounded-xl" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
             ))}
           </div>
         </div>
@@ -141,191 +165,150 @@ const ListingPage = () => {
 
   if (notFound || !data) {
     return (
-      <div className="min-h-screen bg-background grain-overlay flex flex-col items-center justify-center p-6 text-center">
-        <p className="text-accent font-body text-xs tracking-[0.3em] uppercase mb-4">404</p>
-        <h1 className="font-display text-4xl md:text-5xl font-medium mb-3">
-          Listing <span className="italic text-accent">not found</span>
-        </h1>
-        <p className="font-body text-muted-foreground mb-8 max-w-md">
-          This listing microsite is no longer available. The agent may have revoked the link.
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center">
+        <h1 className="mb-2 text-2xl font-semibold tracking-tight">This listing page isn't available</h1>
+        <p className="mb-6 max-w-md text-muted-foreground">
+          The agent may have turned off the link. Ask them for a new one.
         </p>
-        <button
-          onClick={() => navigate("/")}
-          className="gold-gradient-animated text-accent-foreground font-body font-semibold text-sm px-8 py-3 rounded-lg hover:opacity-90 transition-opacity"
+        <Link
+          to="/"
+          className={`inline-flex h-10 items-center rounded-md border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-card ${FOCUS_RING}`}
         >
-          Visit RealVision
-        </button>
+          Go to RealVision
+        </Link>
       </div>
     );
   }
 
   const agent = data.agent || {};
   const stagings = data.stagings || [];
+  const showAgent = hasAgentInfo(agent);
 
   return (
-    <div className="min-h-screen bg-background grain-overlay">
-      {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-40 px-6 py-4 backdrop-blur-md bg-foreground/40 border-b border-border/10">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <button onClick={() => navigate("/")}>
-            <Logo light />
-          </button>
-          <button
-            onClick={() => navigate("/auth")}
-            className="font-body text-sm font-semibold gold-gradient text-accent-foreground px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
-          >
-            Try It Free
-          </button>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-background">
+      <PageHeader />
 
-      {/* Header */}
-      <div className="pt-28 pb-8 px-6 text-center">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="inline-flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-full px-4 py-1.5 mb-5">
-            <Sparkles className="w-3 h-3 text-accent" />
-            <span className="font-body text-[10px] tracking-[0.2em] uppercase text-accent">
-              Virtual Listing Tour
-            </span>
-          </div>
-          <h1 className="font-display text-3xl md:text-5xl font-medium mb-3 max-w-3xl mx-auto">
-            {data.property_address}
-          </h1>
-          <p className="font-body text-sm text-muted-foreground">
-            {stagings.length} staged room{stagings.length !== 1 ? "s" : ""}
+      <main className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 sm:pt-12">
+        <div className="mb-8 max-w-3xl">
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{data.property_address}</h1>
+          <p className="mt-2 text-muted-foreground">
+            <span className="tabular-nums">{stagings.length}</span> photo{stagings.length !== 1 ? "s" : ""}. Select a
+            photo to compare it with the original.
           </p>
-        </motion.div>
-      </div>
-
-      {/* Top agent card */}
-      {(agent.display_name || agent.brokerage || agent.phone || agent.email || agent.headshot_url) && (
-        <div className="px-6 mb-10">
-          <div className="max-w-2xl mx-auto">
-            <AgentCard agent={agent} />
-          </div>
         </div>
-      )}
 
-      {/* Rooms grid */}
-      <div className="px-6 pb-16">
-        <div className="max-w-6xl mx-auto">
-          {stagings.length === 0 ? (
-            <p className="text-center font-body text-sm text-muted-foreground py-20">
-              No staged rooms yet.
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {stagings.map((s, i) => (
-                <motion.button
-                  key={s.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.04 }}
-                  onClick={() => setSelected(s)}
-                  className="group text-left relative rounded-2xl overflow-hidden border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm hover:border-accent/25 hover:-translate-y-0.5 transition-all duration-500"
-                >
-                  <div className="aspect-[4/3] relative overflow-hidden">
-                    <ProgressiveImage
-                      src={s.staged_image_url}
-                      alt={`${s.room_type} - ${s.style}`}
-                      wrapperClassName="absolute inset-0"
-                      className="group-hover:scale-[1.05] transition-transform duration-[1200ms] ease-[cubic-bezier(0.25,0.4,0.25,1)]"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-foreground/75 via-foreground/10 to-transparent transition-opacity duration-500 group-hover:from-foreground/85" />
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span
-                          className="inline-block w-1 h-1 rounded-full bg-accent"
-                          style={{ boxShadow: "0 0 8px hsl(38 60% 55% / 0.6)" }}
-                        />
-                        <p className="font-body text-[10px] tracking-[0.25em] uppercase text-accent">
-                          {s.style}
-                        </p>
-                      </div>
-                      <p className="font-display text-xl text-primary-foreground font-medium leading-tight capitalize">
-                        {s.room_type}
-                      </p>
-                    </div>
-                  </div>
-                </motion.button>
-              ))}
-            </div>
+        <div className={showAgent ? "grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]" : ""}>
+          {showAgent && (
+            <aside className="lg:order-2">
+              <div className="lg:sticky lg:top-24">
+                <AgentCard agent={agent} />
+              </div>
+            </aside>
           )}
-        </div>
-      </div>
 
-      {/* Bottom agent card */}
-      {(agent.display_name || agent.brokerage || agent.phone || agent.email || agent.headshot_url) && (
-        <div className="px-6 pb-20">
-          <div className="max-w-2xl mx-auto">
-            <p className="text-accent font-body text-[10px] tracking-[0.3em] uppercase text-center mb-4">
-              Contact
+          <section aria-label="Photos" className="lg:order-1">
+            {stagings.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border px-6 py-16 text-center text-muted-foreground">
+                No photos have been added to this listing yet.
+              </div>
+            ) : (
+              <ul className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2">
+                {stagings.map((s) => (
+                  <li key={s.id}>
+                    <button
+                      type="button"
+                      onClick={() => setSelected(s)}
+                      className={`group block w-full rounded-xl text-left ${FOCUS_RING}`}
+                      aria-label={`${s.room_type}, ${s.style}. Compare with original`}
+                    >
+                      <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-border">
+                        <ProgressiveImage
+                          src={s.staged_image_url}
+                          alt={`${s.room_type}, ${s.style}`}
+                          wrapperClassName="absolute inset-0"
+                          className="transition-transform duration-500 ease-out group-hover:scale-[1.02] motion-reduce:transition-none"
+                        />
+                        <span className="absolute left-3 top-3 rounded-sm bg-background/95 px-1.5 py-0.5 text-xs font-medium text-foreground">
+                          {disclosureLabel(s.kind, s.style)}
+                        </span>
+                      </div>
+                      <div className="mt-3 flex items-baseline justify-between gap-3">
+                        <p className="truncate font-medium capitalize">{s.room_type}</p>
+                        <p className="flex-shrink-0 text-sm text-muted-foreground">{s.style}</p>
+                      </div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {stagings.length > 0 && (
+              <p className="mt-10 text-sm text-muted-foreground">
+                Photos marked virtually staged or virtually edited were changed with AI software. Furniture, finishes
+                and views may differ from the property. Open any photo to see the original.
+              </p>
+            )}
+          </section>
+        </div>
+      </main>
+
+      <section className="border-t border-border bg-card px-4 py-12 sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">Are you an agent? Stage your own listings</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Stage an empty room in about a minute.
+              {freeQuota ? ` Try ${freeQuota} stagings a month free.` : ""}
             </p>
-            <AgentCard agent={agent} tone="dark" />
           </div>
-        </div>
-      )}
-
-      {/* Bottom RealVision CTA */}
-      <section className="py-16 px-6 border-t border-border bg-card/40">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="font-display text-2xl md:text-3xl font-medium mb-3">
-            Stage <span className="italic text-accent">your own</span> listings
-          </h2>
-          <p className="font-body text-sm text-muted-foreground mb-6">
-            Transform vacant rooms into stunning staged spaces in under 30 seconds.
-          </p>
-          <button
-            onClick={() => navigate("/auth")}
-            className="gold-gradient-animated text-accent-foreground font-body font-semibold text-sm px-8 py-3 rounded-lg hover:opacity-90 transition-opacity inline-flex items-center gap-2 group"
+          <Link
+            to="/auth"
+            className={`gold-gradient-animated inline-flex h-10 flex-shrink-0 items-center rounded-md px-4 text-sm font-medium ${FOCUS_RING}`}
           >
-            Start Staging Free
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </button>
+            Start staging free
+          </Link>
         </div>
       </section>
 
-      <footer className="border-t border-border py-6 px-6 bg-card/40 text-center">
-        <button
-          onClick={() => navigate("/")}
-          className="font-body text-xs text-muted-foreground/70 hover:text-accent transition-colors"
-        >
-          Staged with RealVision
-        </button>
+      <footer className="border-t border-border px-4 py-6 text-center sm:px-6">
+        <Link to="/" className={`rounded-sm text-xs text-muted-foreground hover:text-foreground ${FOCUS_RING}`}>
+          Made with RealVision
+        </Link>
       </footer>
 
-      {/* Before/After modal */}
-      <AnimatePresence>
-        {selected && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-foreground/80 backdrop-blur-md overflow-y-auto"
-          >
-            <button
-              onClick={() => setSelected(null)}
-              className="fixed top-6 right-6 z-50 w-10 h-10 rounded-full bg-foreground/60 hover:bg-foreground/80 text-primary-foreground flex items-center justify-center transition-colors"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <div className="pt-16 pb-10 px-4">
-              <p className="text-center text-accent font-body text-[10px] tracking-[0.3em] uppercase mb-2">
-                {selected.style}
-              </p>
-              <h3 className="text-center font-display text-2xl md:text-3xl font-medium text-primary-foreground mb-6 capitalize">
-                {selected.room_type}
-              </h3>
-              <BeforeAfterSlider
-                before={selected.original_image_url}
-                after={selected.staged_image_url}
-                mlsDisclosure={selected.mls_disclosure}
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <DialogPrimitive.Root open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
+        <DialogPrimitive.Portal>
+          <DialogPrimitive.Content className="fixed inset-0 z-50 overflow-y-auto bg-background focus:outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0">
+            {selected && (
+              <>
+                <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+                  <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+                    <div className="min-w-0">
+                      <DialogPrimitive.Title className="truncate font-semibold tracking-tight">
+                        {data.property_address}
+                      </DialogPrimitive.Title>
+                      <DialogPrimitive.Description className="truncate text-sm text-muted-foreground">
+                        {selected.style}. {disclosureLabel(selected.kind, selected.style)}.
+                      </DialogPrimitive.Description>
+                    </div>
+                    <DialogPrimitive.Close
+                      className={`inline-flex h-9 flex-shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-card ${FOCUS_RING}`}
+                    >
+                      <X className="h-4 w-4" aria-hidden />
+                      Close
+                    </DialogPrimitive.Close>
+                  </div>
+                </div>
+                <BeforeAfterSlider
+                  before={selected.original_image_url}
+                  after={selected.staged_image_url}
+                  mlsDisclosure={selected.mls_disclosure}
+                  title={selected.room_type}
+                />
+              </>
+            )}
+          </DialogPrimitive.Content>
+        </DialogPrimitive.Portal>
+      </DialogPrimitive.Root>
     </div>
   );
 };

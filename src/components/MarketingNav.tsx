@@ -1,78 +1,93 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
 
+const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const linkClass = `font-body text-sm text-muted-foreground hover:text-foreground transition-colors rounded-md px-2 py-1.5 ${focusRing}`;
+const mobileLinkClass = `font-body text-base text-foreground py-3 border-b border-border rounded-md ${focusRing}`;
+
+const NAV_LINKS = [
+  { to: "/#tools", label: "Tools" },
+  { to: "/pricing", label: "Pricing" },
+];
+
 const MarketingNav = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const [scrolled, setScrolled] = useState(false);
-  const isLanding = location.pathname === "/";
+  const [open, setOpen] = useState(false);
 
+  // Close the mobile menu whenever the route or hash changes.
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 60);
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    setOpen(false);
+  }, [location.pathname, location.hash]);
 
-  const forceSolid = !isLanding;
-  const solid = forceSolid || scrolled;
-
-  const goAnchor = (hash: string) => {
-    if (isLanding) {
-      const el = document.querySelector(hash);
-      el?.scrollIntoView({ behavior: "smooth" });
-    } else {
-      navigate("/" + hash);
-    }
-  };
+  const appHref = user ? "/app" : "/auth";
+  const appLabel = user ? "Open app" : "Start free";
 
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 transition-all duration-300 border-b border-border/10 ${
-        solid ? "py-3 backdrop-blur-xl bg-foreground/95" : "py-4 sm:py-5 backdrop-blur-md bg-background/20"
-      }`}
-    >
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
-        <button onClick={() => navigate("/")} className="shrink-0">
-          <Logo light />
-        </button>
-        <div className="flex items-center gap-3 sm:gap-6">
-          <button
-            onClick={() => goAnchor("#features")}
-            className="font-body text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors hidden lg:inline"
+    <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
+      <nav aria-label="Main" className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+        <Link to="/" className={`shrink-0 rounded-md ${focusRing}`} aria-label="RealVision home">
+          <Logo />
+        </Link>
+
+        <div className="hidden md:flex items-center gap-3">
+          {NAV_LINKS.map((l) => (
+            <Link key={l.to} to={l.to} className={linkClass}>
+              {l.label}
+            </Link>
+          ))}
+          {!user && (
+            <Link to="/auth" className={linkClass}>
+              Sign in
+            </Link>
+          )}
+          <Link
+            to={appHref}
+            className={`ml-1 gold-gradient-animated font-body text-sm font-medium text-accent-foreground px-4 py-2 rounded-md ${focusRing} focus-visible:ring-offset-2`}
           >
-            Features
-          </button>
-          <button
-            onClick={() => goAnchor("#showcase")}
-            className="font-body text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors hidden lg:inline"
-          >
-            Showcase
-          </button>
-          <button
-            onClick={() => navigate("/pricing")}
-            className="font-body text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors hidden md:inline"
-          >
-            Pricing
-          </button>
-          <button
-            onClick={() => navigate(user ? "/app" : "/auth")}
-            className="font-body text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors hidden sm:inline"
-          >
-            {user ? "Open App" : "Sign In"}
-          </button>
-          <button
-            onClick={() => navigate(user ? "/app" : "/auth")}
-            className="font-body text-xs sm:text-sm font-semibold gold-gradient text-accent-foreground px-4 sm:px-6 py-2.5 rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap"
-          >
-            {user ? "Open App" : "Get Started"}
-          </button>
+            {appLabel}
+          </Link>
         </div>
-      </div>
-    </nav>
+
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-controls="marketing-mobile-menu"
+          aria-label={open ? "Close menu" : "Open menu"}
+          className={`md:hidden inline-flex items-center justify-center w-10 h-10 rounded-md border border-border text-foreground hover:bg-card ${focusRing}`}
+        >
+          {open ? <X className="w-5 h-5" aria-hidden /> : <Menu className="w-5 h-5" aria-hidden />}
+        </button>
+      </nav>
+
+      {open && (
+        <div id="marketing-mobile-menu" className="md:hidden border-t border-border bg-background">
+          <div className="max-w-6xl mx-auto px-4 pt-1 pb-4 flex flex-col">
+            {NAV_LINKS.map((l) => (
+              <Link key={l.to} to={l.to} onClick={() => setOpen(false)} className={mobileLinkClass}>
+                {l.label}
+              </Link>
+            ))}
+            {!user && (
+              <Link to="/auth" onClick={() => setOpen(false)} className={mobileLinkClass}>
+                Sign in
+              </Link>
+            )}
+            <Link
+              to={appHref}
+              onClick={() => setOpen(false)}
+              className={`gold-gradient-animated mt-4 text-center font-body text-base font-medium text-accent-foreground px-4 py-3 rounded-md ${focusRing} focus-visible:ring-offset-2`}
+            >
+              {appLabel}
+            </Link>
+          </div>
+        </div>
+      )}
+    </header>
   );
 };
 

@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Logo from "@/components/Logo";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PRICING_PLANS } from "@/config/pricing";
 
 interface SharedStaging {
   id: string;
@@ -15,11 +14,25 @@ interface SharedStaging {
   style: string;
   property_address: string | null;
   created_at: string;
+  /** Not returned by get_shared_staging yet; inferred from style when missing. */
+  kind?: string | null;
+  mls_disclosure?: boolean;
 }
+
+const FOCUS_RING = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+const EDIT_STYLE_LABELS = ["removed", "declutter", "day to dusk", "blue sky", "refresh lawn"];
+const freeQuota = PRICING_PLANS.find((p) => p.id === "free")?.monthlyQuota;
+
+/** "Virtually staged" for furniture staging (and refines of it), "Virtually edited" for other tools. */
+const disclosureLabel = (kind: string | null | undefined, style: string) => {
+  if (kind) return kind === "stage" || kind === "refine" ? "Virtually staged" : "Virtually edited";
+  const s = style.toLowerCase();
+  const isEdit = s.startsWith("recolor") || EDIT_STYLE_LABELS.some((label) => s.startsWith(label));
+  return isEdit ? "Virtually edited" : "Virtually staged";
+};
 
 const SharedStagingPage = () => {
   const { token } = useParams<{ token: string }>();
-  const navigate = useNavigate();
   const [staging, setStaging] = useState<SharedStaging | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -30,6 +43,7 @@ const SharedStagingPage = () => {
       const { data, error } = await supabase.rpc("get_shared_staging", { p_token: token });
       const row = Array.isArray(data) ? data[0] : null;
       if (error || !row) {
+        if (error) console.error("Load shared staging failed:", error);
         setNotFound(true);
       } else {
         setStaging(row as SharedStaging);
@@ -41,26 +55,19 @@ const SharedStagingPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background grain-overlay">
-        {/* Top bar skeleton */}
-        <div className="border-b border-border/40 px-6 py-4">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <Skeleton className="h-7 w-40" />
-            <Skeleton className="h-9 w-28 rounded-lg" />
+      <div className="min-h-screen bg-background">
+        <div className="border-b border-border">
+          <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
+            <Skeleton className="h-7 w-36" />
+            <Skeleton className="h-9 w-28" />
           </div>
         </div>
-        {/* Hero skeleton */}
-        <div className="max-w-5xl mx-auto px-6 py-12 space-y-8">
-          <div className="text-center space-y-3">
-            <Skeleton className="h-3 w-24 mx-auto rounded-full" />
-            <Skeleton className="h-10 md:h-14 w-2/3 mx-auto" />
-            <Skeleton className="h-4 w-1/2 mx-auto" />
+        <div className="mx-auto max-w-5xl space-y-6 px-4 py-10 sm:px-6">
+          <div className="space-y-3">
+            <Skeleton className="h-9 w-2/3" />
+            <Skeleton className="h-4 w-1/3" />
           </div>
-          <Skeleton className="aspect-[16/10] w-full rounded-2xl" />
-          <div className="flex justify-center gap-3">
-            <Skeleton className="h-11 w-44 rounded-lg" />
-            <Skeleton className="h-11 w-32 rounded-lg" />
-          </div>
+          <Skeleton className="aspect-[16/10] w-full rounded-xl" />
         </div>
       </div>
     );
@@ -68,88 +75,87 @@ const SharedStagingPage = () => {
 
   if (notFound || !staging) {
     return (
-      <div className="min-h-screen bg-background grain-overlay flex flex-col items-center justify-center p-6 text-center">
-        <p className="text-accent font-body text-xs tracking-[0.3em] uppercase mb-4">404</p>
-        <h1 className="font-display text-4xl md:text-5xl font-medium mb-3">
-          Link <span className="italic text-accent">not found</span>
-        </h1>
-        <p className="font-body text-muted-foreground mb-8 max-w-md">
-          This shared staging is no longer available. The owner may have revoked the link.
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center">
+        <h1 className="mb-2 text-2xl font-semibold tracking-tight">This link isn't available</h1>
+        <p className="mb-6 max-w-md text-muted-foreground">
+          The person who shared it may have turned it off. Ask them for a new link.
         </p>
-        <button
-          onClick={() => navigate("/")}
-          className="gold-gradient-animated text-accent-foreground font-body font-semibold text-sm px-8 py-3 rounded-lg hover:opacity-90 transition-opacity"
+        <Link
+          to="/"
+          className={`inline-flex h-10 items-center rounded-md border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-card ${FOCUS_RING}`}
         >
-          Visit RealVision
-        </button>
+          Go to RealVision
+        </Link>
       </div>
     );
   }
 
+  const label = disclosureLabel(staging.kind, staging.style);
+
   return (
-    <div className="min-h-screen bg-background grain-overlay">
-      {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 backdrop-blur-md bg-foreground/40 border-b border-border/10">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <button onClick={() => navigate("/")}>
-            <Logo light />
-          </button>
-          <button
-            onClick={() => navigate("/auth")}
-            className="font-body text-sm font-semibold gold-gradient text-accent-foreground px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
+          <Link to="/" className={`rounded-md ${FOCUS_RING}`} aria-label="RealVision home">
+            <Logo />
+          </Link>
+          <Link
+            to="/auth"
+            className={`inline-flex h-9 items-center rounded-md border border-border bg-background px-3 text-sm font-medium transition-colors hover:bg-card ${FOCUS_RING}`}
           >
-            Try It Free
-          </button>
+            Try RealVision
+          </Link>
         </div>
-      </nav>
+      </header>
 
-      {/* Header */}
-      <div className="pt-28 pb-6 px-6 text-center">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="inline-flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-full px-4 py-1.5 mb-4">
-            <Sparkles className="w-3 h-3 text-accent" />
-            <span className="font-body text-[10px] tracking-[0.2em] uppercase text-accent">AI-Staged with RealVision</span>
-          </div>
-          <h1 className="font-display text-3xl md:text-4xl font-medium mb-2">
-            {staging.property_address || `${staging.room_type}`}
+      <main>
+        <div className="mx-auto max-w-5xl px-4 pt-8 sm:px-6 sm:pt-12">
+          <span className="inline-block rounded-sm border border-border bg-card px-1.5 py-0.5 text-xs font-medium">
+            {label}
+          </span>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+            {staging.property_address || <span className="capitalize">{staging.room_type}</span>}
           </h1>
-          <p className="font-body text-sm text-muted-foreground">
-            <span className="capitalize">{staging.room_type}</span> · <span className="capitalize">{staging.style}</span> style
+          <p className="mt-2 text-muted-foreground">
+            {staging.property_address && <span className="capitalize">{staging.room_type}, </span>}
+            {staging.style}
           </p>
-        </motion.div>
-      </div>
+        </div>
 
-      {/* Before/After */}
-      <BeforeAfterSlider
-        before={staging.original_image_url}
-        after={staging.staged_image_url}
-      />
+        <BeforeAfterSlider
+          before={staging.original_image_url}
+          after={staging.staged_image_url}
+          mlsDisclosure={staging.mls_disclosure}
+          title="Before and after"
+        />
 
-      {/* CTA */}
-      <section className="py-20 px-6 bg-card/40 border-t border-border">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="font-display text-3xl md:text-4xl font-medium mb-4">
-            Stage <span className="italic text-accent">your own</span> listings
-          </h2>
-          <p className="font-body text-muted-foreground mb-8">
-            Transform vacant rooms into stunning staged spaces in under 30 seconds. Try 3 stagings free.
-          </p>
-          <button
-            onClick={() => navigate("/auth")}
-            className="gold-gradient-animated text-accent-foreground font-body font-semibold text-base px-10 py-4 rounded-lg hover:opacity-90 transition-opacity inline-flex items-center gap-2 group"
+        <p className="mx-auto max-w-5xl px-4 pb-12 text-sm text-muted-foreground sm:px-6">
+          The after photo was changed with AI software. Furniture, finishes and views may differ from the property.
+        </p>
+      </main>
+
+      <section className="border-t border-border bg-card px-4 py-12 sm:px-6">
+        <div className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">Stage your own listings</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Upload an empty room and get a staged photo in about a minute.
+              {freeQuota ? ` Try ${freeQuota} stagings a month free.` : ""}
+            </p>
+          </div>
+          <Link
+            to="/auth"
+            className={`gold-gradient-animated inline-flex h-10 flex-shrink-0 items-center rounded-md px-4 text-sm font-medium ${FOCUS_RING}`}
           >
-            Start Staging Free
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </button>
+            Start staging free
+          </Link>
         </div>
       </section>
 
-      <footer className="border-t border-border py-8 px-6 bg-card/40">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <footer className="border-t border-border px-4 py-6 sm:px-6">
+        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 sm:flex-row">
           <Logo />
-          <p className="font-body text-sm text-muted-foreground">
-            © 2026 RealVision. AI-powered virtual staging.
-          </p>
+          <p className="text-sm text-muted-foreground">© 2026 RealVision. Virtual staging for real estate photos.</p>
         </div>
       </footer>
     </div>

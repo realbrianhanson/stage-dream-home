@@ -13,9 +13,9 @@ interface ProgressiveImageProps extends ImgHTMLAttributes<HTMLImageElement> {
 }
 
 /**
- * ProgressiveImage — luxe blur-up loader.
- * Renders a soft gold-tinted shimmer + scale/blur transition as the image decodes.
- * Uses native lazy loading and async decode for performance.
+ * ProgressiveImage fades an image in over a neutral placeholder once it has
+ * decoded. Uses native lazy loading and async decode. Give the wrapper a fixed
+ * aspect (or absolute inset) so the layout never shifts while loading.
  */
 export const ProgressiveImage = ({
   src,
@@ -25,40 +25,32 @@ export const ProgressiveImage = ({
   className,
   eager = false,
   onLoad,
+  onError,
   ...rest
 }: ProgressiveImageProps) => {
   const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // If image is already cached, mark loaded immediately to avoid flash
+  // Reset when the source changes; mark loaded at once if the image is cached.
   useEffect(() => {
-    if (imgRef.current?.complete && imgRef.current.naturalWidth > 0) {
-      setLoaded(true);
-    }
+    setFailed(false);
+    setLoaded(!!(imgRef.current?.complete && imgRef.current.naturalWidth > 0));
   }, [src]);
 
   return (
-    <div
-      className={cn(
-        "relative overflow-hidden bg-muted/40",
-        aspect,
-        wrapperClassName
+    <div className={cn("relative overflow-hidden bg-muted", aspect, wrapperClassName)}>
+      {!loaded && !failed && (
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-muted before:absolute before:inset-0 before:-translate-x-full before:animate-[skeletonShimmer_2s_ease-in-out_infinite] before:bg-gradient-to-r before:from-transparent before:via-background/70 before:to-transparent motion-reduce:before:animate-none"
+        />
       )}
-    >
-      {/* Shimmer placeholder */}
-      <div
-        aria-hidden
-        className={cn(
-          "absolute inset-0 transition-opacity duration-700",
-          loaded ? "opacity-0" : "opacity-100"
-        )}
-        style={{
-          background:
-            "linear-gradient(110deg, hsl(var(--muted) / 0.6) 30%, hsl(var(--accent) / 0.15) 50%, hsl(var(--muted) / 0.6) 70%)",
-          backgroundSize: "200% 100%",
-          animation: "skeletonShimmer 2.4s ease-in-out infinite",
-        }}
-      />
+      {failed && (
+        <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-xs text-muted-foreground">
+          Image unavailable
+        </div>
+      )}
       <img
         ref={imgRef}
         src={src}
@@ -69,12 +61,14 @@ export const ProgressiveImage = ({
           setLoaded(true);
           onLoad?.(e);
         }}
+        onError={(e) => {
+          setFailed(true);
+          onError?.(e);
+        }}
         className={cn(
-          "h-full w-full object-cover transition-all duration-[900ms] ease-out will-change-transform",
-          loaded
-            ? "opacity-100 scale-100 blur-0"
-            : "opacity-0 scale-[1.04] blur-md",
-          className
+          "h-full w-full object-cover transition-opacity duration-500 ease-out motion-reduce:transition-none",
+          loaded ? "opacity-100" : "opacity-0",
+          className,
         )}
         {...rest}
       />

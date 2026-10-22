@@ -1,25 +1,16 @@
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  X,
-  Loader2,
-  Check,
-  AlertCircle,
-  RotateCcw,
-  StopCircle,
-  Download,
-  GitCompare,
-  ChevronRight,
-} from "lucide-react";
+import { X, Loader2, Check, AlertCircle, RotateCcw, Square, Download, Columns2, ArrowLeft } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { stageRoom, uploadOriginal } from "@/lib/stagingApi";
 import { useAuth } from "@/hooks/useAuth";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
-
+import Chips from "@/components/studio/Chips";
 import { ROOM_TYPES, STYLES, pickPaletteForBatch } from "@/config/catalogs";
 
 export const MAX_BATCH = 15;
 const BATCH_DELAY_MS = 2000;
+const MAX_FILE_MB = 15;
 
 type Status = "queued" | "staging" | "done" | "failed";
 
@@ -79,43 +70,61 @@ interface Props {
   onExit: () => void;
 }
 
-const StatusPill = ({ status }: { status: Status }) => {
-  const map: Record<Status, { label: string; cls: string; Icon: any }> = {
-    queued: {
-      label: "Queued",
-      cls: "text-muted-foreground border-border",
-      Icon: null,
-    },
-    staging: {
-      label: "Staging",
-      cls: "text-accent border-accent/30 bg-accent/[0.06]",
-      Icon: Loader2,
-    },
-    done: {
-      label: "Done",
-      cls: "text-accent border-accent/30 bg-accent/[0.08]",
-      Icon: Check,
-    },
-    failed: {
-      label: "Failed",
-      cls: "text-destructive border-destructive/30 bg-destructive/[0.06]",
-      Icon: AlertCircle,
-    },
-  };
-  const { label, cls, Icon } = map[status];
+const STATUS_TAGS: Record<Status, { label: string; cls: string; Icon: LucideIcon | null }> = {
+  queued: { label: "Queued", cls: "text-muted-foreground border-border bg-background", Icon: null },
+  staging: { label: "Staging", cls: "text-accent border-accent/30 bg-accent-soft", Icon: Loader2 },
+  done: { label: "Done", cls: "text-accent border-accent/30 bg-accent-soft", Icon: Check },
+  failed: { label: "Failed", cls: "text-destructive border-destructive/30 bg-destructive/5", Icon: AlertCircle },
+};
+
+const StatusTag = ({ status }: { status: Status }) => {
+  const { label, cls, Icon } = STATUS_TAGS[status];
   return (
-    <span
-      className={`inline-flex items-center gap-1 font-body text-[11px] px-2 py-0.5 rounded-full border ${cls}`}
-    >
-      {Icon && (
-        <Icon
-          className={`w-3 h-3 ${status === "staging" ? "animate-spin" : ""}`}
-        />
-      )}
+    <span className={`inline-flex items-center gap-1 h-6 px-2 rounded-sm border text-xs font-medium ${cls}`}>
+      {Icon && <Icon className={`w-3 h-3 ${status === "staging" ? "animate-spin" : ""}`} aria-hidden />}
       {label}
     </span>
   );
 };
+
+const secondaryBtn =
+  "inline-flex items-center justify-center gap-2 h-10 px-4 rounded-md border border-border bg-background text-sm font-medium hover:bg-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+const iconBtn =
+  "w-9 h-9 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-card transition-colors disabled:opacity-40";
+
+const SettingToggle = ({
+  title,
+  desc,
+  checked,
+  disabled,
+  onChange,
+  children,
+}: {
+  title: string;
+  desc: string;
+  checked: boolean;
+  disabled: boolean;
+  onChange: (v: boolean) => void;
+  children?: React.ReactNode;
+}) => (
+  <div className="rounded-lg border border-border p-3.5">
+    <label className={`flex items-start justify-between gap-4 ${disabled ? "opacity-60" : "cursor-pointer"}`}>
+      <span>
+        <span className="block text-sm font-medium">{title}</span>
+        <span className="block text-xs text-muted-foreground mt-0.5">{desc}</span>
+      </span>
+      <input
+        type="checkbox"
+        role="switch"
+        className="mt-1 h-4 w-4 shrink-0 accent-[hsl(var(--accent))]"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+    </label>
+    {children}
+  </div>
+);
 
 const BatchStaging = ({
   initialFiles,
@@ -148,8 +157,8 @@ const BatchStaging = ({
       const built: BatchItem[] = [];
       for (const f of capped) {
         if (!f.type.startsWith("image/")) continue;
-        if (f.size > 10 * 1024 * 1024) {
-          toast.error(`${f.name} skipped — over 10MB`);
+        if (f.size > MAX_FILE_MB * 1024 * 1024) {
+          toast.error(`Skipped ${f.name}: it's over ${MAX_FILE_MB} MB.`);
           continue;
         }
         const url = await downscaleFile(f);
@@ -176,6 +185,7 @@ const BatchStaging = ({
   }, []);
 
   const isFree = usage?.plan === "free";
+  const isAdmin = usage?.plan === "admin";
   const totalCount = items.length;
   const doneCount = items.filter((i) => i.status === "done").length;
   const failedCount = items.filter((i) => i.status === "failed").length;
@@ -328,373 +338,238 @@ const BatchStaging = ({
 
   if (loadingFiles) {
     return (
-      <div className="border border-white/[0.06] rounded-2xl p-16 text-center bg-white/[0.02]">
-        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-accent" />
-        <p className="font-body text-sm text-muted-foreground">
-          Preparing your batch…
-        </p>
+      <div className="rounded-xl border border-border bg-card px-6 py-16 text-center" role="status">
+        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3 text-accent" aria-hidden />
+        <p className="text-sm text-muted-foreground">Preparing your photos…</p>
       </div>
     );
   }
 
   if (items.length === 0) {
     return (
-      <div className="border border-white/[0.06] rounded-2xl p-12 text-center bg-white/[0.02]">
-        <p className="font-body text-sm text-muted-foreground mb-4">
-          No valid images in this batch.
-        </p>
-        <button
-          onClick={onExit}
-          className="font-body text-sm text-accent hover:underline"
-        >
-          Start over
+      <div className="rounded-xl border border-border bg-card px-6 py-12 text-center">
+        <p className="font-medium">None of those files could be opened</p>
+        <p className="mt-1 text-sm text-muted-foreground mb-5">Use JPG, PNG or WebP photos up to {MAX_FILE_MB} MB.</p>
+        <button type="button" onClick={onExit} className={secondaryBtn}>
+          Choose other photos
         </button>
       </div>
     );
   }
 
-  return (
-    <div>
-      {/* Batch header */}
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <div>
-          <p className="text-accent font-body text-[11px] tracking-[0.3em] uppercase mb-1">
-            Batch Staging
-          </p>
-          <p className="font-display text-2xl font-medium">
-            {items.length} photo{items.length !== 1 ? "s" : ""} queued
-          </p>
-        </div>
-        <button
-          onClick={onExit}
-          disabled={processing}
-          className="font-body text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
-        >
-          Start over
-        </button>
-      </div>
-
-      {/* Shared property name */}
-      <div className="mb-6">
-        <label className="font-body text-sm font-medium text-muted-foreground block mb-2">
-          Property Name (applied to all)
-        </label>
-        <input
-          type="text"
-          value={propertyName}
-          disabled={processing}
-          onChange={(e) => setPropertyName(e.target.value)}
-          placeholder="e.g., 123 Oak Street or Lakeside Condo"
-          className="w-full font-body text-sm bg-white/[0.02] border border-white/[0.08] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all placeholder:text-muted-foreground/50 disabled:opacity-60"
-        />
-      </div>
-
-      {/* Shared style */}
-      <div className="mb-6">
-        <label className="font-body text-sm font-medium text-muted-foreground block mb-3">
-          Design Style (applied to all)
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {STYLES.map((s) => (
-            <button
-              key={s}
-              disabled={processing}
-              onClick={() => setStyle(s)}
-              className={`font-body text-sm px-4 py-2 rounded-lg border transition-all disabled:opacity-60 ${
-                style === s
-                  ? "border-accent/30 bg-accent/[0.08] text-accent"
-                  : "border-border text-muted-foreground hover:border-accent/40"
-              }`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Shared MLS toggle */}
-      <div className="mb-6 flex items-start justify-between gap-4 p-4 rounded-xl border border-border">
-        <div className="min-w-0">
-          <p className="font-body text-sm font-medium">MLS disclosure label</p>
-          <p className="font-body text-xs text-muted-foreground leading-snug mt-0.5">
-            Adds a subtle "Virtually Staged" label to every photo in the batch.
-          </p>
-        </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={mlsDisclosure}
-          aria-label="Toggle MLS disclosure label"
-          disabled={processing}
-          onClick={() => setMlsDisclosure((v) => !v)}
-          className={`relative shrink-0 w-10 h-6 rounded-full transition-colors disabled:opacity-60 ${
-            mlsDisclosure ? "bg-accent" : "bg-border"
-          }`}
-        >
-          <span
-            className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-background shadow-sm transition-transform ${
-              mlsDisclosure ? "translate-x-4" : "translate-x-0"
-            }`}
-          />
-        </button>
-      </div>
-
-      {/* Shared consistency toggle */}
-      <div className="mb-6 p-4 rounded-xl border border-border">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="font-body text-sm font-medium">Consistent look across rooms</p>
-            <p className="font-body text-xs text-muted-foreground leading-snug mt-0.5">
-              Uses one coordinated palette so every room in this listing feels like the same designed home.
-            </p>
-          </div>
+  if (compareItem && compareItem.originalUrl && compareItem.stagedUrl) {
+    return (
+      <div className="rounded-xl border border-border bg-background">
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-6 pt-4">
           <button
             type="button"
-            role="switch"
-            aria-checked={consistency}
-            aria-label="Toggle consistent look across rooms"
-            disabled={processing}
-            onClick={() => setConsistency((v) => !v)}
-            className={`relative shrink-0 w-10 h-6 rounded-full transition-colors disabled:opacity-60 ${
-              consistency ? "bg-accent" : "bg-border"
-            }`}
+            onClick={() => setCompareItem(null)}
+            className="inline-flex items-center gap-1.5 h-9 -ml-2 px-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-card"
           >
-            <span
-              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-background shadow-sm transition-transform ${
-                consistency ? "translate-x-4" : "translate-x-0"
-              }`}
-            />
+            <ArrowLeft className="w-4 h-4" aria-hidden />
+            Back to all photos
+          </button>
+          <p className="text-sm text-muted-foreground truncate">{compareItem.fileName}</p>
+        </div>
+        <BeforeAfterSlider
+          before={compareItem.originalUrl}
+          after={compareItem.stagedUrl}
+          isWatermarked={compareItem.isWatermarked}
+          mlsDisclosure={mlsDisclosure}
+          refineContext={{
+            stagingId: compareItem.stagingId,
+            tool: "stage",
+            roomType: compareItem.roomType,
+            style,
+            propertyName: propertyName.trim() || null,
+            palette: sharedPalette || null,
+          }}
+        />
+      </div>
+    );
+  }
+
+  const startLabel =
+    pendingCount === 0
+      ? "All photos staged"
+      : exceedsFreeLimit
+        ? `Not enough stagings left (${remainingStagings})`
+        : `Stage ${pendingCount} photo${pendingCount !== 1 ? "s" : ""}`;
+
+  return (
+    <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-6 lg:gap-8 items-start">
+      {/* Queue */}
+      <div className="min-w-0">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold tracking-tight">
+              {items.length} photo{items.length !== 1 ? "s" : ""} in this listing
+            </h3>
+            <p className="text-sm text-muted-foreground tabular-nums">
+              {doneCount} done{failedCount > 0 ? `, ${failedCount} failed` : ""}
+            </p>
+          </div>
+          <button type="button" onClick={onExit} disabled={processing} className={secondaryBtn}>
+            Start over
           </button>
         </div>
-        {consistency && sharedPalette && (
-          <p className="font-body text-[11px] text-muted-foreground/70 mt-3 pt-3 border-t border-white/[0.04] italic">
-            Palette · {sharedPalette}
-          </p>
+
+        {(processing || doneCount > 0) && (
+          <div
+            className="mb-4 h-1.5 rounded-sm bg-muted overflow-hidden"
+            role="progressbar"
+            aria-label="Batch progress"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progressPct}
+          >
+            <div className="h-full bg-accent transition-[width] duration-500" style={{ width: `${progressPct}%` }} />
+          </div>
         )}
-      </div>
 
-
-      {/* Queue list */}
-      <div className="mb-6 border border-white/[0.06] rounded-2xl bg-white/[0.02] overflow-hidden">
-        <div className="divide-y divide-white/[0.06]">
+        <ul className="rounded-xl border border-border bg-background divide-y divide-border overflow-hidden">
           {items.map((it) => (
-            <div
-              key={it.id}
-              className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4"
-            >
-              {/* Thumbnails: original + staged (if done) */}
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-white/[0.06]">
-                  <img
-                    src={it.original}
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+            <li key={it.id} className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <img src={it.original} alt={`Original: ${it.fileName}`} className="w-14 h-14 sm:w-20 sm:h-16 rounded-md object-cover border border-border" />
                 {it.status === "done" && it.stagedUrl && (
-                  <>
-                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />
-                    <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-accent/30">
-                      <img
-                        src={it.stagedUrl}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  </>
+                  <img src={it.stagedUrl} alt={`Staged: ${it.fileName}`} className="w-14 h-14 sm:w-20 sm:h-16 rounded-md object-cover border border-accent/40" />
                 )}
               </div>
 
-              {/* Meta + room-type dropdown */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                  <p className="font-body text-sm truncate max-w-[16rem]">
-                    {it.fileName}
-                  </p>
-                  <StatusPill status={it.status} />
+                <div className="flex items-center gap-2 mb-1.5 min-w-0">
+                  <p className="text-sm font-medium truncate">{it.fileName}</p>
+                  <StatusTag status={it.status} />
                 </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <select
-                    value={it.roomType}
-                    disabled={processing || it.status === "done"}
-                    onChange={(e) => changeRoomType(it.id, e.target.value)}
-                    className="font-body text-xs bg-background/60 border border-white/[0.08] rounded-md px-2 py-1 focus:outline-none focus:border-accent/50 disabled:opacity-60"
-                  >
-                    {ROOM_TYPES.map((rt) => (
-                      <option key={rt} value={rt}>
-                        {rt}
-                      </option>
-                    ))}
-                  </select>
-                  {it.status === "failed" && it.error && (
-                    <span className="font-body text-[11px] text-destructive/80 truncate max-w-[16rem]">
-                      {it.error}
-                    </span>
-                  )}
-                </div>
+                <label className="sr-only" htmlFor={`room-${it.id}`}>
+                  Room type for {it.fileName}
+                </label>
+                <select
+                  id={`room-${it.id}`}
+                  value={it.roomType}
+                  disabled={processing || it.status === "done"}
+                  onChange={(e) => changeRoomType(it.id, e.target.value)}
+                  className="h-8 max-w-full rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring disabled:opacity-60"
+                >
+                  {ROOM_TYPES.map((rt) => (
+                    <option key={rt} value={rt}>
+                      {rt}
+                    </option>
+                  ))}
+                </select>
+                {it.status === "failed" && it.error && <p className="mt-1.5 text-xs text-destructive">{it.error}</p>}
               </div>
 
-              {/* Row actions */}
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-0.5 shrink-0">
                 {it.status === "done" && it.stagedUrl && it.originalUrl && (
-                  <button
-                    onClick={() => setCompareItem(it)}
-                    className="p-2 rounded-md text-muted-foreground hover:text-accent hover:bg-accent/[0.06] transition-colors"
-                    title="Compare before / after"
-                    aria-label="Compare"
-                  >
-                    <GitCompare className="w-4 h-4" />
+                  <button type="button" onClick={() => setCompareItem(it)} className={iconBtn} title="Compare and refine" aria-label={`Compare and refine ${it.fileName}`}>
+                    <Columns2 className="w-4 h-4" aria-hidden />
                   </button>
                 )}
                 {it.status === "failed" && (
-                  <button
-                    onClick={() => retryItem(it.id)}
-                    disabled={processing}
-                    className="p-2 rounded-md text-muted-foreground hover:text-accent hover:bg-accent/[0.06] transition-colors disabled:opacity-40"
-                    title="Retry"
-                    aria-label="Retry"
-                  >
-                    <RotateCcw className="w-4 h-4" />
+                  <button type="button" onClick={() => retryItem(it.id)} disabled={processing} className={iconBtn} title="Try again" aria-label={`Try ${it.fileName} again`}>
+                    <RotateCcw className="w-4 h-4" aria-hidden />
                   </button>
                 )}
                 {it.status !== "staging" && it.status !== "done" && (
-                  <button
-                    onClick={() => removeItem(it.id)}
-                    disabled={processing}
-                    className="p-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/[0.06] transition-colors disabled:opacity-40"
-                    title="Remove"
-                    aria-label="Remove"
-                  >
-                    <X className="w-4 h-4" />
+                  <button type="button" onClick={() => removeItem(it.id)} disabled={processing} className={iconBtn} title="Remove" aria-label={`Remove ${it.fileName}`}>
+                    <X className="w-4 h-4" aria-hidden />
                   </button>
                 )}
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
 
-      {/* Usage line */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <p className="font-body text-xs text-muted-foreground">
-          This will use{" "}
-          <span className="text-foreground font-medium">
-            {pendingCount} staging{pendingCount !== 1 ? "s" : ""}
-          </span>
-          {isFree && (
+      {/* Shared settings */}
+      <div className="rounded-xl border border-border bg-background p-5 sm:p-6 space-y-5 lg:sticky lg:top-24">
+        <label className="block">
+          <span className="block text-sm font-medium mb-2">Property name</span>
+          <input
+            type="text"
+            value={propertyName}
+            disabled={processing}
+            onChange={(e) => setPropertyName(e.target.value)}
+            placeholder="e.g. 123 Oak Street"
+            className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring disabled:opacity-60"
+          />
+          <span className="block mt-1.5 text-xs text-muted-foreground">Used in file names and saved with each staging.</span>
+        </label>
+
+        <Chips
+          label="Style for every photo"
+          options={STYLES.map((s) => ({ value: s, label: s, disabled: processing }))}
+          selected={[style]}
+          onToggle={setStyle}
+        />
+
+        <SettingToggle
+          title="Matching look across rooms"
+          desc="One coordinated palette so every room reads as the same home."
+          checked={consistency}
+          disabled={processing}
+          onChange={setConsistency}
+        >
+          {consistency && sharedPalette && (
+            <p className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground">Palette: {sharedPalette}</p>
+          )}
+        </SettingToggle>
+
+        <SettingToggle
+          title={'"Virtually staged" label'}
+          desc="Adds a small disclosure to every photo. Many MLS boards require it."
+          checked={mlsDisclosure}
+          disabled={processing}
+          onChange={setMlsDisclosure}
+        />
+
+        <div className="space-y-2.5 border-t border-border pt-5">
+          {!processing ? (
+            <button
+              type="button"
+              onClick={startBatch}
+              disabled={pendingCount === 0 || exceedsFreeLimit}
+              className="gold-gradient-animated w-full h-12 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {startLabel}
+            </button>
+          ) : (
             <>
-              {" "}·{" "}
-              <span
-                className={
-                  exceedsFreeLimit ? "text-destructive" : "text-muted-foreground"
-                }
+              <div className="w-full h-12 rounded-md bg-accent-soft text-accent font-medium inline-flex items-center justify-center gap-2" role="status">
+                <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
+                Staging {Math.min(doneCount + failedCount + 1, totalCount)} of {totalCount}…
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  cancelledRef.current = true;
+                  toast.info("Stopping after the current photo.");
+                }}
+                className="w-full h-10 rounded-md border border-border text-sm text-muted-foreground hover:text-destructive hover:border-destructive/40 inline-flex items-center justify-center gap-2"
               >
-                {remainingStagings} remaining on Free
-              </span>
+                <Square className="w-3.5 h-3.5" aria-hidden />
+                Stop after this photo
+              </button>
             </>
           )}
-        </p>
-        {processing && (
-          <p className="font-body text-xs text-accent">
-            {doneCount + failedCount} of {totalCount} processed
+
+          {doneCount > 0 && !processing && (
+            <button type="button" onClick={downloadAll} className={`${secondaryBtn} w-full`}>
+              <Download className="w-4 h-4" aria-hidden />
+              Download all ({doneCount})
+            </button>
+          )}
+
+          <p className={`text-xs text-center ${exceedsFreeLimit ? "text-destructive" : "text-muted-foreground"}`}>
+            {isAdmin
+              ? "Admin: unlimited."
+              : `Uses ${pendingCount} staging${pendingCount !== 1 ? "s" : ""}. ${remainingStagings} left this month.`}
+            {isFree ? " Free results carry a watermark." : ""}
           </p>
-        )}
-      </div>
-
-      {/* Progress bar */}
-      {(processing || doneCount > 0) && (
-        <div className="mb-6 h-1 rounded-full bg-white/[0.05] overflow-hidden">
-          <div
-            className="h-full gold-gradient-animated transition-all duration-500"
-            style={{ width: `${progressPct}%` }}
-          />
         </div>
-      )}
-
-      {/* Footer actions */}
-      <div className="space-y-3">
-        {!processing ? (
-          <motion.button
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.99 }}
-            onClick={startBatch}
-            disabled={pendingCount === 0 || exceedsFreeLimit}
-            className="w-full gold-gradient-animated text-accent-foreground font-body font-semibold text-base py-4 rounded-lg tracking-wide hover:opacity-90 transition-opacity disabled:opacity-40"
-          >
-            {pendingCount === 0
-              ? "All photos staged"
-              : exceedsFreeLimit
-              ? `Not enough stagings left this month (${remainingStagings})`
-              : `Stage ${pendingCount} Photo${pendingCount !== 1 ? "s" : ""}`}
-          </motion.button>
-        ) : (
-          <motion.button
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            onClick={() => {
-              cancelledRef.current = true;
-              toast.info("Cancelling after current photo…");
-            }}
-            disabled={cancelledRef.current}
-            className="w-full border border-border font-body text-sm py-3 rounded-lg text-muted-foreground hover:border-destructive/30 hover:text-destructive transition-colors flex items-center justify-center gap-2 disabled:opacity-40"
-          >
-            <StopCircle className="w-4 h-4" />
-            Cancel After Current Photo
-          </motion.button>
-        )}
-
-        {doneCount > 0 && !processing && (
-          <button
-            onClick={downloadAll}
-            className="w-full border border-accent/30 text-accent hover:bg-accent/[0.06] font-body font-semibold text-sm py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
-          >
-            <Download className="w-4 h-4" />
-            Download All ({doneCount})
-          </button>
-        )}
       </div>
-
-      {/* Compare modal */}
-      <AnimatePresence>
-        {compareItem && compareItem.originalUrl && compareItem.stagedUrl && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-md overflow-y-auto"
-            onClick={() => setCompareItem(null)}
-          >
-            <div className="min-h-screen" onClick={(e) => e.stopPropagation()}>
-              <div className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-6 py-3 border-b border-white/[0.06] bg-background/80 backdrop-blur-md">
-                <p className="font-body text-sm text-muted-foreground truncate">
-                  {compareItem.fileName} · {compareItem.roomType}
-                </p>
-                <button
-                  onClick={() => setCompareItem(null)}
-                  className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition-colors"
-                  aria-label="Close comparison"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <BeforeAfterSlider
-                before={compareItem.originalUrl}
-                after={compareItem.stagedUrl}
-                isWatermarked={compareItem.isWatermarked}
-                mlsDisclosure={mlsDisclosure}
-                onReset={() => setCompareItem(null)}
-                refineContext={{
-                  stagingId: compareItem.stagingId,
-                  roomType: compareItem.roomType,
-                  style,
-                  propertyName: propertyName.trim() || null,
-                  palette: sharedPalette || null,
-                }}
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

@@ -1,13 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Copy, Check, Sparkles, Loader2, RefreshCw } from "lucide-react";
+import { Copy, Check, Loader2, RefreshCw, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import DownloadWithPresets from "@/components/DownloadWithPresets";
-import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useUsage } from "@/hooks/useUsage";
 import { stageRoom } from "@/lib/stagingApi";
-import type { ToolId } from "@/config/tools";
+import { toolInfo, type ToolId } from "@/config/tools";
+import { cn } from "@/lib/utils";
 
 export interface RefineContext {
   /** Saved staging behind `after`; refines edit its clean master. */
@@ -21,14 +20,9 @@ export interface RefineContext {
   palette?: string | null;
 }
 
-const REFINE_CHIPS = [
-  "Less furniture",
-  "Warmer tones",
-  "Different sofa",
-  "More minimal",
-  "Brighter",
-  "Add plants",
-];
+const REFINE_CHIPS = ["Less furniture", "Warmer tones", "Different sofa", "More minimal", "Brighter", "Add plants"];
+const MAX_REFINE = 120;
+const KEY_STEP = 5;
 
 interface Version {
   stagingId?: string | null;
@@ -44,15 +38,66 @@ interface BeforeAfterSliderProps {
   isWatermarked?: boolean;
   mlsDisclosure?: boolean;
   refineContext?: RefineContext;
+  /** Overrides the heading built from refineContext. */
+  title?: string;
 }
 
-const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosure, refineContext }: BeforeAfterSliderProps) => {
-  const { user } = useAuth();
+const stripRefinedSuffix = (s: string) => s.replace(/\s*\(refined\)\s*$/i, "");
+
+function headingFor(ctx?: RefineContext): string {
+  if (!ctx) return "Your staged photo";
+  const room = ctx.roomType || "Room";
+  const style = stripRefinedSuffix(ctx.style || "");
+  if ((!ctx.tool || ctx.tool === "stage") && style && style !== "Removed") return `${style} ${room.toLowerCase()}`;
+  const action = ctx.tool ? toolInfo(ctx.tool).label : style === "Removed" ? "Furniture removed" : style;
+  return `${room}: ${action.toLowerCase()}`;
+}
+
+function convertToPngBlob(blob: Blob): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    const objectUrl = URL.createObjectURL(blob);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("Canvas unavailable"));
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("PNG conversion failed"))), "image/png");
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Image load failed"));
+    };
+    img.src = objectUrl;
+  });
+}
+
+async function downloadBlobFrom(url: string, filename: string) {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+}
+
+const secondaryBtn =
+  "inline-flex items-center justify-center gap-2 h-10 px-4 rounded-md border border-border bg-background text-sm font-medium text-foreground hover:bg-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+
+/** Result view: before/after comparison, download, refine and version history. */
+const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosure, refineContext, title }: BeforeAfterSliderProps) => {
   const navigate = useNavigate();
   const { canStage, refresh, usage, remainingStagings, freeLimit } = useUsage();
   const isFree = usage?.plan === "free";
+  const isAdmin = usage?.plan === "admin";
   const [sliderPos, setSliderPos] = useState(50);
-  const [containerWidth, setContainerWidth] = useState(0);
   const [aspectRatio, setAspectRatio] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -66,8 +111,7 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
   const [refining, setRefining] = useState(false);
   const [freeText, setFreeText] = useState("");
 
-  // If the parent swaps in a completely different `after` (e.g. new staging opened),
-  // reset the version history for that new session.
+  // A different `after` (a new staging opened) starts a new version history.
   useEffect(() => {
     setVersions([{ stagingId: refineContext?.stagingId, url: after, label: refineContext?.style || "v1", isWatermarked }]);
     setActiveIdx(0);
@@ -79,99 +123,85 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
   const currentAfter = currentVersion.url;
   const currentWatermarked = currentVersion.isWatermarked;
 
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setContainerWidth(entry.contentRect.width);
-      }
-    });
-    observer.observe(containerRef.current);
-    return () => observer.disconnect();
-  }, []);
-
-  // Load the currently displayed image to determine natural aspect ratio.
+  // Size the frame to the image's natural aspect ratio.
   useEffect(() => {
     if (!currentAfter) return;
     const img = new window.Image();
     img.onload = () => {
-      if (img.naturalWidth && img.naturalHeight) {
-        setAspectRatio(img.naturalWidth / img.naturalHeight);
-      }
+      if (img.naturalWidth && img.naturalHeight) setAspectRatio(img.naturalWidth / img.naturalHeight);
     };
     img.src = currentAfter;
   }, [currentAfter]);
 
   const updateSlider = useCallback((clientX: number) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
     const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
     setSliderPos((x / rect.width) * 100);
   }, []);
 
-  const handleMouseDown = () => { isDragging.current = true; };
-  const handleMouseUp = () => { isDragging.current = false; };
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    isDragging.current = true;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    updateSlider(e.clientX);
+  };
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (isDragging.current) updateSlider(e.clientX);
   };
-  const handleHandleTouchStart = (e: React.TouchEvent) => {
-    isDragging.current = true;
-    // Prevent page scroll while dragging the handle.
-    e.preventDefault();
+  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    isDragging.current = false;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
   };
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging.current) return;
+
+  const onSliderKey = (e: React.KeyboardEvent) => {
+    const step = e.shiftKey ? KEY_STEP * 2 : KEY_STEP;
+    const moves: Record<string, (p: number) => number> = {
+      ArrowLeft: (p) => p - step,
+      ArrowDown: (p) => p - step,
+      ArrowRight: (p) => p + step,
+      ArrowUp: (p) => p + step,
+      PageDown: (p) => p - 25,
+      PageUp: (p) => p + 25,
+      Home: () => 0,
+      End: () => 100,
+    };
+    const move = moves[e.key];
+    if (!move) return;
     e.preventDefault();
-    updateSlider(e.touches[0].clientX);
+    setSliderPos((p) => Math.max(0, Math.min(100, move(p))));
   };
+
   const handleCopyToClipboard = async () => {
     try {
       const response = await fetch(currentAfter);
       const blob = await response.blob();
       const pngBlob = blob.type === "image/png" ? blob : await convertToPngBlob(blob);
-      await navigator.clipboard.write([
-        new ClipboardItem({ "image/png": pngBlob }),
-      ]);
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": pngBlob })]);
       setCopied(true);
-      toast.success("Image copied to clipboard");
+      toast.success("Image copied");
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("Clipboard not available in this browser — use Download instead");
-      // Auto-trigger download as fallback via blob URL (cross-origin safe)
+      toast.error("This browser can't copy images. Downloading it instead.");
       try {
-        const res = await fetch(currentAfter);
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "staged-room.jpg";
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        await downloadBlobFrom(currentAfter, "staged-room.jpg");
       } catch {
-        toast.error("Download failed. Please try again.");
+        toast.error("The download didn't start. Please try again.");
       }
     }
   };
 
-  const stripRefinedSuffix = (s: string) => s.replace(/\s*\(refined\)\s*$/i, "");
-
-  const runStaging = async (opts: {
-    mode: ToolId | "refine";
-    refineInstruction?: string;
-    versionLabel: string;
-  }) => {
-    if (!refineContext) return;
+  const runStaging = async (opts: { mode: ToolId | "refine"; refineInstruction?: string; versionLabel: string }) => {
+    if (!refineContext) return false;
     if (!canStage) {
-      toast.error(isFree ? `You've used all ${freeLimit} free stagings this month.` : "You've used all of this month's stagings.", {
+      toast.error(isFree ? `You've used your ${freeLimit} free stagings this month.` : "You've used this month's stagings.", {
         action: { label: "See plans", onClick: () => navigate("/pricing") },
       });
-      return;
+      return false;
     }
     if (opts.mode === "refine" && !currentVersion.stagingId) {
-      toast.error("Open this staging from My Stagings to refine it.");
-      return;
+      toast.error("Open this staging from My stagings to refine it.");
+      return false;
     }
     setRefining(true);
     try {
@@ -189,36 +219,33 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
       });
       const row = result.stagings[0];
       setVersions((prev) => {
-        const next = [
-          ...prev,
-          { stagingId: row.id, url: row.staged_image_url, label: opts.versionLabel, isWatermarked: result.isWatermarked },
-        ];
+        const next = [...prev, { stagingId: row.id, url: row.staged_image_url, label: opts.versionLabel, isWatermarked: result.isWatermarked }];
         setActiveIdx(next.length - 1);
         return next;
       });
-      toast.success(opts.mode === "refine" ? "Refined!" : "Regenerated");
+      toast.success(opts.mode === "refine" ? "Refined version added" : "New take added");
+      return true;
     } catch (err) {
       console.error(`${opts.mode} failed:`, err);
       toast.error(err instanceof Error ? err.message : "That didn't work. Please try again.");
+      return false;
     } finally {
       await refresh();
       setRefining(false);
     }
   };
 
-  const handleRefine = () => {
+  const handleRefine = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     const instruction = freeText.trim();
-    if (!instruction) {
-      toast.error("Add a change to apply");
-      return;
-    }
+    if (!instruction) return toast.error("Describe the change you want first.");
     if (!refineContext) return;
-    const base = stripRefinedSuffix(refineContext.style);
-    runStaging({
+    const ok = await runStaging({
       mode: "refine",
       refineInstruction: instruction,
-      versionLabel: `${base} (refined)`,
-    }).then(() => setFreeText(""));
+      versionLabel: `${stripRefinedSuffix(refineContext.style)} (refined)`,
+    });
+    if (ok) setFreeText("");
   };
 
   const handleRegenerate = () => {
@@ -230,10 +257,7 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
       toast.info("Run a new recolor from the studio to try another finish.");
       return;
     }
-    runStaging({
-      mode: tool,
-      versionLabel: `${base} · new take`,
-    });
+    void runStaging({ mode: tool, versionLabel: `${base}, new take` });
   };
 
   const addChip = (chip: string) => {
@@ -243,281 +267,197 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
       if (!cur) return chip;
       if (cur.toLowerCase().includes(addition)) return cur;
       const combined = `${cur}, ${addition}`;
-      return combined.length > 120 ? cur : combined;
+      return combined.length > MAX_REFINE ? cur : combined;
     });
   };
 
-
-  const convertToPngBlob = (blob: Blob): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      const img = new window.Image();
-      const objectUrl = URL.createObjectURL(blob);
-      img.onload = () => {
-        URL.revokeObjectURL(objectUrl);
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext("2d")!;
-        ctx.drawImage(img, 0, 0);
-        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("PNG conversion failed"))), "image/png");
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(objectUrl);
-        reject(new Error("Image load failed"));
-      };
-      img.src = objectUrl;
-    });
-  };
-
+  const pos = Math.round(sliderPos);
+  const heading = title ?? headingFor(refineContext);
 
   return (
-    <section className="py-24 px-6">
-      <div className="max-w-4xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <p className="text-accent font-body text-sm tracking-[0.3em] uppercase mb-4">
-            Result
-          </p>
-          <h2 className="font-display text-4xl md:text-5xl font-medium mb-4">
-            Before & After
-          </h2>
-          <p className="font-body text-muted-foreground">
-            Drag the slider to compare the original and staged room
-          </p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-          ref={containerRef}
-          className="relative rounded-2xl overflow-hidden shadow-elevated border border-white/[0.06] cursor-col-resize select-none mx-auto"
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleMouseUp}
-          onTouchCancel={handleMouseUp}
-          style={{
-            aspectRatio: aspectRatio ? `${aspectRatio}` : "16 / 10",
-            maxHeight: "70vh",
-            width: aspectRatio ? `min(100%, calc(70vh * ${aspectRatio}))` : "100%",
-          }}
-        >
-          {/* After (full) */}
-          <img src={currentAfter} alt="Staged room" className="absolute inset-0 w-full h-full object-cover" />
-
-          {/* Watermark overlay */}
-          {currentWatermarked && (
-            <div className="absolute bottom-4 right-4 z-[5] bg-foreground/40 backdrop-blur-sm rounded-full px-3 py-1">
-              <span className="font-body text-xs text-primary-foreground/40 select-none">RealVision</span>
-            </div>
-          )}
-
-          {/* Before (clipped) */}
-          <div
-            className="absolute inset-0 overflow-hidden"
-            style={{ width: `${sliderPos}%` }}
-          >
-            <img
-              src={before}
-              alt="Original room"
-              className="absolute inset-0 w-full h-full object-cover"
-              style={{ width: `${containerWidth}px`, maxWidth: "none" }}
-            />
+    <section className="py-8 sm:py-12 px-4 sm:px-6">
+      <div className="max-w-5xl mx-auto">
+        <div className="flex flex-wrap items-end justify-between gap-3 mb-5">
+          <div className="min-w-0">
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">{heading}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Drag the handle, or focus it and use the arrow keys, to compare.</p>
           </div>
-
-          {/* Slider handle */}
-          <div
-            className="absolute top-0 bottom-0 z-10 touch-none"
-            style={{ left: `${sliderPos}%`, transform: "translateX(-50%)" }}
-            onMouseDown={handleMouseDown}
-            onTouchStart={handleHandleTouchStart}
-          >
-            <div className="w-0.5 h-full bg-primary-foreground/80" />
-            <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, hsl(38 55% 45%), hsl(40 70% 62%))', boxShadow: '0 4px 20px hsl(38 60% 55% / 0.3)' }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" className="text-accent-foreground">
-                <path d="M5 3L2 8L5 13" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                <path d="M11 3L14 8L11 13" stroke="currentColor" strokeWidth="1.5" fill="none" />
-              </svg>
-            </div>
-          </div>
-
-          {/* Labels */}
-          <div className="absolute top-4 left-4 bg-foreground/60 text-primary-foreground rounded-lg px-3 py-1.5 text-xs font-body font-medium">
-            Before
-          </div>
-          <div className="absolute top-4 right-4 bg-accent/90 text-accent-foreground rounded-lg px-3 py-1.5 text-xs font-body font-medium">
-            After
-          </div>
-        </motion.div>
-
-        {/* Actions */}
-        <div className="flex justify-center gap-4 mt-8 flex-wrap">
-          <DownloadWithPresets imageUrl={currentAfter} filename="staged-room" variant="gold" isWatermarked={currentWatermarked} mlsDisclosure={mlsDisclosure} />
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleCopyToClipboard}
-            className="border border-border font-body font-semibold text-sm px-8 py-3 rounded-lg text-muted-foreground hover:border-accent/30 hover:text-accent transition-colors flex items-center gap-2"
-          >
-            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            {copied ? "Copied!" : "Copy to Clipboard"}
-          </motion.button>
           {onReset && (
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={onReset}
-              className="border border-border font-body font-semibold text-sm px-8 py-3 rounded-lg text-muted-foreground hover:border-accent/30 hover:text-accent transition-colors"
-            >
-              Stage Another Room
-            </motion.button>
+            <button type="button" onClick={onReset} className={secondaryBtn}>
+              <RotateCcw className="w-4 h-4" aria-hidden />
+              Stage another photo
+            </button>
           )}
         </div>
 
-        {/* Upgrade nudge for free users */}
-        {currentWatermarked && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="text-center mt-6"
+        <div
+          ref={containerRef}
+          className="relative mx-auto rounded-xl overflow-hidden border border-border bg-card select-none cursor-col-resize touch-pan-y"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          style={{
+            aspectRatio: aspectRatio ? `${aspectRatio}` : "4 / 3",
+            maxHeight: "75vh",
+            width: aspectRatio ? `min(100%, calc(75vh * ${aspectRatio}))` : "100%",
+          }}
+        >
+          <img src={currentAfter} alt="After: staged photo" draggable={false} className="absolute inset-0 w-full h-full object-cover" />
+          <img
+            src={before}
+            alt="Before: original photo"
+            draggable={false}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
+          />
+
+          <div className="absolute inset-y-0 z-10 -translate-x-1/2 pointer-events-none" style={{ left: `${sliderPos}%` }}>
+            <div className="w-0.5 h-full bg-background shadow-soft" />
+          </div>
+          <div
+            role="slider"
+            tabIndex={0}
+            aria-label="Before and after comparison"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={pos}
+            aria-valuetext={`${pos}% original photo shown`}
+            onKeyDown={onSliderKey}
+            className="absolute top-1/2 z-20 w-11 h-11 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent text-accent-foreground border-2 border-background shadow-soft flex items-center justify-center cursor-grab active:cursor-grabbing"
+            style={{ left: `${sliderPos}%` }}
           >
-            <p className="font-body text-sm text-muted-foreground">
-              Free images include a small watermark.{" "}
-              <button
-                onClick={() => navigate("/pricing")}
-                className="text-accent hover:underline transition-colors"
-              >
-                Upgrade to Pro
-              </button>{" "}
-              for clean, watermark-free exports.
-            </p>
-          </motion.div>
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+              <path d="M5 3L2 8L5 13" stroke="currentColor" strokeWidth="1.5" fill="none" />
+              <path d="M11 3L14 8L11 13" stroke="currentColor" strokeWidth="1.5" fill="none" />
+            </svg>
+          </div>
+
+          <span className="absolute top-3 left-3 z-10 rounded-sm bg-foreground/75 text-background px-2 py-1 text-xs font-medium pointer-events-none">
+            Before
+          </span>
+          <span className="absolute top-3 right-3 z-10 rounded-sm bg-background/90 text-foreground px-2 py-1 text-xs font-medium pointer-events-none">
+            After
+          </span>
+        </div>
+
+        {versions.length > 1 && (
+          <div className="mt-4">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Versions</p>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {versions.map((v, i) => (
+                <button
+                  key={`${v.url}-${i}`}
+                  type="button"
+                  onClick={() => setActiveIdx(i)}
+                  aria-pressed={i === activeIdx}
+                  aria-label={`Version ${i + 1}: ${v.label}`}
+                  title={v.label}
+                  className={cn(
+                    "relative shrink-0 w-20 h-16 rounded-md overflow-hidden border-2 transition-colors",
+                    i === activeIdx ? "border-accent" : "border-transparent opacity-70 hover:opacity-100",
+                  )}
+                >
+                  <img src={v.url} alt="" className="w-full h-full object-cover" />
+                  <span className="absolute bottom-1 left-1 rounded-sm bg-background/90 px-1 text-[10px] font-medium tabular-nums">v{i + 1}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
-        {/* Refine section */}
+        <div className="mt-5 flex flex-wrap items-center gap-2">
+          <DownloadWithPresets
+            imageUrl={currentAfter}
+            filename="staged-room"
+            variant="gold"
+            isWatermarked={currentWatermarked}
+            mlsDisclosure={mlsDisclosure}
+          />
+          <button type="button" onClick={handleCopyToClipboard} className={secondaryBtn}>
+            {copied ? <Check className="w-4 h-4" aria-hidden /> : <Copy className="w-4 h-4" aria-hidden />}
+            {copied ? "Copied" : "Copy image"}
+          </button>
+          {refineContext && (
+            <button type="button" onClick={handleRegenerate} disabled={refining} className={secondaryBtn}>
+              <RefreshCw className="w-4 h-4" aria-hidden />
+              New take
+            </button>
+          )}
+        </div>
+
+        {currentWatermarked && (
+          <p className="mt-3 text-sm text-muted-foreground">
+            Free results carry a small watermark.{" "}
+            <button type="button" onClick={() => navigate("/pricing")} className="font-medium text-accent hover:underline">
+              See plans
+            </button>{" "}
+            for clean, full-resolution downloads.
+          </p>
+        )}
+
         {refineContext && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mt-12 pt-8 border-t border-white/[0.06] max-w-2xl mx-auto"
-          >
-            <p className="text-accent font-body text-xs tracking-[0.3em] uppercase text-center mb-3">
-              Refine
-            </p>
-            <p className="text-center font-body text-sm text-muted-foreground mb-6">
-              Not quite right? Tweak this result or regenerate with the same settings.
+          <form onSubmit={handleRefine} className="mt-8 rounded-xl border border-border bg-background p-5 sm:p-6">
+            <h3 className="text-lg font-semibold tracking-tight">Refine this result</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Describe a change and we'll edit this image. "New take" re-runs the same settings from scratch.
             </p>
 
-            <div className="flex flex-wrap justify-center gap-2 mb-4">
+            <div className="mt-4 flex flex-wrap gap-2">
               {REFINE_CHIPS.map((chip) => (
                 <button
                   key={chip}
                   type="button"
                   disabled={refining}
                   onClick={() => addChip(chip)}
-                  className="border border-white/[0.06] hover:border-accent/25 px-3 py-1.5 rounded-full text-xs font-body text-muted-foreground hover:text-accent transition-all disabled:opacity-40"
+                  className="h-9 px-3.5 rounded-md border border-border bg-background text-sm text-foreground/80 hover:border-foreground/30 hover:text-foreground transition-colors disabled:opacity-40"
                 >
                   {chip}
                 </button>
               ))}
             </div>
 
-            <div className="mb-4">
+            <label htmlFor="refine-text" className="block mt-4 text-sm font-medium">
+              Your change
+            </label>
+            <div className="mt-2 flex flex-col sm:flex-row gap-2">
               <input
+                id="refine-text"
                 type="text"
                 value={freeText}
-                maxLength={120}
+                maxLength={MAX_REFINE}
                 disabled={refining}
-                onChange={(e) => setFreeText(e.target.value.slice(0, 120))}
-                placeholder="Or describe your own change (e.g. swap the sofa for leather)"
-                className="w-full font-body text-sm bg-white/[0.02] border border-white/[0.08] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all placeholder:text-muted-foreground/50 disabled:opacity-50"
+                onChange={(e) => setFreeText(e.target.value.slice(0, MAX_REFINE))}
+                placeholder="e.g. swap the sofa for a leather one"
+                className="flex-1 min-w-0 h-10 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-ring disabled:opacity-60"
               />
-              <div className="text-right text-[10px] text-muted-foreground/50 font-body mt-1">
-                {freeText.length}/120
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <motion.button
-                whileHover={{ scale: refining ? 1 : 1.01 }}
-                whileTap={{ scale: refining ? 1 : 0.99 }}
-                onClick={handleRefine}
+              <button
+                type="submit"
                 disabled={refining || !freeText.trim()}
-                className="gold-gradient-animated text-accent-foreground font-body font-semibold text-sm py-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 flex items-center justify-center gap-2"
+                className="gold-gradient-animated h-10 px-5 rounded-md text-sm font-medium inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {refining ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Sparkles className="w-4 h-4" />
-                )}
-                Refine This Result
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: refining ? 1 : 1.01 }}
-                whileTap={{ scale: refining ? 1 : 0.99 }}
-                onClick={handleRegenerate}
-                disabled={refining}
-                className="border border-border font-body font-semibold text-sm py-3 rounded-lg text-muted-foreground hover:border-accent/30 hover:text-accent transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
-              >
-                <RefreshCw className="w-4 h-4" />
-                Regenerate
-              </motion.button>
+                {refining && <Loader2 className="w-4 h-4 animate-spin" aria-hidden />}
+                {refining ? "Working…" : "Apply change"}
+              </button>
+            </div>
+            <div className="mt-2 flex flex-wrap justify-between gap-2 text-xs text-muted-foreground">
+              <span>
+                {isAdmin ? "Admin: unlimited" : `Each change or new take uses 1 staging. ${remainingStagings} left this month.`}
+              </span>
+              <span className="tabular-nums">
+                {freeText.length}/{MAX_REFINE}
+              </span>
             </div>
 
-            <p className="text-center font-body text-[11px] text-muted-foreground/60 mt-3">
-              Uses 1 staging
-              {isFree && ` · ${remainingStagings} remaining on Free`}
-            </p>
-
-            {!canStage && (
-              <div className="text-center mt-4 py-3 border border-white/[0.06] rounded-lg bg-white/[0.02]">
-                <p className="font-body text-xs text-muted-foreground">
-                  You've used all {freeLimit} free stagings this month.{" "}
-                  <button
-                    onClick={() => navigate("/pricing")}
-                    className="text-accent hover:underline"
-                  >
-                    Upgrade
-                  </button>{" "}
-                  for unlimited refines.
-                </p>
-              </div>
+            {!canStage && usage && (
+              <p className="mt-4 rounded-md border border-border bg-card px-3 py-2.5 text-sm">
+                {isFree ? `You've used your ${freeLimit} free stagings this month.` : "You've used this month's stagings."}{" "}
+                <button type="button" onClick={() => navigate("/pricing")} className="font-medium text-accent hover:underline">
+                  See plans
+                </button>
+              </p>
             )}
-
-            {versions.length > 1 && (
-              <div className="mt-8">
-                <p className="font-body text-[10px] tracking-[0.3em] uppercase text-muted-foreground/70 mb-3 text-center">
-                  Versions
-                </p>
-                <div className="flex gap-3 overflow-x-auto pb-2 justify-center flex-wrap">
-                  {versions.map((v, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setActiveIdx(i)}
-                      title={v.label}
-                      className={`relative shrink-0 w-20 h-20 rounded-lg overflow-hidden border transition-all ${
-                        i === activeIdx
-                          ? "border-accent shadow-glow-gold"
-                          : "border-white/[0.06] opacity-60 hover:opacity-100"
-                      }`}
-                    >
-                      <img src={v.url} alt={v.label} className="w-full h-full object-cover" />
-                      <span className="absolute bottom-0 left-0 right-0 bg-foreground/70 text-primary-foreground text-[9px] font-body py-0.5 truncate px-1 text-center">
-                        v{i + 1}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </motion.div>
+          </form>
         )}
       </div>
     </section>

@@ -42,7 +42,7 @@ export interface StagingResult {
 
 interface RoomUploaderProps {
   onResult: (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean, meta?: StagingMeta) => void;
-  onMultiStart: (original: string, pendingStyles: string[]) => void;
+  onMultiStart: (original: string, pendingStyles: string[], meta?: { roomType?: string; style?: string }) => void;
   onMultiProgress: (result: StagingResult, remainingStyles: string[]) => void;
   initialImage?: string | null;
   initialRoomType?: string;
@@ -217,7 +217,7 @@ const RoomUploader = ({
 
       if (result.stagings.length > 1) {
         const labels = result.stagings.map((_, i) => `Option ${i + 1}`);
-        onMultiStart(url, labels);
+        onMultiStart(url, labels, { roomType: base.roomType, style: state.style });
         result.stagings.forEach((row, i) =>
           onMultiProgress(
             { style: labels[i], stagedImageUrl: row.staged_image_url, stagingId: row.id, isWatermarked: result.isWatermarked, mlsDisclosure: row.mls_disclosure },
@@ -250,7 +250,7 @@ const RoomUploader = ({
 
   const runCompare = async (url: string, base: Omit<StageParams, "style">) => {
     const styles = state.compareStyles;
-    onMultiStart(url, [...styles]);
+    onMultiStart(url, [...styles], { roomType: base.roomType });
     let done = 0;
     for (let i = 0; i < styles.length; i++) {
       if (cancelledRef.current) {
