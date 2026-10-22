@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" });
+    const stripe = new Stripe(stripeKey);
     let customerId = usage?.stripe_customer_id as string | null | undefined;
     if (!customerId) {
       const existing = await stripe.customers.list({ email: user.email!, limit: 1 });

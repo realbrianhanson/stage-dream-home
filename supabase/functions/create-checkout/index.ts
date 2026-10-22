@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
     }
     const user = userData.user;
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" });
+    const stripe = new Stripe(stripeKey);
 
     const admin = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { data: usage } = await admin
