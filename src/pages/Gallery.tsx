@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Trash2, X, Upload, ArrowLeft, LogOut, Download, RefreshCw, Search, ChevronDown, ChevronRight, Share2, User, Home } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import type { StagingRow } from "@/lib/stagingApi";
 import { useAuth } from "@/hooks/useAuth";
 import { useUsage } from "@/hooks/useUsage";
 import { toast } from "sonner";
@@ -15,17 +16,7 @@ import ListingShareDialog from "@/components/ListingShareDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
 
-interface Staging {
-  id: string;
-  original_image_url: string;
-  staged_image_url: string;
-  room_type: string;
-  style: string;
-  property_address: string | null;
-  custom_instructions: string | null;
-  created_at: string;
-  share_token: string | null;
-}
+type Staging = StagingRow;
 
 const Gallery = () => {
   const { signOut } = useAuth();
@@ -609,12 +600,14 @@ const Gallery = () => {
               before={selectedStaging.original_image_url}
               after={selectedStaging.staged_image_url}
               onReset={() => setSelectedStaging(null)}
+              mlsDisclosure={selectedStaging.mls_disclosure}
               refineContext={{
+                stagingId: selectedStaging.id,
                 roomType: selectedStaging.room_type,
                 style: selectedStaging.style,
                 propertyName: selectedStaging.property_address,
                 customInstructions: selectedStaging.custom_instructions,
-                palette: (selectedStaging as any).staging_palette || null,
+                palette: selectedStaging.staging_palette || null,
               }}
             />
           </motion.div>

@@ -11,9 +11,8 @@ import {
   GitCompare,
   ChevronRight,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { uploadStagingImage } from "@/lib/uploadStagingImage";
+import { stageRoom, uploadOriginal } from "@/lib/stagingApi";
 import { useAuth } from "@/hooks/useAuth";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 
@@ -29,6 +28,7 @@ interface BatchItem {
   fileName: string;
   original: string; // downscaled data URL
   originalUrl?: string;
+  stagingId?: string;
   stagedUrl?: string;
   isWatermarked?: boolean;
   roomType: string;
@@ -198,45 +198,18 @@ const BatchStaging = ({
     if (!target) return;
 
     try {
-      const { data, error } = await supabase.functions.invoke("stage-room", {
-        body: {
-          image: target.original,
-          roomType: target.roomType,
-          style,
-          mode: "stage",
-          mls_disclosure: mlsDisclosure,
-          palette: sharedPalette || undefined,
-        },
+      if (!user) throw new Error("Please sign in again.");
+      const originalUrl = target.originalUrl ?? (await uploadOriginal(user.id, target.original));
+      const result = await stageRoom({
+        originalUrl,
+        mode: "stage",
+        roomType: target.roomType,
+        style,
+        mlsDisclosure,
+        palette: sharedPalette || undefined,
+        propertyName: propertyName.trim() || undefined,
       });
-      if (error) throw error;
-      if (!data?.stagedImageUrl) throw new Error("No staged image returned");
-
-      let originalUrl = target.originalUrl;
-      let stagedUrl: string = data.stagedImageUrl;
-
-      if (user) {
-        const stagingId = crypto.randomUUID();
-        const [origU, stagedU] = await Promise.all([
-          originalUrl
-            ? Promise.resolve(originalUrl)
-            : uploadStagingImage(user.id, stagingId, target.original, "original"),
-          uploadStagingImage(user.id, stagingId, data.stagedImageUrl, "staged"),
-        ]);
-        originalUrl = origU;
-        stagedUrl = stagedU;
-
-        await supabase.from("stagings").insert({
-          id: stagingId,
-          user_id: user.id,
-          original_image_url: originalUrl,
-          staged_image_url: stagedUrl,
-          room_type: target.roomType,
-          style,
-          property_address: propertyName.trim() || null,
-          mls_disclosure: mlsDisclosure,
-          staging_palette: sharedPalette || null,
-        } as any);
-      }
+      const row = result.stagings[0];
 
       setItems((prev) =>
         prev.map((x) =>
@@ -244,14 +217,15 @@ const BatchStaging = ({
             ? {
                 ...x,
                 status: "done" as Status,
-                stagedUrl,
+                stagedUrl: row.staged_image_url,
+                stagingId: row.id,
                 originalUrl,
-                isWatermarked: data.isWatermarked,
+                isWatermarked: result.isWatermarked,
               }
             : x
         )
       );
-    } catch (err: any) {
+    } catch (err) {
       console.error("Batch item failed:", err);
       setItems((prev) =>
         prev.map((x) =>
@@ -259,7 +233,7 @@ const BatchStaging = ({
             ? {
                 ...x,
                 status: "failed" as Status,
-                error: err?.message || "Failed",
+                error: err instanceof Error ? err.message : "Failed",
               }
             : x
         )
@@ -709,6 +683,13 @@ const BatchStaging = ({
                 isWatermarked={compareItem.isWatermarked}
                 mlsDisclosure={mlsDisclosure}
                 onReset={() => setCompareItem(null)}
+                refineContext={{
+                  stagingId: compareItem.stagingId,
+                  roomType: compareItem.roomType,
+                  style,
+                  propertyName: propertyName.trim() || null,
+                  palette: sharedPalette || null,
+                }}
               />
             </div>
           </motion.div>

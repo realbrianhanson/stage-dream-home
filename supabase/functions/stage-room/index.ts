@@ -1,9 +1,36 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { Image, decode } from "https://deno.land/x/imagescript@1.2.17/mod.ts";
-import { parseStageBody, reserveFailure, type StageRequest } from "../_shared/staging.ts";
+import { ownedStoragePath, parseStageBody, reserveFailure, type StageRequest } from "../_shared/staging.ts";
+import { buildPrompt } from "../_shared/prompts.ts";
+import { imageDimensions } from "../_shared/sizing.ts";
+import {
+  DEFAULT_CHAIN,
+  FAST_CHAIN,
+  GatewayError,
+  KNOWN_MODELS,
+  generateWithFallback,
+  type GeneratedImage,
+  type SourceImage,
+} from "../_shared/models.ts";
 
-// --- Server-side watermark (free plan only) ---
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+const GENERIC_ERROR = "Something went wrong staging your room. Please try again.";
+const PUBLIC_BUCKET = "stagings";
+const MASTER_BUCKET = "staging-masters";
+
+const json = (status: number, body: unknown) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+// --- Labels: free-plan watermark and MLS disclosure ---------------------------
+
 let cachedFont: Uint8Array | null = null;
 async function loadFont(): Promise<Uint8Array | null> {
   if (cachedFont) return cachedFont;
@@ -24,172 +51,51 @@ async function loadFont(): Promise<Uint8Array | null> {
   return null;
 }
 
-function bytesToBase64(bytes: Uint8Array): string {
-  let bin = "";
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  return btoa(bin);
+function paintText(img: Image, font: Uint8Array, text: string, size: number, color: number, x: number | "right" | "center", y: number | "bottom" | "center") {
+  const label = Image.renderText(font, size, text, color);
+  const shadow = Image.renderText(font, size, text, 0x00000088);
+  const pad = Math.round(img.width * 0.02);
+  const px = x === "right" ? img.width - label.width - pad : x === "center" ? Math.round((img.width - label.width) / 2) : x;
+  const py = y === "bottom" ? img.height - label.height - pad : y === "center" ? Math.round((img.height - label.height) / 2) : y;
+  img.composite(shadow, Math.max(0, px + 2), Math.max(0, py + 2));
+  img.composite(label, Math.max(0, px), Math.max(0, py));
 }
 
-// --- Paid-plan upscale cap ---
-const MAX_LONG_EDGE = 3000;
-
-function paintWatermark(img: Image, font: Uint8Array | null) {
-  if (!font) {
-    // Font unavailable — draw a solid pill in the corner so free files are still marked.
-    const barH = Math.max(28, Math.round(img.height * 0.04));
-    const bar = new Image(img.width, barH).fill(0x000000aa);
-    img.composite(bar, 0, img.height - barH);
-    return;
-  }
-  const fontSize = Math.max(22, Math.round(img.width * 0.028));
-  const text = "Staged by RealVision";
-  const textImg = Image.renderText(font, fontSize, text, 0xffffffcc);
-  const padX = Math.round(img.width * 0.02);
-  const padY = Math.round(img.height * 0.02);
-  const x = Math.max(0, img.width - textImg.width - padX);
-  const y = Math.max(0, img.height - textImg.height - padY);
-  const shadow = Image.renderText(font, fontSize, text, 0x00000099);
-  img.composite(shadow, x + 2, y + 2);
-  img.composite(textImg, x, y);
-}
-
-function paintMlsLabel(img: Image, font: Uint8Array) {
-  const fontSize = Math.max(20, Math.round(img.width * 0.022));
-  const text = "Virtually Staged";
-  const textImg = Image.renderText(font, fontSize, text, 0xffffffbf); // ~75% opacity
-  const padX = Math.round(img.width * 0.02);
-  const padY = Math.round(img.height * 0.02);
-  const x = padX;
-  const y = Math.max(0, img.height - textImg.height - padY);
-  const shadow = Image.renderText(font, fontSize, text, 0x00000099);
-  img.composite(shadow, x + 2, y + 2);
-  img.composite(textImg, x, y);
-}
-
-interface PostprocessOpts {
-  watermark: boolean; // free-plan RealVision mark, bottom-right
-  mlsLabel: boolean;  // "Virtually Staged", bottom-left
-  upscale: boolean;   // paid-plan hi-res upscale
+interface Finish {
+  watermark: boolean;
+  mlsLabel: boolean;
 }
 
 /**
- * Single decode/encode pass that optionally upscales, then paints the MLS
- * disclosure label (bottom-left) and/or the free-plan watermark (bottom-right).
- * Falls back gracefully on upscale failure and returns the source URL unchanged
- * if nothing needs to happen.
+ * Turn model output into the JPEG we store. Labels are painted at full
+ * resolution; if the disclosure or watermark can't be drawn we fail rather
+ * than ship an unlabelled image.
  */
-async function postprocessImage(sourceUrl: string, opts: PostprocessOpts): Promise<string> {
-  if (!opts.watermark && !opts.mlsLabel && !opts.upscale) return sourceUrl;
+async function finishImage(src: GeneratedImage, opts: Finish): Promise<Uint8Array> {
+  const needsPaint = opts.watermark || opts.mlsLabel;
+  const isJpeg = src.mime.includes("jpeg") || src.mime.includes("jpg");
+  if (!needsPaint && isJpeg) return src.bytes;
 
-  const res = await fetch(sourceUrl);
-  if (!res.ok) throw new Error("Failed to fetch generated image for postprocessing");
-  const bytes = new Uint8Array(await res.arrayBuffer());
-  const decoded = await decode(bytes);
+  const decoded = await decode(src.bytes);
   if (!(decoded instanceof Image)) throw new Error("Unsupported image format");
-  let img: Image = decoded;
+  const img: Image = decoded;
 
-  // Upscale first so any overlays are painted at final resolution.
-  if (opts.upscale) {
-    const longEdge = Math.max(img.width, img.height);
-    const targetsFor = (factor: number) => {
-      const capped = Math.min(longEdge * factor, MAX_LONG_EDGE);
-      const scale = capped / longEdge;
-      return {
-        w: Math.max(1, Math.round(img.width * scale)),
-        h: Math.max(1, Math.round(img.height * scale)),
-      };
-    };
-    let upscaled: Image | null = null;
-    for (const factor of [2, 1.5]) {
-      try {
-        const { w, h } = targetsFor(factor);
-        if (w === img.width && h === img.height) break; // already at cap
-        upscaled = img.clone().resize(w, h);
-        break;
-      } catch (err) {
-        console.warn(`Upscale ${factor}x failed, trying smaller:`, err);
-      }
-    }
-    if (upscaled) img = upscaled;
-  }
-
-  if (opts.mlsLabel || opts.watermark) {
+  if (needsPaint) {
     const font = await loadFont();
-    // The disclosure must be readable text; fail rather than ship it unlabeled.
-    if (opts.mlsLabel && !font) throw new Error("mls_font_unavailable");
-    if (opts.mlsLabel && font) paintMlsLabel(img, font);
-    if (opts.watermark) paintWatermark(img, font);
+    if (!font) throw new Error("label_font_unavailable");
+    const pad = Math.round(img.width * 0.02);
+    if (opts.mlsLabel) {
+      paintText(img, font, "Virtually Staged", Math.max(20, Math.round(img.width * 0.022)), 0xffffffd0, pad, "bottom");
+    }
+    if (opts.watermark) {
+      paintText(img, font, "RealVision", Math.max(48, Math.round(img.width * 0.08)), 0xffffff40, "center", "center");
+      paintText(img, font, "Staged free with RealVision", Math.max(20, Math.round(img.width * 0.022)), 0xffffffcc, "right", "bottom");
+    }
   }
-
-  const out = await img.encode();
-  return `data:image/png;base64,${bytesToBase64(out)}`;
+  return await img.encodeJPEG(90);
 }
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
-
-const GENERIC_ERROR = "Something went wrong staging your room. Please try again.";
-
-const json = (status: number, body: unknown) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-
-const normalizeRoomType = (raw: string) => {
-  const lower = raw.toLowerCase().trim();
-  const map: Record<string, string> = {
-    "outdoor / patio": "outdoor patio space",
-    "outdoor/patio": "outdoor patio space",
-  };
-  return map[lower] ?? lower.replace(/\s*\/\s*/g, " ").replace(/\s+/g, " ");
-};
-
-function buildPrompt(r: StageRequest): string {
-  const safeRoomType = normalizeRoomType(r.roomType);
-  const safeStyle = r.style.toLowerCase();
-  let prompt: string;
-
-  if (r.mode === "refine") {
-    prompt = `You are refining a virtually staged real estate photo. Take this image and apply ONLY the following change requested by the client: "${r.refineInstruction}".
-
-CRITICAL RULES — the output MUST match the input image in every way EXCEPT the requested change:
-- Keep the EXACT same room, architecture, walls, windows, doors, flooring, ceiling and built-in fixtures.
-- Keep the EXACT same camera angle, framing, perspective, focal length and lighting direction.
-- Keep the overall staging composition, style and materials the same. Do NOT re-stage from scratch.
-- Do NOT modify furniture or decor that the instruction does not explicitly touch.
-- Only modify what the instruction specifies.
-
-The result must be photorealistic and indistinguishable from a real photograph of a ${safeRoomType}, matching the ${safeStyle} style of the input.`;
-  } else if (r.mode === "remove") {
-    prompt = `You are a professional virtual de-staging specialist. Take this photo of a furnished ${safeRoomType} and digitally remove ALL furniture, decor, rugs, artwork, plants, lamps, curtains, and personal items.
-
-The result must show a completely empty, vacant ${safeRoomType} with only the bare architecture remaining: walls, floors, ceiling, windows, doors, and built-in fixtures (kitchen counters, bathroom fixtures, fireplaces, built-in shelving). Patch and reconstruct any areas where furniture was hiding the floor or walls so they look natural, clean, and continuous.
-
-CRITICAL: Keep the room's architecture, walls, windows, flooring material, ceiling, and lighting EXACTLY the same. Do not add anything new. Do not change wall colors. Do not stage. The output must be photorealistic, evenly lit, and indistinguishable from a real photograph of an empty room.`;
-  } else {
-    prompt = `You are a professional interior designer and virtual stager. Take this photo of an empty/vacant ${safeRoomType} and virtually stage it with beautiful ${safeStyle} style furniture and decor.
-
-Add appropriate furniture like sofas, tables, chairs, rugs, lamps, artwork, plants, and decorative accessories. Make the room look warm, inviting, and ready for a real estate listing. Keep the room's architecture, walls, windows, and flooring exactly the same. Only add furniture and decor. Make it look photorealistic and professionally staged.`;
-  }
-
-  if (r.customInstructions && r.mode !== "refine") {
-    prompt += `\n\nAdditional requirements from the client: ${r.customInstructions}`;
-  }
-  if (r.palette && r.mode !== "remove") {
-    prompt += `\n\nThis room is part of a whole-home staging. Use a consistent furniture collection and palette across rooms: ${r.palette}. Keep the same design language, wood tones, metal finishes, and textile palette so all rooms in this listing feel professionally coordinated.`;
-  }
-  if (r.aspectRatio && r.mode !== "refine") {
-    prompt += `\n\nIMPORTANT: Generate the image with a ${r.aspectRatio} aspect ratio.`;
-  }
-  return prompt;
-}
+// --- Request handling ----------------------------------------------------------
 
 interface Outcome {
   response: Response;
@@ -207,57 +113,156 @@ interface Ctx {
   userId: string | null;
   plan: string | null;
   request: StageRequest | null;
-  reserved: boolean;
+  reserved: number;
+  used: number;
+  model: string | null;
 }
 
-async function callGateway(apiKey: string, prompt: string, image: string): Promise<Outcome | string> {
-  let response: Response;
-  try {
-    response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image",
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: prompt },
-              { type: "image_url", image_url: { url: image } },
-            ],
-          },
-        ],
-        modalities: ["image", "text"],
-      }),
-    });
-  } catch (err) {
-    console.error("AI gateway fetch failed:", err);
-    return fail(502, GENERIC_ERROR, `gateway_fetch: ${(err as Error)?.message || "unknown"}`);
-  }
-
-  if (response.status === 429) {
-    return fail(429, "You're staging too fast! Please wait a moment and try again.", "gateway_429");
-  }
-  if (response.status === 402) {
-    // Our gateway credits ran out, not the user's plan.
-    return fail(503, "Staging is temporarily unavailable. Please try again shortly.", "gateway_402");
-  }
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => "");
-    console.error("AI gateway error:", response.status, errorText);
-    return fail(502, GENERIC_ERROR, `gateway_${response.status}: ${errorText}`);
-  }
-
-  const data = await response.json().catch(() => null);
-  const url: string | undefined = data?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-  return url ?? fail(502, GENERIC_ERROR, "no_staged_url");
+interface Source {
+  image: SourceImage;
+  originalUrl: string;
+  parent: Record<string, unknown> | null;
 }
 
-async function handle(req: Request, ctx: Ctx): Promise<Outcome> {
+function dataUrlToBytes(dataUrl: string): { bytes: Uint8Array; mime: string } {
+  const [head, b64] = dataUrl.split(",");
+  return {
+    mime: head.match(/:(.*?);/)?.[1] ?? "image/jpeg",
+    bytes: Uint8Array.from(atob(b64 ?? ""), (c) => c.charCodeAt(0)),
+  };
+}
+
+async function sourceFrom(bytes: Uint8Array, mime: string): Promise<SourceImage> {
+  let dims = imageDimensions(bytes);
+  if (!dims) {
+    const d = await decode(bytes).catch(() => null);
+    dims = d instanceof Image ? { width: d.width, height: d.height } : { width: 1536, height: 1024 };
+  }
+  return { bytes, mime, ...dims };
+}
+
+async function download(admin: SupabaseClient, bucket: string, path: string) {
+  const { data, error } = await admin.storage.from(bucket).download(path);
+  if (error || !data) throw new Error(`download_failed: ${bucket}/${path}`);
+  return { bytes: new Uint8Array(await data.arrayBuffer()), mime: data.type || "image/jpeg" };
+}
+
+/** Load the photo to edit, making sure it belongs to the caller. */
+async function loadSource(r: StageRequest, userId: string, admin: SupabaseClient, supabaseUrl: string): Promise<Source | Outcome> {
+  if (r.parentId) {
+    const { data: parent } = await admin.from("stagings").select("*").eq("id", r.parentId).maybeSingle();
+    if (!parent || parent.user_id !== userId) return fail(404, "That staging could not be found.", "parent_not_found");
+    // Refines start from the clean master so labels and watermarks never stack.
+    const file = parent.master_path
+      ? await download(admin, MASTER_BUCKET, parent.master_path as string)
+      : await download(admin, PUBLIC_BUCKET, ownedStoragePath(parent.staged_image_url as string, supabaseUrl, userId) ?? "");
+    return { image: await sourceFrom(file.bytes, file.mime), originalUrl: parent.original_image_url as string, parent };
+  }
+
+  if (r.originalUrl) {
+    const path = ownedStoragePath(r.originalUrl, supabaseUrl, userId);
+    if (!path) return fail(403, "That photo isn't in your account.", "foreign_original");
+    const file = await download(admin, PUBLIC_BUCKET, path);
+    return { image: await sourceFrom(file.bytes, file.mime), originalUrl: r.originalUrl, parent: null };
+  }
+
+  // Legacy clients send the photo inline; store it so the staging has an original.
+  const { bytes, mime } = dataUrlToBytes(r.imageData ?? "");
+  if (bytes.length === 0) return fail(400, "Please upload an image to stage", "empty_image");
+  const ext = mime.includes("png") ? "png" : mime.includes("webp") ? "webp" : "jpg";
+  const path = `${userId}/${crypto.randomUUID()}/original.${ext}`;
+  const { error } = await admin.storage.from(PUBLIC_BUCKET).upload(path, bytes, { contentType: mime });
+  if (error) throw new Error(`original_upload_failed: ${error.message}`);
+  const originalUrl = admin.storage.from(PUBLIC_BUCKET).getPublicUrl(path).data.publicUrl;
+  return { image: await sourceFrom(bytes, mime), originalUrl, parent: null };
+}
+
+/** Reserve up to `want` credits; returns how many were granted and the first refusal. */
+async function reserveCredits(client: SupabaseClient, userId: string, want: number) {
+  let granted = 0;
+  let refusal: string | null = null;
+  for (let i = 0; i < want; i++) {
+    let { data, error } = await client.rpc("reserve_staging");
+    // reserve_staging() may not exist yet if this deploys before its migration.
+    if (error?.code === "PGRST202") {
+      const legacy = await client.rpc("check_and_increment_staging", { p_user_id: userId });
+      error = legacy.error;
+      data = legacy.data === true ? "ok" : "quota_exceeded";
+    }
+    if (error) throw new Error(`quota_rpc: ${error.message}`);
+    if (data !== "ok") {
+      refusal = String(data);
+      break;
+    }
+    granted++;
+  }
+  return { granted, refusal };
+}
+
+function chainFor(plan: string, override: string | null): string[] {
+  const base = plan === "free" ? FAST_CHAIN : DEFAULT_CHAIN;
+  const fromEnv = (Deno.env.get("STAGING_MODELS") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const chain = fromEnv.length > 0 && plan !== "free" ? fromEnv : base;
+  if (override && KNOWN_MODELS.includes(override)) return [override, ...chain.filter((m) => m !== override)];
+  return chain;
+}
+
+interface SaveCtx {
+  r: StageRequest;
+  userId: string;
+  admin: SupabaseClient;
+  source: Source;
+  isFree: boolean;
+  model: string;
+}
+
+/** Store the clean master privately, the finished JPEG publicly, and the row. */
+async function saveImage(image: GeneratedImage, c: SaveCtx): Promise<Record<string, unknown>> {
+  const { r, userId, admin, source } = c;
+  const id = crypto.randomUUID();
+  const finished = await finishImage(image, { watermark: c.isFree, mlsLabel: r.wantsMlsLabel });
+
+  const masterPath = `${userId}/${id}.${image.mime.includes("png") ? "png" : "jpg"}`;
+  const stagedPath = `${userId}/${id}/staged.jpg`;
+  const [m, s] = await Promise.all([
+    admin.storage.from(MASTER_BUCKET).upload(masterPath, image.bytes, { contentType: image.mime }),
+    admin.storage.from(PUBLIC_BUCKET).upload(stagedPath, finished, { contentType: "image/jpeg" }),
+  ]);
+  if (s.error) throw new Error(`staged_upload_failed: ${s.error.message}`);
+  if (m.error) console.error("master upload failed:", m.error);
+
+  const parent = source.parent;
+  const { data: row, error } = await admin
+    .from("stagings")
+    .insert({
+      id,
+      user_id: userId,
+      original_image_url: source.originalUrl,
+      staged_image_url: admin.storage.from(PUBLIC_BUCKET).getPublicUrl(stagedPath).data.publicUrl,
+      room_type: r.roomType,
+      style: r.mode === "refine" ? `${r.style} (refined)` : r.mode === "remove" ? "Removed" : r.style,
+      property_address: r.propertyName || (parent?.property_address as string | null) || null,
+      custom_instructions: r.mode === "refine" ? r.refineInstruction : r.customInstructions || null,
+      aspect_ratio: r.aspectRatio,
+      mls_disclosure: r.wantsMlsLabel,
+      staging_palette: r.palette || null,
+      parent_id: parent ? parent.id : null,
+      master_path: m.error ? null : masterPath,
+      model: c.model,
+      kind: r.mode,
+    })
+    .select("*")
+    .single();
+  if (error) throw new Error(`staging_insert_failed: ${error.message}`);
+  return row;
+}
+
+async function handle(req: Request, ctx: Ctx, admin: SupabaseClient): Promise<Outcome> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return fail(401, "No authorization header", "no_auth");
 
-  const userClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+  const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
     global: { headers: { Authorization: authHeader } },
   });
   const { data: { user }, error: authError } = await userClient.auth.getUser();
@@ -268,8 +273,8 @@ async function handle(req: Request, ctx: Ctx): Promise<Outcome> {
   const body = await req.json().catch(() => null);
   const parsed = parseStageBody(body);
   if (!parsed.ok) return fail(400, parsed.message, parsed.code);
-  const request = parsed.value;
-  ctx.request = request;
+  const r = parsed.value;
+  ctx.request = r;
 
   const apiKey = Deno.env.get("LOVABLE_API_KEY");
   if (!apiKey) return fail(500, "Staging service is not configured. Please contact support.", "missing_api_key");
@@ -278,76 +283,100 @@ async function handle(req: Request, ctx: Ctx): Promise<Outcome> {
   const isAdmin = usageRow?.is_admin === true;
   const plan = isAdmin ? "admin" : ((usageRow?.plan as string | undefined) ?? "free");
   ctx.plan = plan;
-
-  // reserve_staging() ships in a migration that may land after this code
-  // deploys; until then fall back to the legacy boolean RPC.
-  let { data: reserve, error: reserveError } = await userClient.rpc("reserve_staging");
-  if (reserveError?.code === "PGRST202") {
-    const legacy = await userClient.rpc("check_and_increment_staging", { p_user_id: user.id });
-    reserveError = legacy.error;
-    reserve = legacy.data === true ? "ok" : "quota_exceeded";
-  }
-  if (reserveError) {
-    console.error("reserve_staging error:", reserveError);
-    return fail(500, "Could not verify staging quota. Please try again.", `quota_rpc: ${reserveError.message}`);
-  }
-  if (reserve !== "ok") {
-    const { status, message } = reserveFailure(String(reserve), plan);
-    return fail(status, message, String(reserve));
-  }
-  ctx.reserved = true;
-
-  const generated = await callGateway(apiKey, buildPrompt(request), request.image);
-  if (typeof generated !== "string") return generated;
-
   const isFree = plan === "free";
-  let stagedImageUrl = generated;
+
+  const source = await loadSource(r, user.id, admin, supabaseUrl);
+  if ("response" in source) return source;
+
+  const { granted, refusal } = await reserveCredits(userClient, user.id, r.variations);
+  ctx.reserved = granted;
+  if (granted === 0) {
+    const { status, message } = reserveFailure(refusal ?? "no_usage", plan);
+    return fail(status, message, refusal ?? "no_usage");
+  }
+
+  const prompt = buildPrompt({
+    mode: r.mode,
+    roomType: r.roomType,
+    style: r.style,
+    customInstructions: r.customInstructions,
+    refineInstruction: r.refineInstruction,
+    palette: r.palette,
+  });
+
+  let generated;
   try {
-    stagedImageUrl = await postprocessImage(generated, {
-      watermark: isFree,
-      mlsLabel: request.wantsMlsLabel,
-      upscale: !isFree,
+    generated = await generateWithFallback(chainFor(plan, isAdmin ? r.model : null), {
+      apiKey,
+      prompt,
+      image: source.image,
+      aspectRatio: r.mode === "refine" ? null : r.aspectRatio,
+      n: granted,
+      hd: !isFree,
     });
   } catch (err) {
-    console.error("Postprocess failed:", err);
-    // Free output must carry the watermark and labelled output must carry the
-    // disclosure; only a plain paid upscale may fall back to the raw image.
-    if (isFree || request.wantsMlsLabel) {
-      return fail(500, "Failed to finalize your image. Please try again.", `postprocess: ${(err as Error)?.message || "unknown"}`);
+    console.error("generation failed:", err);
+    if (err instanceof GatewayError && err.status === 429) {
+      return fail(429, "Staging is busy right now. Please try again in a moment.", err.message);
+    }
+    if (err instanceof GatewayError && err.status === 402) {
+      return fail(503, "Staging is temporarily unavailable. Please try again shortly.", err.message);
+    }
+    return fail(502, GENERIC_ERROR, err instanceof Error ? err.message : String(err));
+  }
+  ctx.model = generated.model;
+  if (generated.attempts.length > 0) console.warn("model fallbacks:", generated.attempts);
+
+  const rows: Record<string, unknown>[] = [];
+  let lastError: unknown = null;
+  for (const image of generated.images.slice(0, granted)) {
+    try {
+      rows.push(await saveImage(image, { r, userId: user.id, admin, source, isFree, model: generated.model }));
+      ctx.used++;
+    } catch (err) {
+      // One bad variation shouldn't sink the others; its credit is refunded.
+      console.error("saving image failed:", err);
+      lastError = err;
     }
   }
+  if (rows.length === 0) throw lastError ?? new Error("no_images_saved");
 
   return {
     response: json(200, {
-      stagedImageUrl,
+      stagings: rows,
+      stagedImageUrl: rows[0]?.staged_image_url,
       plan,
+      model: generated.model,
       isWatermarked: isFree,
-      mlsDisclosure: request.wantsMlsLabel,
+      mlsDisclosure: r.wantsMlsLabel,
     }),
     success: true,
     error: null,
   };
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   const startedAt = Date.now();
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-  const ctx: Ctx = { userId: null, plan: null, request: null, reserved: false };
+  const ctx: Ctx = { userId: null, plan: null, request: null, reserved: 0, used: 0, model: null };
 
   let outcome: Outcome;
   try {
-    outcome = await handle(req, ctx);
+    outcome = await handle(req, ctx, admin);
   } catch (err) {
     console.error("Stage room error:", err);
-    outcome = fail(500, GENERIC_ERROR, `unhandled: ${(err as Error)?.message || "unknown"}`);
+    outcome = fail(500, GENERIC_ERROR, `unhandled: ${err instanceof Error ? err.message : String(err)}`);
   }
 
-  // Any reserved credit that didn't produce an image goes back to the user.
-  if (ctx.reserved && !outcome.success && ctx.userId) {
-    const { error } = await admin.rpc("decrement_staging", { p_user_id: ctx.userId });
-    if (error) console.error("decrement_staging failed:", error);
+  // Every reserved credit that didn't become a saved image goes back.
+  const unused = ctx.reserved - ctx.used;
+  if (unused > 0 && ctx.userId) {
+    for (let i = 0; i < unused; i++) {
+      const { error } = await admin.rpc("decrement_staging", { p_user_id: ctx.userId });
+      if (error) console.error("decrement_staging failed:", error);
+    }
   }
 
   const r = ctx.request;
@@ -363,6 +392,7 @@ serve(async (req) => {
       error_text: outcome.error ? outcome.error.slice(0, 2000) : null,
       duration_ms: Date.now() - startedAt,
       mls_disclosure: r?.wantsMlsLabel ?? false,
+      model: ctx.model,
     })
     .then(({ error }) => {
       if (error) console.error("generation_logs insert failed:", error);

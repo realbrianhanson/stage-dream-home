@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import HeroSection from "@/components/HeroSection";
 import RoomUploader from "@/components/RoomUploader";
-import type { StagingResult } from "@/components/RoomUploader";
+import type { StagingMeta, StagingResult } from "@/components/RoomUploader";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import ComparisonView from "@/components/ComparisonView";
 import UsageIndicator from "@/components/UsageIndicator";
@@ -16,7 +16,7 @@ import { openCustomerPortal } from "@/lib/billing";
 import { LogOut, ImageIcon, HelpCircle, CreditCard } from "lucide-react";
 
 type ResultState =
-  | { type: "single"; original: string; staged: string; isWatermarked?: boolean; mlsDisclosure?: boolean; meta?: { roomType: string; style: string; propertyName: string; customInstructions: string; palette?: string } }
+  | { type: "single"; original: string; staged: string; isWatermarked?: boolean; mlsDisclosure?: boolean; meta?: StagingMeta }
   | { type: "multi"; original: string; results: StagingResult[]; pendingStyles: string[]; isWatermarked?: boolean }
   | null;
 
@@ -66,7 +66,7 @@ const Index = () => {
     document.getElementById("upload-section")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleResult = (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean, meta?: { roomType: string; style: string; propertyName: string; customInstructions: string; palette?: string }) => {
+  const handleResult = (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean, meta?: StagingMeta) => {
     setResult({ type: "single", original, staged, isWatermarked, mlsDisclosure, meta });
     setStagingCount((prev) => prev + 1);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -179,6 +179,7 @@ const Index = () => {
             isWatermarked={result.isWatermarked}
             mlsDisclosure={result.mlsDisclosure}
             refineContext={result.meta ? {
+              stagingId: result.meta.stagingId,
               roomType: result.meta.roomType,
               style: result.meta.style,
               propertyName: result.meta.propertyName,

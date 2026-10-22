@@ -20,13 +20,13 @@ describe("parseStageBody", () => {
   it("clips free text and drops unknown aspect ratios", () => {
     const r = parseStageBody({
       image: img,
-      roomType: "x".repeat(500),
+      propertyName: "x".repeat(500),
       customInstructions: "y".repeat(1000),
       aspectRatio: "21:9",
     });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.value.roomType).toHaveLength(80);
+    expect(r.value.propertyName).toHaveLength(160);
     expect(r.value.customInstructions).toHaveLength(300);
     expect(r.value.aspectRatio).toBeNull();
   });

@@ -1,9 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, Image as ImageIcon, X, Loader2, Lock, ToggleLeft, ToggleRight, ChevronDown, ChevronUp, StopCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { uploadStagingImage } from "@/lib/uploadStagingImage";
+import { stageRoom, uploadOriginal, StagingError } from "@/lib/stagingApi";
 import BatchStaging from "@/components/BatchStaging";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -22,6 +21,16 @@ const INSTRUCTION_CHIPS = [
 
 const MAX_INSTRUCTIONS = 300;
 
+// Admin-only: pick the image model to A/B results. "Auto" uses the server's chain.
+const ADMIN_MODELS = [
+  { value: "", label: "Auto (best available)" },
+  { value: "openai/gpt-image-2.5-sunburst", label: "GPT Image 2.5 Sunburst" },
+  { value: "openai/gpt-image-2.5-flare", label: "GPT Image 2.5 Flare (fast)" },
+  { value: "openai/gpt-image-2", label: "GPT Image 2" },
+  { value: "google/gemini-3-pro-image", label: "Gemini 3 Pro Image" },
+  { value: "google/gemini-2.5-flash-image", label: "Gemini 2.5 Flash Image (old)" },
+];
+
 import { ROOM_TYPES, STYLES, getPalettesForStyle } from "@/config/catalogs";
 
 const ASPECT_RATIOS = [
@@ -32,15 +41,25 @@ const ASPECT_RATIOS = [
   { value: "1:1", label: "Square 1:1" },
 ];
 
+export interface StagingMeta {
+  stagingId: string;
+  roomType: string;
+  style: string;
+  propertyName: string;
+  customInstructions: string;
+  palette?: string;
+}
+
 export interface StagingResult {
   style: string;
   stagedImageUrl: string;
+  stagingId?: string;
   isWatermarked?: boolean;
   mlsDisclosure?: boolean;
 }
 
 interface RoomUploaderProps {
-  onResult: (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean, meta?: { roomType: string; style: string; propertyName: string; customInstructions: string; palette?: string }) => void;
+  onResult: (original: string, staged: string, isWatermarked?: boolean, mlsDisclosure?: boolean, meta?: StagingMeta) => void;
   onMultiResult: (original: string, results: StagingResult[], isWatermarked?: boolean) => void;
   onMultiStart: (original: string, pendingStyles: string[]) => void;
   onMultiProgress: (result: StagingResult, remainingStyles: string[]) => void;
@@ -86,6 +105,8 @@ const RoomUploader = ({
   const [aspectRatio, setAspectRatio] = useState("");
   const [palette, setPalette] = useState(initialPalette || "");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [adminModel, setAdminModel] = useState("");
+  const isAdmin = usage?.plan === "admin";
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressText, setProgressText] = useState("");
   const [dragOver, setDragOver] = useState(false);
@@ -208,161 +229,98 @@ const RoomUploader = ({
   };
 
   const handleStage = async () => {
-    if (!image) return;
+    if (!image || !user) return;
 
     const isRemove = mode === "remove";
-    const stylesToStage = isRemove ? ["Removed"] : (compareMode ? selectedStyles : [style]);
+    const stylesToStage = isRemove ? [style] : compareMode ? selectedStyles : [style];
     const count = stylesToStage.length;
 
     if (!canStage) {
-      toast.error("You've reached your free staging limit this month.");
+      toast.error(usage?.plan === "free" ? "You've reached your free staging limit this month." : "You've used all of this month's stagings.");
       return;
     }
 
     setIsProcessing(true);
     cancelledRef.current = false;
+    const instructions = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
+    const common = {
+      roomType,
+      customInstructions: instructions,
+      aspectRatio: aspectRatio || undefined,
+      mlsDisclosure: !isRemove && mlsDisclosure,
+      propertyName: propertyName.trim() || undefined,
+      model: isAdmin ? adminModel || undefined : undefined,
+    };
 
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      setProgressText("Uploading your photo...");
+      const originalUrl = await uploadOriginal(user.id, image);
 
       if (count === 1) {
         setProgressText(isRemove ? "Removing furniture from your room..." : "Staging your room with AI...");
-        const instrTrimmed = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
         const paletteForRun = !isRemove && palette ? palette : "";
-        const { data, error } = await supabase.functions.invoke("stage-room", {
-          body: { image, roomType, style: stylesToStage[0], customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined, mode: isRemove ? "remove" : "stage", mls_disclosure: !isRemove && mlsDisclosure, palette: paletteForRun || undefined },
+        const result = await stageRoom({
+          ...common,
+          originalUrl,
+          mode: isRemove ? "remove" : "stage",
+          style: stylesToStage[0],
+          palette: paletteForRun,
         });
-        // Always refresh usage after an attempt so the indicator matches DB.
-        await onStagingComplete();
-        if (error) throw error;
-        if (!data?.stagedImageUrl) throw new Error("No staged image returned");
+        const row = result.stagings[0];
+        const meta = {
+          stagingId: row.id,
+          roomType,
+          style: row.style,
+          propertyName: propertyName.trim(),
+          customInstructions: instructions,
+          palette: paletteForRun,
+        };
+        onResult(originalUrl, row.staged_image_url, result.isWatermarked, !isRemove && mlsDisclosure, meta);
+        toast.success(isRemove ? "Furniture removed" : "Room staged");
+        return;
+      }
 
-        if (user) {
-          const stagingId = crypto.randomUUID();
-          const [originalUrl, stagedUrl] = await Promise.all([
-            uploadStagingImage(user.id, stagingId, image, "original"),
-            uploadStagingImage(user.id, stagingId, data.stagedImageUrl, "staged"),
-          ]);
-
-          await supabase.from("stagings").insert({
-            id: stagingId,
-            user_id: user.id,
-            original_image_url: originalUrl,
-            staged_image_url: stagedUrl,
-            room_type: roomType,
-            style: stylesToStage[0],
-            property_address: propertyName.trim() || null,
-            custom_instructions: instrTrimmed || null,
-            aspect_ratio: aspectRatio || null,
-            mls_disclosure: !isRemove && mlsDisclosure,
-            staging_palette: paletteForRun || null,
-          } as any);
-          const meta = { roomType, style: stylesToStage[0], propertyName: propertyName.trim(), customInstructions: instrTrimmed, palette: paletteForRun };
-          onResult(originalUrl, stagedUrl, data.isWatermarked, !isRemove && mlsDisclosure, meta);
-        } else {
-          const meta = { roomType, style: stylesToStage[0], propertyName: propertyName.trim(), customInstructions: instrTrimmed, palette: paletteForRun };
-          onResult(image, data.stagedImageUrl, data.isWatermarked, !isRemove && mlsDisclosure, meta);
+      // Compare styles: results stream in one at a time.
+      onMultiStart(originalUrl, [...stylesToStage]);
+      const completed: StagingResult[] = [];
+      for (let i = 0; i < stylesToStage.length; i++) {
+        if (cancelledRef.current) {
+          toast.info(`Stopped after ${completed.length} of ${count} styles`);
+          break;
         }
-        toast.success(isRemove ? "Furniture removed successfully!" : "Room staged successfully!");
-      } else {
-        // Multi-style — progressive streaming
-        onMultiStart(image, [...stylesToStage]);
-
-        const completedResults: StagingResult[] = [];
-
-        // Upload original image once and reuse URL
-        let sharedOriginalUrl: string | null = null;
-        if (user) {
-          const firstStagingId = crypto.randomUUID();
-          sharedOriginalUrl = await uploadStagingImage(user.id, firstStagingId, image, "original");
-        }
-
-        let quotaHit = false;
-        // Each style gets its own palette from the shared catalog, unless one was picked.
-        const comparePaletteFor = (s: string) =>
-          palette && getPalettesForStyle(s).includes(palette) ? palette : "";
-
-        for (let i = 0; i < stylesToStage.length; i++) {
-          if (cancelledRef.current) {
-            toast.info(`Cancelled — ${completedResults.length} of ${count} styles completed`);
+        const currentStyle = stylesToStage[i];
+        const remaining = stylesToStage.slice(i + 1);
+        setProgressText(`Staging ${i + 1} of ${count} · ${currentStyle}`);
+        const comparePalette = palette && getPalettesForStyle(currentStyle).includes(palette) ? palette : "";
+        try {
+          const result = await stageRoom({ ...common, originalUrl, mode: "stage", style: currentStyle, palette: comparePalette });
+          const row = result.stagings[0];
+          const item: StagingResult = {
+            style: currentStyle,
+            stagedImageUrl: row.staged_image_url,
+            stagingId: row.id,
+            isWatermarked: result.isWatermarked,
+            mlsDisclosure,
+          };
+          completed.push(item);
+          onMultiProgress(item, cancelledRef.current ? [] : remaining);
+        } catch (err) {
+          if (err instanceof StagingError && err.isQuota) {
+            toast.info(`Limit reached after ${completed.length} style${completed.length === 1 ? "" : "s"}.`);
+            onMultiProgress({ style: currentStyle, stagedImageUrl: "", isWatermarked: false }, []);
             break;
           }
-
-          const currentStyle = stylesToStage[i];
-          const comparePalette = comparePaletteFor(currentStyle);
-          const remaining = stylesToStage.slice(i + 1);
-          setProgressText(`Staging ${i + 1} of ${count}... ${currentStyle}`);
-
-          try {
-            const instrTrimmed = customInstructions.trim().slice(0, MAX_INSTRUCTIONS);
-            const { data, error } = await supabase.functions.invoke("stage-room", {
-              body: { image, roomType, style: currentStyle, customInstructions: instrTrimmed, aspectRatio: aspectRatio || undefined, mode: "stage", mls_disclosure: mlsDisclosure, palette: comparePalette || undefined },
-            });
-            if (error) {
-              // 402 (quota) or other — stop the loop for quota exhaustion
-              const msg = (error as any)?.context?.status === 402 ? "quota" : "";
-              if (msg === "quota") {
-                quotaHit = true;
-                toast.info(`Limit reached after ${completedResults.length} style${completedResults.length !== 1 ? "s" : ""}. Upgrade for more.`);
-                break;
-              }
-              throw error;
-            }
-            if (!data?.stagedImageUrl) throw new Error(`No staged image returned for ${currentStyle}`);
-
-            let finalResult: StagingResult = { style: currentStyle, stagedImageUrl: data.stagedImageUrl, isWatermarked: data.isWatermarked, mlsDisclosure: mlsDisclosure };
-
-            // Upload staged image and save to db (reuse shared original)
-            if (user && sharedOriginalUrl) {
-              const stagingId = crypto.randomUUID();
-              const stagedUrl = await uploadStagingImage(user.id, stagingId, data.stagedImageUrl, "staged");
-
-              await supabase.from("stagings").insert({
-                id: stagingId,
-                user_id: user.id,
-                original_image_url: sharedOriginalUrl,
-                staged_image_url: stagedUrl,
-                room_type: roomType,
-                style: currentStyle,
-                property_address: propertyName.trim() || null,
-                custom_instructions: instrTrimmed || null,
-                aspect_ratio: aspectRatio || null,
-                mls_disclosure: mlsDisclosure,
-                staging_palette: comparePalette || null,
-              } as any);
-
-              finalResult.stagedImageUrl = stagedUrl;
-            }
-
-            completedResults.push(finalResult);
-            onMultiProgress(finalResult, cancelledRef.current ? [] : remaining);
-          } catch (styleErr: any) {
-            console.error(`Style "${currentStyle}" failed:`, styleErr);
-            toast.error(`Failed to stage "${currentStyle}" — skipping`);
-            onMultiProgress(
-              { style: currentStyle, stagedImageUrl: "", isWatermarked: false },
-              cancelledRef.current ? [] : remaining
-            );
-          }
-        }
-
-        // Refresh usage once at end so indicator matches DB.
-        await onStagingComplete();
-
-        if (!quotaHit) {
-          toast.success(
-            cancelledRef.current
-              ? `${completedResults.length} style${completedResults.length !== 1 ? "s" : ""} staged`
-              : `Room staged in ${completedResults.length} styles!`
-          );
+          console.error(`Style "${currentStyle}" failed:`, err);
+          toast.error(`${currentStyle}: ${err instanceof Error ? err.message : "failed"}`);
+          onMultiProgress({ style: currentStyle, stagedImageUrl: "", isWatermarked: false }, cancelledRef.current ? [] : remaining);
         }
       }
-    } catch (err: any) {
+      if (completed.length > 0 && !cancelledRef.current) toast.success(`Staged in ${completed.length} styles`);
+    } catch (err) {
       console.error("Staging error:", err);
-      toast.error(err.message || "Failed to stage room. Please try again.");
+      toast.error(err instanceof Error ? err.message : "Failed to stage room. Please try again.");
     } finally {
+      await onStagingComplete();
       setIsProcessing(false);
       setProgressText("");
       cancelledRef.current = false;
@@ -728,6 +686,26 @@ const RoomUploader = ({
                             </span>
                           </div>
                         </div>
+
+                        {isAdmin && (
+                          <div className="mt-5">
+                            <label className="font-body text-sm font-medium text-muted-foreground block mb-2">
+                              Image model <span className="text-accent">· admin</span>
+                            </label>
+                            <select
+                              value={adminModel}
+                              onChange={(e) => setAdminModel(e.target.value)}
+                              className="w-full font-body text-sm bg-card border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/50 transition-all"
+                            >
+                              {ADMIN_MODELS.map((m) => (
+                                <option key={m.value} value={m.value}>{m.label}</option>
+                              ))}
+                            </select>
+                            <p className="font-body text-[11px] text-muted-foreground mt-1.5">
+                              Only you see this. Each result records which model made it.
+                            </p>
+                          </div>
+                        )}
 
                         {mode === "stage" && !compareMode && (
                           <div className="mt-5">

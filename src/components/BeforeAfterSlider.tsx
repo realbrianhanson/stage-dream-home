@@ -6,10 +6,11 @@ import DownloadWithPresets from "@/components/DownloadWithPresets";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useUsage } from "@/hooks/useUsage";
-import { supabase } from "@/integrations/supabase/client";
-import { uploadStagingImage } from "@/lib/uploadStagingImage";
+import { stageRoom } from "@/lib/stagingApi";
 
 export interface RefineContext {
+  /** Saved staging behind `after`; refines edit its clean master. */
+  stagingId?: string | null;
   roomType: string;
   style: string;
   propertyName?: string | null;
@@ -27,6 +28,7 @@ const REFINE_CHIPS = [
 ];
 
 interface Version {
+  stagingId?: string | null;
   url: string;
   label: string;
   isWatermarked?: boolean;
@@ -55,7 +57,7 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
 
   // Session version history: v1 is the initial `after`; each refine/regenerate appends.
   const [versions, setVersions] = useState<Version[]>([
-    { url: after, label: refineContext?.style || "v1", isWatermarked },
+    { stagingId: refineContext?.stagingId, url: after, label: refineContext?.style || "v1", isWatermarked },
   ]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [refining, setRefining] = useState(false);
@@ -64,13 +66,13 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
   // If the parent swaps in a completely different `after` (e.g. new staging opened),
   // reset the version history for that new session.
   useEffect(() => {
-    setVersions([{ url: after, label: refineContext?.style || "v1", isWatermarked }]);
+    setVersions([{ stagingId: refineContext?.stagingId, url: after, label: refineContext?.style || "v1", isWatermarked }]);
     setActiveIdx(0);
     setFreeText("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [after]);
 
-  const currentVersion = versions[activeIdx] ?? { url: after, isWatermarked };
+  const currentVersion: Version = versions[activeIdx] ?? { stagingId: refineContext?.stagingId, url: after, label: "v1", isWatermarked };
   const currentAfter = currentVersion.url;
   const currentWatermarked = currentVersion.isWatermarked;
 
@@ -154,71 +156,49 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
 
   const runStaging = async (opts: {
     mode: "stage" | "refine";
-    image: string;
     refineInstruction?: string;
-    savedStyle: string;
-    savedInstructions?: string | null;
     versionLabel: string;
   }) => {
     if (!refineContext) return;
     if (!canStage) {
-      toast.error(`You've used all ${freeLimit} free stagings this month.`, {
-        action: { label: "Upgrade", onClick: () => navigate("/pricing") },
+      toast.error(isFree ? `You've used all ${freeLimit} free stagings this month.` : "You've used all of this month's stagings.", {
+        action: { label: "See plans", onClick: () => navigate("/pricing") },
       });
+      return;
+    }
+    if (opts.mode === "refine" && !currentVersion.stagingId) {
+      toast.error("Open this staging from My Stagings to refine it.");
       return;
     }
     setRefining(true);
     try {
-      const { data, error } = await supabase.functions.invoke("stage-room", {
-        body: {
-          image: opts.image,
-          mode: opts.mode,
-          roomType: refineContext.roomType,
-          style: stripRefinedSuffix(refineContext.style),
-          refineInstruction: opts.refineInstruction,
-          customInstructions: opts.mode === "stage" ? (opts.savedInstructions || "") : undefined,
-          mls_disclosure: !!mlsDisclosure,
-          palette: refineContext.palette || undefined,
-        },
+      const result = await stageRoom({
+        mode: opts.mode,
+        parentId: opts.mode === "refine" ? currentVersion.stagingId ?? undefined : undefined,
+        originalUrl: opts.mode === "stage" ? before : undefined,
+        roomType: refineContext.roomType,
+        style: stripRefinedSuffix(refineContext.style),
+        refineInstruction: opts.refineInstruction,
+        customInstructions: opts.mode === "stage" ? refineContext.customInstructions || "" : undefined,
+        mlsDisclosure: !!mlsDisclosure,
+        palette: refineContext.palette || undefined,
+        propertyName: refineContext.propertyName || undefined,
       });
-      await refresh();
-      if (error) throw error;
-      if (!data?.stagedImageUrl) throw new Error("No image returned");
-
-      let finalUrl: string = data.stagedImageUrl;
-      if (user) {
-        const stagingId = crypto.randomUUID();
-        finalUrl = await uploadStagingImage(user.id, stagingId, data.stagedImageUrl, "staged");
-        await supabase.from("stagings").insert({
-          id: stagingId,
-          user_id: user.id,
-          original_image_url: before,
-          staged_image_url: finalUrl,
-          room_type: refineContext.roomType,
-          style: opts.savedStyle,
-          property_address: refineContext.propertyName?.trim() || null,
-          custom_instructions:
-            opts.mode === "refine"
-              ? (opts.refineInstruction || "").slice(0, 240)
-              : (opts.savedInstructions || null),
-          mls_disclosure: !!mlsDisclosure,
-          staging_palette: refineContext.palette || null,
-        } as any);
-      }
-
+      const row = result.stagings[0];
       setVersions((prev) => {
         const next = [
           ...prev,
-          { url: finalUrl, label: opts.versionLabel, isWatermarked: !!data.isWatermarked },
+          { stagingId: row.id, url: row.staged_image_url, label: opts.versionLabel, isWatermarked: result.isWatermarked },
         ];
         setActiveIdx(next.length - 1);
         return next;
       });
       toast.success(opts.mode === "refine" ? "Refined!" : "Regenerated");
-    } catch (err: any) {
+    } catch (err) {
       console.error(`${opts.mode} failed:`, err);
-      toast.error(err?.message || `${opts.mode === "refine" ? "Refine" : "Regenerate"} failed. Please try again.`);
+      toast.error(err instanceof Error ? err.message : "That didn't work. Please try again.");
     } finally {
+      await refresh();
       setRefining(false);
     }
   };
@@ -233,9 +213,7 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
     const base = stripRefinedSuffix(refineContext.style);
     runStaging({
       mode: "refine",
-      image: currentAfter,
       refineInstruction: instruction,
-      savedStyle: `${base} (refined)`,
       versionLabel: `${base} (refined)`,
     }).then(() => setFreeText(""));
   };
@@ -245,9 +223,6 @@ const BeforeAfterSlider = ({ before, after, onReset, isWatermarked, mlsDisclosur
     const base = stripRefinedSuffix(refineContext.style);
     runStaging({
       mode: "stage",
-      image: before,
-      savedStyle: base,
-      savedInstructions: refineContext.customInstructions || null,
       versionLabel: `${base} · regen`,
     });
   };

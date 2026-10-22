@@ -146,8 +146,12 @@ export type Database = {
           created_at: string
           custom_instructions: string | null
           id: string
+          kind: string
+          master_path: string | null
           mls_disclosure: boolean
+          model: string | null
           original_image_url: string
+          parent_id: string | null
           property_address: string | null
           room_type: string
           share_token: string | null
@@ -161,8 +165,12 @@ export type Database = {
           created_at?: string
           custom_instructions?: string | null
           id?: string
+          kind?: string
+          master_path?: string | null
           mls_disclosure?: boolean
+          model?: string | null
           original_image_url: string
+          parent_id?: string | null
           property_address?: string | null
           room_type: string
           share_token?: string | null
@@ -176,8 +184,12 @@ export type Database = {
           created_at?: string
           custom_instructions?: string | null
           id?: string
+          kind?: string
+          master_path?: string | null
           mls_disclosure?: boolean
+          model?: string | null
           original_image_url?: string
+          parent_id?: string | null
           property_address?: string | null
           room_type?: string
           share_token?: string | null
