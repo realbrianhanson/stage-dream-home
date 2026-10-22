@@ -41,6 +41,8 @@ export const TOOL_EXAMPLES: Record<ToolId, ShowcasePair> = {
     after: archedAfter,
     afterAlt: "The same room staged with a long cream sofa under the window, two armchairs and a round walnut coffee table on a jute rug, with the archway left clear",
     afterLabel: "Staged, Modern",
+    // The sofa sits under the window, so settle left of center to show it.
+    rest: 25,
   },
   remove: {
     id: "remove",

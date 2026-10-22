@@ -9,18 +9,20 @@ export interface DemoPair {
   afterAlt: string;
   /** Short label for the edited side, e.g. "Staged, Modern". */
   afterLabel: string;
+  /** Where the divider settles, in % from the left. Defaults to the middle. */
+  rest?: number;
 }
 
 const KEY_STEP = 5;
 const clamp = (n: number) => Math.min(100, Math.max(0, n));
 
-// Intro: open on the original photo, glide to reveal the edit, then settle in
-// the middle. [position %, milliseconds to get there]
-const INTRO: Array<[number, number]> = [
+// Intro: open on the original photo, sweep past the resting point to reveal
+// the edit, then settle. [position %, milliseconds to get there]
+const introFor = (rest: number): Array<[number, number]> => [
   [94, 0],
   [94, 600],
-  [26, 1500],
-  [50, 700],
+  [Math.max(6, rest - 24), 1500],
+  [rest, 700],
 ];
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
@@ -43,8 +45,9 @@ interface InteractiveDemoProps {
  */
 const InteractiveDemo = ({ pair, variant = "framed", intro = false, handleTop = 50 }: InteractiveDemoProps) => {
   const immersive = variant === "immersive";
+  const rest = pair.rest ?? 50;
   const playIntro = intro && !prefersReducedMotion();
-  const [pos, setPos] = useState(playIntro ? INTRO[0][0] : 50);
+  const [pos, setPos] = useState(playIntro ? introFor(rest)[0][0] : rest);
   const frameRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
   // Any input from the visitor ends the intro immediately.
@@ -52,15 +55,16 @@ const InteractiveDemo = ({ pair, variant = "framed", intro = false, handleTop = 
 
   useEffect(() => {
     if (!playIntro) return;
+    const steps = introFor(rest);
     let raf = 0;
     let start = 0;
-    const total = INTRO.reduce((sum, [, ms]) => sum + ms, 0);
+    const total = steps.reduce((sum, [, ms]) => sum + ms, 0);
     const frame = (now: number) => {
       if (touched.current) return;
       if (!start) start = now;
       let elapsed = now - start;
-      let from = INTRO[0][0];
-      for (const [to, ms] of INTRO.slice(1)) {
+      let from = steps[0][0];
+      for (const [to, ms] of steps.slice(1)) {
         if (elapsed <= ms) {
           setPos(from + (to - from) * easeInOut(elapsed / ms));
           raf = requestAnimationFrame(frame);
@@ -69,17 +73,17 @@ const InteractiveDemo = ({ pair, variant = "framed", intro = false, handleTop = 
         elapsed -= ms;
         from = to;
       }
-      setPos(INTRO[INTRO.length - 1][0]);
+      setPos(rest);
     };
     raf = requestAnimationFrame(frame);
     const failsafe = window.setTimeout(() => {
-      if (!touched.current) setPos(50);
+      if (!touched.current) setPos(rest);
     }, total + 500);
     return () => {
       cancelAnimationFrame(raf);
       window.clearTimeout(failsafe);
     };
-  }, [playIntro]);
+  }, [playIntro, rest]);
 
   const moveTo = useCallback((clientX: number) => {
     const rect = frameRef.current?.getBoundingClientRect();
