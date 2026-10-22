@@ -39,7 +39,7 @@ export const TOOL_EXAMPLES: Record<ToolId, ShowcasePair> = {
     ...WIDE,
     ...ARCHED,
     after: archedAfter,
-    afterAlt: "The same room staged with a cream sofa, a walnut coffee table, two lounge chairs and a woven rug",
+    afterAlt: "The same room staged with a long cream sofa under the window, two armchairs and a round walnut coffee table on a jute rug, with the archway left clear",
     afterLabel: "Staged, Modern",
   },
   remove: {

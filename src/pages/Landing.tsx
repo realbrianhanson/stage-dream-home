@@ -253,7 +253,7 @@ const StyleGallery = () => (
           original={archedBefore}
           width={1920}
           height={1280}
-          alt="A living room with an arched window staged in a Modern style with a cream sofa, swivel chairs and a round coffee table"
+          alt="A living room with an arched window staged in a Modern style with a cream sofa, a tub chair, a walnut coffee table and a sideboard, with the archway left clear"
           caption="Living room, Modern"
           aspect="aspect-[16/10]"
         />
